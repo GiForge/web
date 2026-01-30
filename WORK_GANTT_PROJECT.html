@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProGantt Enterprise v4</title>
+    <title>ProGantt Advanced Dashboard v5</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -12,7 +12,7 @@
             --danger: #ef4444;
             --warning: #f59e0b;
             --success: #10b981;
-            --bg-app: #f1f5f9;
+            --bg-app: #f8fafc;
             --card-bg: #ffffff;
             --border-color: #e2e8f0;
             --text-primary: #1e293b;
@@ -23,7 +23,28 @@
 
         .app-container { max-width: 1800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-        /* Header e Top Bar */
+        /* Dashboard Riepilogo */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .summary-card i { font-size: 24px; color: var(--p-color); background: #eef2ff; padding: 12px; border-radius: 12px; }
+        .summary-card div span { font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .summary-card div p { font-size: 1.4rem; font-weight: 800; }
+
+        /* Top Bar */
         .top-bar {
             background: var(--card-bg);
             padding: 15px 25px;
@@ -31,154 +52,121 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             border: 1px solid var(--border-color);
         }
 
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 5px;
-        }
-
-        .stat-card {
+        /* Legenda */
+        .legend {
+            display: flex;
+            gap: 20px;
+            padding: 10px 20px;
             background: #fff;
-            padding: 12px;
             border-radius: 12px;
             border: 1px solid var(--border-color);
-            text-align: center;
+            font-size: 12px;
+            font-weight: 500;
         }
-        .stat-card span { font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase; }
-        .stat-card p { font-size: 1.1rem; font-weight: 800; color: var(--p-color); }
-
-        /* Buttons */
-        .btn {
-            padding: 8px 16px;
-            border-radius: 10px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: 0.2s;
-            font-size: 14px;
-        }
-        .btn-p { background: var(--p-color); color: white; }
-        .btn-p:hover { background: var(--p-dark); transform: translateY(-1px); }
-        .btn-outline { background: white; border: 1px solid var(--border-color); color: var(--text-primary); }
-        .btn-outline:hover { background: #f8fafc; }
-        .btn-zoom { background: #fff; border: 1px solid var(--border-color); width: 36px; height: 36px; justify-content: center; }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .box { width: 14px; height: 14px; border-radius: 3px; }
 
         /* Layout */
-        .main-layout { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
-
-        /* Sidebar */
-        .sidebar { background: var(--card-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); max-height: 75vh; overflow-y: auto; }
-        .task-list-item {
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-            background: #f8fafc;
-            border: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .task-list-item:hover { border-color: var(--p-color); }
-        .task-list-item.conflict { border-left: 4px solid var(--danger); background: #fff1f2; }
-
-        /* Gantt Box */
-        .gantt-box {
-            background: var(--card-bg);
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
+        .main-layout { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+        .sidebar { background: var(--card-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); height: fit-content; }
+        
+        /* Gantt */
+        .gantt-box { background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color); overflow: hidden; }
         .gantt-viewport { overflow-x: auto; position: relative; }
         .gantt-grid-header { display: flex; background: #f8fafc; border-bottom: 2px solid var(--border-color); }
-        .day-cell {
-            flex-shrink: 0;
-            text-align: center;
-            font-size: 10px;
-            font-weight: 700;
-            border-right: 1px solid #e2e8f0;
-            padding: 8px 0;
-            color: #64748b;
-        }
+        .day-cell { flex-shrink: 0; text-align: center; font-size: 10px; padding: 8px 0; border-right: 1px solid #e2e8f0; }
+        .gantt-body { position: relative; min-height: 500px; background-size: 50px 100%; }
+        .gantt-row { height: 50px; border-bottom: 1px solid #f1f5f9; position: relative; display: flex; align-items: center; }
 
-        .gantt-body { position: relative; min-height: 450px; background-image: linear-gradient(to right, #f1f5f9 1px, transparent 1px); }
-        .gantt-row { display: flex; height: 55px; border-bottom: 1px solid #f1f5f9; position: relative; align-items: center; }
-        
-        /* Task Bars */
         .task-bar {
             position: absolute;
-            height: 34px;
-            background: linear-gradient(135deg, #6366f1, #818cf8);
-            border-radius: 8px;
-            z-index: 10;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            padding: 0 12px;
+            height: 30px;
+            background: linear-gradient(90deg, #6366f1, #818cf8);
+            border-radius: 6px;
             color: white;
             font-size: 11px;
-            font-weight: 600;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
-        .task-bar.conflict { background: linear-gradient(135deg, #ef4444, #f43f5e) !important; }
-
-        .today-line {
-            position: absolute;
-            top: 0; bottom: 0;
-            width: 2px;
-            background: var(--danger);
-            z-index: 50;
-            pointer-events: none;
+        .task-bar.milestone { 
+            background: var(--warning) !important; 
+            width: 16px !important; 
+            height: 16px !important; 
+            transform: rotate(45deg);
+            border: 2px solid #fff;
         }
+        .task-bar.conflict { background: var(--danger) !important; }
 
-        /* Modal */
-        .modal { display: none; position: fixed; z-index: 1000; left:0; top:0; width:100%; height:100%; background:rgba(15,23,42,0.6); backdrop-filter: blur(4px); }
-        .modal-content { background: white; margin: 50px auto; padding: 25px; border-radius: 20px; width: 500px; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
-        input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; }
-        label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger); z-index: 100; pointer-events: none; }
+
+        /* Buttons & Forms */
+        .btn { padding: 10px 15px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .btn-p { background: var(--p-color); color: white; }
+        .btn-outline { background: white; border: 1px solid var(--border-color); }
+        
+        .modal { display: none; position: fixed; z-index: 1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+        .modal-content { background: white; margin: 5% auto; padding: 25px; border-radius: 16px; width: 450px; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border-color); border-radius: 8px; }
+        label { font-size: 11px; font-weight: 700; color: #64748b; margin-top: 10px; display: block; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <div class="stats-bar">
-        <div class="stat-card"><span>Budget Totale</span><p id="stat-cost">€0</p></div>
-        <div class="stat-card"><span>Attività</span><p id="stat-tasks">0</p></div>
-        <div class="stat-card"><span>Risorse Attive</span><p id="stat-resources">0</p></div>
-        <div class="stat-card"><span>Conflitti Ore</span><p id="stat-conflicts" style="color:var(--danger)">0</p></div>
+    <div class="summary-grid" id="project-summary">
+        <div class="summary-card">
+            <i class="fas fa-tasks"></i>
+            <div><span>Task Totali</span><p id="sum-tasks">0</p></div>
+        </div>
+        <div class="summary-card">
+            <i class="fas fa-calendar-alt"></i>
+            <div><span>Durata Progetto</span><p id="sum-duration">0 gg</p></div>
+        </div>
+        <div class="summary-card">
+            <i class="fas fa-euro-sign"></i>
+            <div><span>Budget Totale</span><p id="sum-cost">€ 0</p></div>
+        </div>
+        <div class="summary-card">
+            <i class="fas fa-flag"></i>
+            <div><span>Milestones</span><p id="sum-milestones">0</p></div>
+        </div>
     </div>
 
     <header class="top-bar">
-        <div>
-            <h1 style="font-size: 1.25rem;"><i class="fas fa-layer-group" style="color:var(--p-color)"></i> ProGantt Enterprise</h1>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <div style="display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; gap: 4px; margin-right: 15px;">
-                <button class="btn btn-zoom" onclick="changeZoom(-10)"><i class="fas fa-minus"></i></button>
-                <button class="btn btn-zoom" onclick="changeZoom(10)"><i class="fas fa-plus"></i></button>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <h2 style="font-size: 1.2rem;"><i class="fas fa-project-diagram" style="color:var(--p-color)"></i> ProGantt v5</h2>
+            <div class="legend">
+                <div class="legend-item"><div class="box" style="background: var(--p-color)"></div> Task</div>
+                <div class="legend-item"><div class="box" style="background: var(--warning)"></div> Milestone</div>
+                <div class="legend-item"><div class="box" style="background: var(--danger)"></div> Conflitto Ore</div>
+                <div class="legend-item"><div class="box" style="border-left: 2px solid var(--danger); background: transparent; width: 5px; height: 14px;"></div> Oggi</div>
             </div>
-            <button class="btn btn-p" onclick="openModal()"><i class="fas fa-plus"></i> Nuovo Task</button>
-            <button class="btn btn-outline" onclick="exportToFile()"><i class="fas fa-file-export"></i> Salva File</button>
-            <button class="btn btn-outline" onclick="document.getElementById('importFile').click()"><i class="fas fa-file-import"></i> Carica</button>
-            <input type="file" id="importFile" hidden onchange="importFromFile(event)">
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-outline" onclick="changeZoom(-10)"><i class="fas fa-search-minus"></i></button>
+            <button class="btn btn-outline" onclick="changeZoom(10)"><i class="fas fa-search-plus"></i></button>
+            <button class="btn btn-p" onclick="openModal()"><i class="fas fa-plus"></i> Nuovo</button>
+            <button class="btn btn-outline" onclick="exportData()"><i class="fas fa-save"></i> Salva</button>
+            <button class="btn btn-outline" onclick="document.getElementById('fileIn').click()"><i class="fas fa-upload"></i></button>
+            <input type="file" id="fileIn" hidden onchange="importData(event)">
         </div>
     </header>
 
     <div class="main-layout">
-        <aside class="sidebar" id="task-sidebar"></aside>
+        <aside class="sidebar">
+            <h3 style="font-size: 14px; margin-bottom: 15px; color:#64748b">ATTIVITÀ</h3>
+            <div id="sidebar-list"></div>
+        </aside>
+
         <section class="gantt-box">
-            <div class="gantt-viewport" id="gantt-viewport">
+            <div class="gantt-viewport">
                 <div class="gantt-grid-header" id="gantt-header"></div>
                 <div class="gantt-body" id="gantt-body"></div>
             </div>
@@ -188,37 +176,24 @@
 
 <div id="taskModal" class="modal">
     <div class="modal-content">
-        <h2 id="modal-title" style="margin-bottom: 15px;">Dettaglio Attività</h2>
-        <input type="hidden" id="task-id">
-        <div class="form-grid">
-            <div style="grid-column: span 2;">
-                <label>Nome Task</label>
-                <input type="text" id="task-name">
-            </div>
-            <div>
-                <label>Inizio</label>
-                <input type="date" id="task-start">
-            </div>
-            <div>
-                <label>Fine</label>
-                <input type="date" id="task-end">
-            </div>
-            <div>
-                <label>Risorsa</label>
-                <input type="text" id="task-resource">
-            </div>
-            <div>
-                <label>Ore/Giorno</label>
-                <input type="number" id="task-hours" value="4">
-            </div>
-            <div>
-                <label>Costo Stimato (€)</label>
-                <input type="number" id="task-cost" value="0">
-            </div>
+        <h3 id="m-title">Dettaglio Task</h3>
+        <input type="hidden" id="t-id">
+        <label>NOME</label><input type="text" id="t-name">
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1"><label>INIZIO</label><input type="date" id="t-start"></div>
+            <div style="flex:1"><label>FINE</label><input type="date" id="t-end"></div>
         </div>
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button class="btn btn-p" style="flex:1" onclick="saveTask()">Salva</button>
-            <button class="btn btn-outline" style="flex:1" onclick="closeModal()">Annulla</button>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1"><label>RISORSA</label><input type="text" id="t-resource"></div>
+            <div style="flex:1"><label>ORE/GG</label><input type="number" id="t-hours" value="4"></div>
+        </div>
+        <label>COSTO (€)</label><input type="number" id="t-cost" value="0">
+        <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" id="t-is-milestone" style="width: auto; margin:0;"> <label style="margin:0">Segna come Milestone</label>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 25px;">
+            <button class="btn btn-p" style="flex:1" onclick="saveTask()">Conferma</button>
+            <button class="btn btn-outline" style="flex:1" onclick="closeModal()">Chiudi</button>
             <button id="del-btn" class="btn" style="background:var(--danger); color:white; display:none" onclick="deleteTask()">Elimina</button>
         </div>
     </div>
@@ -226,214 +201,147 @@
 
 <script>
     let tasks = [];
-    let zoomLevel = 50; // pixel per giorno
-    const projectStart = new Date();
-    projectStart.setDate(projectStart.getDate() - 5);
+    let zoom = 50;
+    const projectBase = new Date();
+    projectBase.setDate(projectBase.getDate() - 5);
 
     function init() {
-        const saved = localStorage.getItem('gantt_v4_data');
-        if(saved) {
-            tasks = JSON.parse(saved).map(t => ({
-                ...t, startDate: new Date(t.startDate), endDate: new Date(t.endDate)
-            }));
+        const data = localStorage.getItem('gantt_v5');
+        if(data) {
+            tasks = JSON.parse(data).map(t => ({...t, startDate: new Date(t.startDate), endDate: new Date(t.endDate)}));
         }
-        renderAll();
+        render();
     }
 
-    function changeZoom(delta) {
-        zoomLevel = Math.max(20, Math.min(150, zoomLevel + delta));
-        renderAll();
-    }
-
-    // --- LOGICA FILE SYSTEM ---
-    function exportToFile() {
-        const dataStr = JSON.stringify(tasks, null, 2);
-        const blob = new Blob([dataStr], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Project_Backup_${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
-    }
-
-    function importFromFile(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const imported = JSON.parse(e.target.result);
-                tasks = imported.map(t => ({
-                    ...t, startDate: new Date(t.startDate), endDate: new Date(t.endDate)
-                }));
-                localStorage.setItem('gantt_v4_data', JSON.stringify(tasks));
-                renderAll();
-                alert("Progetto caricato con successo!");
-            } catch (err) {
-                alert("Errore nel caricamento del file.");
-            }
-        };
-        reader.readAsText(file);
-    }
-
-    // --- GESTIONE TASK ---
-    function openModal(id = null) {
-        const modal = document.getElementById('taskModal');
-        const delBtn = document.getElementById('del-btn');
-        if(id) {
-            const t = tasks.find(x => x.id === id);
-            document.getElementById('task-id').value = t.id;
-            document.getElementById('task-name').value = t.name;
-            document.getElementById('task-start').value = t.startDate.toISOString().split('T')[0];
-            document.getElementById('task-end').value = t.endDate.toISOString().split('T')[0];
-            document.getElementById('task-resource').value = t.resource;
-            document.getElementById('task-hours').value = t.hoursPerDay;
-            document.getElementById('task-cost').value = t.cost;
-            delBtn.style.display = 'block';
-        } else {
-            document.getElementById('task-id').value = "";
-            document.getElementById('task-name').value = "";
-            delBtn.style.display = 'none';
-        }
-        modal.style.display = 'block';
-    }
-
-    function closeModal() { document.getElementById('taskModal').style.display = 'none'; }
-
-    function saveTask() {
-        const id = document.getElementById('task-id').value;
-        const newTask = {
-            id: id ? parseInt(id) : Date.now(),
-            name: document.getElementById('task-name').value || "Nuovo Task",
-            startDate: new Date(document.getElementById('task-start').value),
-            endDate: new Date(document.getElementById('task-end').value),
-            resource: document.getElementById('task-resource').value || "Senza Risorsa",
-            hoursPerDay: parseFloat(document.getElementById('task-hours').value) || 0,
-            cost: parseFloat(document.getElementById('task-cost').value) || 0
-        };
-
-        if(id) {
-            const idx = tasks.findIndex(x => x.id === parseInt(id));
-            tasks[idx] = newTask;
-        } else {
-            tasks.push(newTask);
-        }
-        
-        localStorage.setItem('gantt_v4_data', JSON.stringify(tasks));
-        closeModal();
-        renderAll();
-    }
-
-    function deleteTask() {
-        const id = parseInt(document.getElementById('task-id').value);
-        tasks = tasks.filter(t => t.id !== id);
-        localStorage.setItem('gantt_v4_data', JSON.stringify(tasks));
-        closeModal();
-        renderAll();
-    }
-
-    // --- RENDERING & LOGICA CONFLITTI ---
-    function renderAll() {
-        const conflicts = calculateConflicts();
+    function render() {
         const header = document.getElementById('gantt-header');
         const body = document.getElementById('gantt-body');
-        const sidebar = document.getElementById('task-sidebar');
+        const sidebar = document.getElementById('sidebar-list');
+        const conflicts = calculateConflicts();
 
-        let maxDate = new Date();
-        maxDate.setDate(maxDate.getDate() + 30);
+        // 1. Riepilogo Statistiche
+        let totCost = 0, milestones = 0, first = new Date(), last = new Date();
         if(tasks.length > 0) {
-            const actualMax = new Date(Math.max(...tasks.map(t => t.endDate)));
-            actualMax.setDate(actualMax.getDate() + 10);
-            maxDate = actualMax;
+            totCost = tasks.reduce((sum, t) => sum + (parseFloat(t.cost) || 0), 0);
+            milestones = tasks.filter(t => t.isMilestone).length;
+            first = new Date(Math.min(...tasks.map(t => t.startDate)));
+            last = new Date(Math.max(...tasks.map(t => t.endDate)));
         }
+        const duration = Math.ceil((last - first) / 86400000) + 1;
+        
+        document.getElementById('sum-tasks').innerText = tasks.length;
+        document.getElementById('sum-cost').innerText = `€ ${totCost.toLocaleString()}`;
+        document.getElementById('sum-milestones').innerText = milestones;
+        document.getElementById('sum-duration').innerText = `${duration} gg`;
 
-        const totalDays = Math.ceil((maxDate - projectStart) / 86400000);
-        header.style.width = body.style.width = (totalDays * zoomLevel) + 'px';
-
-        // Header Giorni
+        // 2. Griglia Temporale
+        let maxDate = new Date(last); maxDate.setDate(maxDate.getDate() + 20);
+        const days = Math.ceil((maxDate - projectBase) / 86400000);
+        header.style.width = body.style.width = (days * zoom) + "px";
         header.innerHTML = "";
-        for(let i=0; i<totalDays; i++){
-            const d = new Date(projectStart); d.setDate(d.getDate() + i);
-            const cell = document.createElement('div');
-            cell.className = 'day-cell';
-            cell.style.width = zoomLevel + 'px';
-            cell.innerHTML = `${d.getDate()}<br>${d.toLocaleDateString('it-IT',{weekday:'short'})}`;
-            header.appendChild(cell);
+        for(let i=0; i<days; i++) {
+            const d = new Date(projectBase); d.setDate(d.getDate()+i);
+            header.innerHTML += `<div class="day-cell" style="width:${zoom}px">${d.getDate()}<br><small>${d.toLocaleDateString('it',{weekday:'short'})}</small></div>`;
         }
 
-        // Sidebar & Body
-        sidebar.innerHTML = "<h3 style='margin-bottom:15px'>Elenco Attività</h3>";
-        body.innerHTML = "";
-
-        // Linea Oggi
-        const todayOffset = Math.floor((new Date() - projectStart) / 86400000) * zoomLevel;
-        body.innerHTML += `<div class="today-line" style="left:${todayOffset}px"></div>`;
-
-        let totCost = 0;
-        let resSet = new Set();
-
+        // 3. Barre Task & Sidebar
+        body.innerHTML = `<div class="today-line" style="left:${Math.floor((new Date()-projectBase)/86400000)*zoom}px"></div>`;
+        sidebar.innerHTML = "";
+        
         tasks.sort((a,b) => a.startDate - b.startDate).forEach(t => {
-            totCost += t.cost;
-            resSet.add(t.resource);
-            const isConflict = conflicts.has(t.id);
-
-            // Sidebar Item
+            const isC = conflicts.has(t.id);
+            // Sidebar
             sidebar.innerHTML += `
-                <div class="task-list-item ${isConflict ? 'conflict' : ''}" onclick="openModal(${t.id})">
-                    <div style="display:flex; justify-content:space-between; font-weight:700">
-                        <span>${t.name}</span>
-                        <span>€${t.cost}</span>
-                    </div>
-                    <div style="font-size:11px; color:#64748b; margin-top:4px">
-                        ${t.resource} • ${t.hoursPerDay}h/gg
-                        ${isConflict ? '<span style="color:var(--danger); display:block">⚠ Sovraccarico</span>' : ''}
-                    </div>
+                <div style="padding:10px; background:white; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:8px; cursor:pointer; border-left:4px solid ${t.isMilestone ? 'var(--warning)' : (isC ? 'var(--danger)' : 'var(--p-color)')}" onclick="openModal(${t.id})">
+                    <div style="font-size:12px; font-weight:700">${t.name}</div>
+                    <div style="font-size:10px; color:#64748b">${t.resource} • €${t.cost}</div>
                 </div>`;
-
-            // Gantt Row
+            
+            // Gantt
             const row = document.createElement('div');
             row.className = 'gantt-row';
-            const left = Math.floor((t.startDate - projectStart) / 86400000) * zoomLevel;
-            const width = (Math.ceil((t.endDate - t.startDate) / 86400000) + 1) * zoomLevel;
+            const left = Math.floor((t.startDate - projectBase) / 86400000) * zoom;
+            const w = (Math.ceil((t.endDate - t.startDate) / 86400000) + 1) * zoom;
             
-            row.innerHTML = `<div class="task-bar ${isConflict ? 'conflict' : ''}" 
-                                style="left:${left}px; width:${width}px" 
-                                onclick="openModal(${t.id})">${t.name}</div>`;
+            row.innerHTML = `<div class="task-bar ${t.isMilestone ? 'milestone' : ''} ${isC ? 'conflict' : ''}" 
+                             style="left:${left}px; width:${t.isMilestone ? '16px' : w+'px'}" 
+                             onclick="openModal(${t.id})">${t.isMilestone ? '' : t.name}</div>`;
             body.appendChild(row);
         });
-
-        document.getElementById('stat-cost').innerText = `€${totCost.toLocaleString()}`;
-        document.getElementById('stat-tasks').innerText = tasks.length;
-        document.getElementById('stat-resources').innerText = resSet.size;
-        document.getElementById('stat-conflicts').innerText = conflicts.size;
     }
 
     function calculateConflicts() {
-        const dayMap = {};
-        const conflictIds = new Set();
+        const map = {}; const cIds = new Set();
         tasks.forEach(t => {
-            let curr = new Date(t.startDate);
-            while(curr <= t.endDate) {
-                const k = curr.toISOString().split('T')[0] + t.resource;
-                dayMap[k] = (dayMap[k] || 0) + t.hoursPerDay;
-                if(dayMap[k] > 8) conflictIds.add(t.id);
-                curr.setDate(curr.getDate() + 1);
+            let cur = new Date(t.startDate);
+            while(cur <= t.endDate) {
+                const k = cur.toISOString().split('T')[0] + t.resource;
+                map[k] = (map[k] || 0) + parseFloat(t.hoursPerDay);
+                if(map[k] > 8) cIds.add(t.id);
+                cur.setDate(cur.getDate()+1);
             }
         });
-        // Una seconda passata per marcare tutti i task coinvolti nel conflitto
-        tasks.forEach(t => {
-            let curr = new Date(t.startDate);
-            while(curr <= t.endDate) {
-                const k = curr.toISOString().split('T')[0] + t.resource;
-                if(dayMap[k] > 8) conflictIds.add(t.id);
-                curr.setDate(curr.getDate() + 1);
-            }
-        });
-        return conflictIds;
+        return cIds;
+    }
+
+    // Modal & Crud
+    function openModal(id = null) {
+        document.getElementById('taskModal').style.display = 'block';
+        const d = id ? tasks.find(t => t.id === id) : null;
+        document.getElementById('t-id').value = id || "";
+        document.getElementById('t-name').value = d ? d.name : "";
+        document.getElementById('t-start').value = d ? d.startDate.toISOString().split('T')[0] : "";
+        document.getElementById('t-end').value = d ? d.endDate.toISOString().split('T')[0] : "";
+        document.getElementById('t-resource').value = d ? d.resource : "";
+        document.getElementById('t-hours').value = d ? d.hoursPerDay : 4;
+        document.getElementById('t-cost').value = d ? d.cost : 0;
+        document.getElementById('t-is-milestone').checked = d ? d.isMilestone : false;
+        document.getElementById('del-btn').style.display = id ? "block" : "none";
+    }
+
+    function saveTask() {
+        const id = document.getElementById('t-id').value;
+        const obj = {
+            id: id ? parseInt(id) : Date.now(),
+            name: document.getElementById('t-name').value,
+            startDate: new Date(document.getElementById('t-start').value),
+            endDate: new Date(document.getElementById('t-end').value),
+            resource: document.getElementById('t-resource').value,
+            hoursPerDay: document.getElementById('t-hours').value,
+            cost: document.getElementById('t-cost').value,
+            isMilestone: document.getElementById('t-is-milestone').checked
+        };
+        if(id) tasks = tasks.map(t => t.id === parseInt(id) ? obj : t);
+        else tasks.push(obj);
+        localStorage.setItem('gantt_v5', JSON.stringify(tasks));
+        closeModal(); render();
+    }
+
+    function deleteTask() {
+        tasks = tasks.filter(t => t.id !== parseInt(document.getElementById('t-id').value));
+        localStorage.setItem('gantt_v5', JSON.stringify(tasks));
+        closeModal(); render();
+    }
+
+    function closeModal() { document.getElementById('taskModal').style.display = 'none'; }
+    function changeZoom(v) { zoom = Math.max(20, zoom + v); render(); }
+    
+    function exportData() {
+        const blob = new Blob([JSON.stringify(tasks)], {type: 'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = 'project.json'; a.click();
+    }
+
+    function importData(e) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            tasks = JSON.parse(ev.target.result).map(t => ({...t, startDate: new Date(t.startDate), endDate: new Date(t.endDate)}));
+            render();
+        };
+        reader.readAsText(e.target.files[0]);
     }
 
     init();
-    window.onclick = (e) => { if(e.target.className === 'modal') closeModal(); }
 </script>
 </body>
 </html>
