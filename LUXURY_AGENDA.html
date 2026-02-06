@@ -2,22 +2,20 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Agenda Luxury 2026 - Custom Font</title>
+    <title>Agenda Luxury 2026 - Master Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    
     <style>
         :root {
             --desk: #0a0a0a; --leather: #1c130d; --gold: #b89352;
             --paper: #fcfaf2; --ink: #1a1a1a;
-            --line-color: rgba(0, 0, 0, 0.18);
-            --margin-color: rgba(220, 20, 60, 0.4);
-            --speed: 0.9s;
-            --widget-bg: rgba(15, 15, 15, 0.85);
+            --line-color: rgba(0, 0, 0, 0.12);
+            --margin-color: rgba(220, 20, 60, 0.3);
+            --speed: 0.8s;
         }
         .theme-dark {
-            --paper: #121212; --ink: #f0e0c0;
-            --line-color: rgba(184, 147, 82, 0.3);
-            --margin-color: rgba(184, 147, 82, 0.5);
+            --paper: #1a1a1a; --ink: #e0d0b0;
+            --line-color: rgba(184, 147, 82, 0.15);
+            --margin-color: rgba(184, 147, 82, 0.4);
         }
 
         * { box-sizing: border-box; }
@@ -26,302 +24,325 @@
             font-family: 'Cormorant Garamond', serif;
             height: 100vh; display: flex; overflow: hidden;
             justify-content: center; align-items: center;
-            perspective: 3500px;
+            perspective: 3000px;
         }
 
-        /* --- WIDGET --- */
-        #widget {
-            position: absolute; bottom: 30px; left: 50%; 
-            transform: translateX(-50%); width: 320px;
-            background: var(--widget-bg); backdrop-filter: blur(15px);
-            border: 1px solid var(--gold); border-radius: 12px; 
-            z-index: 2000; color: white;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+        /* --- UI CONTROLS (ROUND BUTTONS) --- */
+        .side-controls {
+            position: fixed; display: flex; flex-direction: column; gap: 15px; z-index: 2000;
         }
-        #widget-header { 
-            padding: 10px 15px; cursor: move; border-bottom: 1px solid rgba(184, 147, 82, 0.3); 
-            display: flex; justify-content: space-between; font-size: 0.7rem; 
-            text-transform: uppercase; letter-spacing: 2px;
-        }
-        #widget-content { padding: 15px; max-height: 500px; overflow-y: auto; }
-        .w-label { font-size: 0.6rem; color: var(--gold); text-transform: uppercase; margin-bottom: 5px; display: block; }
-        .w-btn { 
-            width: 100%; background: transparent; color: var(--gold); 
-            border: 1px solid var(--gold); padding: 8px; margin-bottom: 6px; 
-            cursor: pointer; font-size: 0.65rem; transition: 0.3s;
-            letter-spacing: 1.5px; text-transform: uppercase;
-        }
-        .w-btn:hover { background: var(--gold); color: black; }
-        .font-sel { 
-            width: 100%; background: #222; color: var(--gold); border: 1px solid var(--gold);
-            padding: 5px; margin-bottom: 15px; font-size: 0.8rem; outline: none;
-        }
-        
-        #cal-box { height: 150px; overflow-y: auto; margin-top: 10px; scrollbar-width: thin; }
-        .day-cell { padding: 4px; cursor: pointer; text-align: center; font-size: 0.7rem; color: #888; }
-        .day-cell.active { background: var(--gold); color: black !important; font-weight: bold; border-radius: 4px; }
-        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 8px; }
+        .controls-left { left: 20px; }
+        .controls-right { right: 20px; }
 
-        /* --- BOOK --- */
+        .btn-round {
+            width: 55px; height: 55px; border-radius: 50%;
+            background: rgba(20, 20, 20, 0.8); border: 1px solid var(--gold);
+            color: var(--gold); cursor: pointer; display: flex;
+            flex-direction: column; align-items: center; justify-content: center;
+            font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px;
+            transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px); overflow: hidden; text-align: center;
+        }
+        .btn-round:hover { background: var(--gold); color: black; transform: scale(1.1); }
+        .btn-round.active { background: #b89352; color: white; box-shadow: 0 0 15px var(--gold); }
+        .btn-round i { font-style: normal; font-size: 1.2rem; margin-bottom: 2px; }
+
+        /* --- BOOK STRUCTURE --- */
         #book {
-            width: 88vw; height: 85vh; position: relative;
+            width: 85vw; height: 85vh; position: relative;
             transform-style: preserve-3d; background: var(--leather);
-            border-radius: 10px; box-shadow: 0 60px 130px rgba(0,0,0,1);
+            border-radius: 15px; box-shadow: 0 50px 100px rgba(0,0,0,0.9);
         }
 
         .page {
-            position: absolute; width: calc(50% - 20px); height: calc(100% - 30px);
-            top: 15px; background: var(--paper); color: var(--ink);
-            padding: 40px 60px; display: flex; flex-direction: column;
-            backface-visibility: hidden; z-index: 10;
+            position: absolute; width: calc(50% - 10px); height: calc(100% - 20px);
+            top: 10px; background: var(--paper); color: var(--ink);
+            padding: 40px 50px; display: flex; flex-direction: column;
+            backface-visibility: hidden; z-index: 10; overflow: hidden;
         }
-        .page.left { left: 15px; border-radius: 5px 0 0 5px; }
-        .page.right { right: 15px; border-radius: 0 5px 5px 0; }
+        .page.left { left: 10px; border-radius: 10px 0 0 10px; }
+        .page.right { right: 10px; border-radius: 0 10px 10px 0; border-left: 1px solid rgba(0,0,0,0.1); }
 
+        /* Flipping Mechanism */
         #flipping-page {
-            position: absolute; width: calc(50% - 20px); height: calc(100% - 30px);
-            top: 15px; left: 50%; transform-style: preserve-3d;
+            position: absolute; width: calc(50% - 10px); height: calc(100% - 20px);
+            top: 10px; left: 50%; transform-style: preserve-3d;
             transform-origin: left center; display: none; z-index: 100;
         }
         .flip-side {
             position: absolute; width: 100%; height: 100%;
             backface-visibility: hidden; background: var(--paper); color: var(--ink);
-            padding: 40px 60px; display: flex; flex-direction: column;
+            padding: 40px 50px; display: flex; flex-direction: column;
         }
-        .flip-side.back { transform: rotateY(180deg); box-shadow: inset 30px 0 60px rgba(0,0,0,0.1); }
+        .flip-side.back { transform: rotateY(180deg); }
 
-        /* --- TEXT & LINES --- */
-        .page-header { border-bottom: 2px solid var(--gold); margin-bottom: 30px; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .header-main h2 { margin: 0; font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 400; font-style: italic; }
-        .header-day-num { font-family: 'Playfair Display', serif; font-size: 5.5rem; line-height: 1; color: var(--gold); font-weight: 300; }
-
-        .editor { 
-            flex: 1; 
-            background-image: linear-gradient(transparent 39px, var(--line-color) 40px);
-            background-size: 100% 40px;
-            line-height: 40px; outline: none;
-            border-left: 2px solid var(--margin-color);
-            padding-left: 25px; margin-left: 10px;
-            font-size: 1.9rem; white-space: pre-wrap;
-            overflow-y: auto;
+        /* Content Styles */
+        .editor-container { position: relative; flex: 1; margin-top: 10px; }
+        .editor {
+            height: 100%; background-image: linear-gradient(transparent 34px, var(--line-color) 35px);
+            background-size: 100% 35px; line-height: 35px; outline: none;
+            padding-left: 15px; border-left: 2px solid var(--margin-color);
+            font-size: 1.6rem; white-space: pre-wrap; z-index: 1; position: relative;
         }
+        .draw-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2; pointer-events: none;
+        }
+        body.pen-active .draw-layer { pointer-events: auto; cursor: crosshair; }
+
+        .page-header { border-bottom: 2px solid var(--gold); display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 5px; }
+        .header-day-num { font-family: 'Playfair Display', serif; font-size: 5rem; color: var(--gold); line-height: 0.8; }
         
-        .page-footer { margin-top: 15px; font-size: 0.8rem; letter-spacing: 2px; color: var(--gold); text-align: center; font-weight: 600; opacity: 0.7; }
-
-        .nav-zone { position: absolute; top: 0; width: 10%; height: 100%; z-index: 1000; cursor: pointer; }
+        .nav-zone { position: absolute; top: 0; width: 15%; height: 100%; z-index: 1500; cursor: pointer; }
         #nav-prev { left: 0; } #nav-next { right: 0; }
-        .hidden { display: none !important; }
+
+        #calendar-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 3000; display: none;
+            justify-content: center; align-items: center; padding: 40px;
+        }
+        .cal-grid-container { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; 
+            max-width: 1000px; max-height: 90vh; overflow-y: auto; 
+        }
     </style>
 </head>
 <body class="theme-light">
 
-<div id="widget" onmousedown="dragStart(event)">
-    <div id="widget-header">
-        <span>LUXURY Agenda 2026</span>
-        <span onclick="toggleWidget()" style="cursor:pointer;">[x]</span>
+    <div class="side-controls controls-left">
+        <button class="btn-round" onclick="toggleTheme()"><i>◑</i>Tema</button>
+        <button class="btn-round" onclick="toggleCalendar()"><i>📅</i>Calen.</button>
+        <button class="btn-round" onclick="exportData()"><i>💾</i>Backup</button>
+        <button class="btn-round" onclick="document.getElementById('importFile').click()"><i>📂</i>Carica</button>
+        <input type="file" id="importFile" hidden onchange="importData(event)">
     </div>
-    <div id="widget-content">
-        <label class="w-label">Stile Scrittura</label>
-        <select class="font-sel" id="fontPicker" onchange="changeFont(this.value)">
-            <option value="'Dancing Script', cursive">Corsivo a Mano</option>
-            <option value="'Cormorant Garamond', serif">Garamond Elegante</option>
-            <option value="'Playfair Display', serif">Classico Editoriale</option>
-            <option value="'Inter', sans-serif">Moderno Tecnico</option>
+
+    <div class="side-controls controls-right">
+        <button class="btn-round" id="pen-toggle" onclick="togglePen()"><i>✎</i>Penna</button>
+        <input type="color" id="inkColor" value="#1a1a1a" style="width:55px; height:30px; border:1px solid var(--gold); background:none; cursor:pointer; border-radius:5px;">
+        <select id="penSize" class="btn-round" style="font-size: 0.5rem;">
+            <option value="2">Sottile</option>
+            <option value="4" selected>Media</option>
+            <option value="8">Grossa</option>
         </select>
-
-        <button class="w-btn" onclick="goToToday()">Vai ad Oggi</button>
-        <button class="w-btn" onclick="toggleTheme()">Inverti Colore</button>
-        <button class="w-btn" onclick="exportData()">Salva Backup</button>
-        <button class="w-btn" onclick="document.getElementById('importFile').click()">Carica Backup</button>
-        <input type="file" id="importFile" hidden accept=".json" onchange="importData(event)">
-        <div id="cal-box"></div>
+        <button class="btn-round" onclick="clearDraw()"><i>⌫</i>Clear</button>
+        <select id="fontPicker" onchange="changeFont(this.value)" class="btn-round" style="font-size: 0.5rem;">
+            <option value="'Dancing Script'">Hand</option>
+            <option value="'Cormorant Garamond'">Gara</option>
+            <option value="'Playfair Display'">Classic</option>
+            <option value="'Inter'">Modern</option>
+        </select>
     </div>
-</div>
 
-<main id="book">
-    <div id="nav-prev" class="nav-zone" onclick="turnPage('prev')"></div>
-    <div id="nav-next" class="nav-zone" onclick="turnPage('next')"></div>
-    <div id="spine" style="position:absolute; left:50%; width:2px; height:100%; background:rgba(0,0,0,0.2); z-index:500; transform:translateX(-50%);"></div>
-    <div class="page left" id="p-left-static"></div>
-    <div class="page right" id="p-right-static"></div>
-    <div id="flipping-page">
-        <div class="flip-side front" id="f-front"></div>
-        <div class="flip-side back" id="f-back"></div>
+    <main id="book">
+        <div id="nav-prev" class="nav-zone" onclick="turnPage('prev')"></div>
+        <div id="nav-next" class="nav-zone" onclick="turnPage('next')"></div>
+        
+        <div class="page left" id="p-left-static"></div>
+        <div class="page right" id="p-right-static"></div>
+
+        <div id="flipping-page">
+            <div class="flip-side front" id="f-front"></div>
+            <div class="flip-side back" id="f-back"></div>
+        </div>
+    </main>
+
+    <div id="calendar-overlay" onclick="toggleCalendar()">
+        <div class="cal-grid-container" id="cal-box" onclick="event.stopPropagation()"></div>
     </div>
-</main>
 
 <script>
-    let state = { d: 1, dark: false, font: "'Dancing Script', cursive", content: {} };
+    let state = { d: 1, dark: false, font: "'Dancing Script'", content: {}, draws: {} };
     let isAnimating = false;
+    let isPenActive = false;
 
     window.onload = () => {
-        const saved = localStorage.getItem('agenda_pro_v14');
-        if (saved) state = JSON.parse(saved); else goToToday(false);
+        const saved = localStorage.getItem('agenda_luxury_v20');
+        if (saved) state = JSON.parse(saved); else goToToday();
         
-        document.getElementById('fontPicker').value = state.font;
-        applyTheme(); 
+        applyTheme();
         applyFont();
-        buildCalendar(); 
         renderStatic();
+        buildCalendar();
 
         window.addEventListener('wheel', (e) => {
-            if (isAnimating) return;
-            if (e.deltaY > 40) turnPage('next');
-            else if (e.deltaY < -40) turnPage('prev');
+            if (isAnimating || isPenActive) return;
+            if (e.deltaY > 50) turnPage('next');
+            else if (e.deltaY < -50) turnPage('prev');
         }, { passive: true });
     };
 
-    function applyFont() {
-        document.body.style.setProperty('--current-font', state.font);
-        // Applichiamo il font dinamicamente alle aree editabili
-        const style = document.createElement('style');
-        style.innerHTML = `.editor { font-family: ${state.font} !important; }`;
-        document.head.appendChild(style);
-    }
-
-    function changeFont(val) {
-        state.font = val;
-        applyFont();
-        saveToLocal();
-    }
+    function saveToLocal() { localStorage.setItem('agenda_luxury_v20', JSON.stringify(state)); }
 
     function getPageHTML(day) {
-        if (day < 1 || day > 365) return '<div class="page-footer">FINE ANNO</div>';
+        if (day < 1 || day > 365) return `<div style="padding:100px; text-align:center; color:var(--gold)"><h3>FINE</h3></div>`;
         const date = new Date(2026, 0, day);
+        const content = state.content[day] || "";
         return `
             <div class="page-header">
-                <div class="header-main">
-                    <div style="text-transform:uppercase; letter-spacing:4px; color:var(--gold); font-weight:700; font-size:0.9rem;">${date.toLocaleDateString('it-IT', {month:'long'})} 2026</div>
-                    <h2>${date.toLocaleDateString('it-IT', {weekday:'long'})}</h2>
+                <div>
+                    <div style="text-transform:uppercase; letter-spacing:3px; color:var(--gold); font-weight:700; font-size:0.8rem;">
+                        ${date.toLocaleDateString('it-IT', {month:'long'})} 2026
+                    </div>
+                    <h2 style="margin:0; font-family:'Playfair Display'; font-style:italic; font-weight:400;">
+                        ${date.toLocaleDateString('it-IT', {weekday:'long'})}
+                    </h2>
                 </div>
                 <div class="header-day-num">${date.getDate()}</div>
             </div>
-            <div class="editor" contenteditable="true" spellcheck="false" oninput="saveText(${day}, this.innerHTML)">${state.content[day] || ""}</div>
-            <div class="page-footer">PAGINA ${day}</div>
+            <div class="editor-container">
+                <div class="editor" contenteditable="true" spellcheck="false" 
+                     id="edit-${day}" oninput="state.content[${day}]=this.innerHTML; saveToLocal();">${content}</div>
+                <canvas id="canv-${day}" class="draw-layer"></canvas>
+            </div>
+            <div style="margin-top:auto; font-size:0.7rem; opacity:0.5; text-align:center; letter-spacing:2px;">PAGINA ${day}</div>
         `;
     }
 
-    function saveText(day, html) { 
-        state.content[day] = html; 
-        saveToLocal();
-    }
+    function initCanvas(day) {
+        const canvas = document.getElementById(`canv-${day}`);
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const container = canvas.parentElement;
+        canvas.width = container.offsetWidth;
+        canvas.height = container.offsetHeight;
 
-    function saveToLocal() { localStorage.setItem('agenda_pro_v14', JSON.stringify(state)); }
+        if(state.draws[day]) {
+            const img = new Image();
+            img.onload = () => ctx.drawImage(img, 0, 0);
+            img.src = state.draws[day];
+        }
+
+        let drawing = false;
+        const start = (e) => { if(!isPenActive) return; drawing = true; ctx.beginPath(); draw(e); };
+        const stop = () => { if(drawing) { drawing = false; state.draws[day] = canvas.toDataURL(); saveToLocal(); } };
+        const draw = (e) => {
+            if(!drawing || !isPenActive) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            ctx.lineWidth = document.getElementById('penSize').value;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = document.getElementById('inkColor').value;
+            ctx.lineTo(x, y); ctx.stroke(); ctx.moveTo(x, y);
+        };
+        canvas.onmousedown = start; canvas.onmousemove = draw; canvas.onmouseup = stop;
+    }
 
     function renderStatic() {
         document.getElementById('p-left-static').innerHTML = getPageHTML(state.d);
         document.getElementById('p-right-static').innerHTML = getPageHTML(state.d + 1);
-        updateCal();
+        initCanvas(state.d);
+        initCanvas(state.d + 1);
     }
 
     function turnPage(dir) {
         if (isAnimating) return;
         if ((dir === 'next' && state.d >= 364) || (dir === 'prev' && state.d <= 1)) return;
+        
         isAnimating = true;
         const flip = document.getElementById('flipping-page');
         const front = document.getElementById('f-front');
         const back = document.getElementById('f-back');
+        
         flip.style.display = 'block';
+        
         if (dir === 'next') {
             front.innerHTML = getPageHTML(state.d + 1);
             back.innerHTML = getPageHTML(state.d + 2);
-            document.getElementById('p-right-static').innerHTML = getPageHTML(state.d + 3);
+            // Sincronizza i disegni sul volta-pagina
+            setTimeout(() => { initCanvas(state.d+1); initCanvas(state.d+2); }, 0);
+            
             flip.style.transition = 'none';
             flip.style.transform = 'rotateY(0deg)';
             setTimeout(() => {
-                flip.style.transition = `transform var(--speed) cubic-bezier(0.645, 0.045, 0.355, 1)`;
+                flip.style.transition = `transform var(--speed) ease-in-out`;
                 flip.style.transform = 'rotateY(-180deg)';
             }, 50);
-            setTimeout(() => { state.d += 2; finishTurn(); }, 900);
+            setTimeout(() => { state.d += 2; finalizeTurn(); }, 800);
         } else {
             front.innerHTML = getPageHTML(state.d - 1);
             back.innerHTML = getPageHTML(state.d);
-            document.getElementById('p-left-static').innerHTML = getPageHTML(state.d - 2);
+            setTimeout(() => { initCanvas(state.d-1); initCanvas(state.d); }, 0);
+            
             flip.style.transition = 'none';
             flip.style.transform = 'rotateY(-180deg)';
             setTimeout(() => {
-                flip.style.transition = `transform var(--speed) cubic-bezier(0.645, 0.045, 0.355, 1)`;
+                flip.style.transition = `transform var(--speed) ease-in-out`;
                 flip.style.transform = 'rotateY(0deg)';
             }, 50);
-            setTimeout(() => { state.d -= 2; finishTurn(); }, 900);
+            setTimeout(() => { state.d -= 2; finalizeTurn(); }, 800);
         }
     }
 
-    function finishTurn() {
+    function finalizeTurn() {
         document.getElementById('flipping-page').style.display = 'none';
         renderStatic();
         isAnimating = false;
-        saveToLocal();
+    }
+
+    function togglePen() {
+        isPenActive = !isPenActive;
+        document.body.classList.toggle('pen-active', isPenActive);
+        document.getElementById('pen-toggle').classList.toggle('active', isPenActive);
+    }
+
+    function clearDraw() {
+        if(confirm("Cancella disegno pagina corrente?")) {
+            const c1 = document.getElementById(`canv-${state.d}`);
+            const c2 = document.getElementById(`canv-${state.d+1}`);
+            if(c1) c1.getContext('2d').clearRect(0,0,c1.width,c1.height);
+            if(c2) c2.getContext('2d').clearRect(0,0,c2.width,c2.height);
+            delete state.draws[state.d]; delete state.draws[state.d+1];
+            saveToLocal();
+        }
+    }
+
+    function toggleCalendar() {
+        const cal = document.getElementById('calendar-overlay');
+        cal.style.display = (cal.style.display === 'flex') ? 'none' : 'flex';
     }
 
     function buildCalendar() {
         const box = document.getElementById('cal-box');
-        const months = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
-        box.innerHTML = "";
+        const months = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
         months.forEach((m, mi) => {
-            const grid = document.createElement('div');
-            grid.className = 'days-grid';
-            box.appendChild(document.createElement('div')).innerHTML = `<div style="color:var(--gold); font-weight:bold; font-size:0.6rem; margin-top:8px">${m.toUpperCase()}</div>`;
+            const mDiv = document.createElement('div');
+            mDiv.innerHTML = `<h4 style="color:var(--gold); margin-bottom:5px;">${m}</h4>`;
             let days = new Date(2026, mi+1, 0).getDate();
             for(let d=1; d<=days; d++) {
                 const doy = Math.round((new Date(2026, mi, d) - new Date(2026,0,0))/86400000);
-                const c = document.createElement('div');
-                c.className = 'day-cell'; c.id = `c-${doy}`; c.textContent = d;
-                c.onclick = () => { if(!isAnimating) { state.d = (doy%2===0)?doy-1:doy; renderStatic(); } };
-                grid.appendChild(c);
+                const btn = document.createElement('button');
+                btn.style = "width:25px; height:25px; margin:2px; font-size:0.6rem; cursor:pointer; background:none; border:1px solid #444; color:#aaa;";
+                btn.innerText = d;
+                btn.onclick = () => { state.d = (doy%2===0)?doy-1:doy; renderStatic(); toggleCalendar(); };
+                mDiv.appendChild(btn);
             }
-            box.appendChild(grid);
+            box.appendChild(mDiv);
         });
     }
 
-    function updateCal() {
-        document.querySelectorAll('.day-cell').forEach(c => c.classList.remove('active'));
-        const active = document.getElementById(`c-${state.d}`);
-        if(active) { active.classList.add('active'); active.scrollIntoView({block:'center'}); }
-    }
-
-    function goToToday(u=true) {
+    function goToToday() {
         const n = new Date(); const start = new Date(2026, 0, 0);
         const doy = Math.floor((new Date(2026, n.getMonth(), n.getDate()) - start)/86400000);
-        state.d = (doy%2===0)?doy-1:doy; if(u) renderStatic();
+        state.d = (doy%2===0)?doy-1:doy;
     }
 
-    function toggleTheme() { state.dark = !state.dark; applyTheme(); renderStatic(); }
     function applyTheme() { document.body.className = state.dark ? 'theme-dark' : 'theme-light'; }
-    function toggleWidget() { document.getElementById('widget-content').classList.toggle('hidden'); }
+    function toggleTheme() { state.dark = !state.dark; applyTheme(); saveToLocal(); }
+    function applyFont() { document.body.style.setProperty('--current-font', state.font); document.querySelectorAll('.editor').forEach(e => e.style.fontFamily = state.font); }
+    function changeFont(f) { state.font = f; applyFont(); saveToLocal(); }
 
     function exportData() {
-        const blob = new Blob([JSON.stringify(state)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = `Agenda_2026_Full_Backup.json`;
-        a.click();
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], {type: 'application/json'}));
+        a.download = 'backup_agenda_2026.json'; a.click();
     }
 
-    function importData(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+    function importData(e) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                state = JSON.parse(e.target.result);
-                document.getElementById('fontPicker').value = state.font;
-                applyTheme(); applyFont(); buildCalendar(); renderStatic();
-                alert("Backup ripristinato con successo!");
-            } catch (err) { alert("File non valido!"); }
-        };
-        reader.readAsText(file);
-    }
-
-    let w = document.getElementById('widget');
-    function dragStart(e) {
-        if(e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.classList.contains('day-cell')) return;
-        let ox = e.clientX - w.offsetLeft, oy = e.clientY - w.offsetTop;
-        document.onmousemove = (ev) => { 
-            w.style.left = (ev.clientX - ox)+"px"; w.style.top = (ev.clientY - oy)+"px"; 
-            w.style.bottom = 'auto'; w.style.transform = 'none';
-        };
-        document.onmouseup = () => document.onmousemove = null;
+        reader.onload = (ev) => { state = JSON.parse(ev.target.result); renderStatic(); applyTheme(); applyFont(); };
+        reader.readAsText(e.target.files[0]);
     }
 </script>
 </body>
