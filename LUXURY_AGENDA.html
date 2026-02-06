@@ -2,7 +2,8 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Agenda Luxury 2026 - Master Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agenda Luxury 2026 - Master Responsive</title>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -18,21 +19,33 @@
             --margin-color: rgba(184, 147, 82, 0.4);
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
             margin: 0; background: var(--desk);
             font-family: 'Cormorant Garamond', serif;
             height: 100vh; display: flex; overflow: hidden;
             justify-content: center; align-items: center;
-            perspective: 3000px;
+            perspective: 3000px; touch-action: none;
         }
 
         /* --- UI CONTROLS --- */
         .side-controls {
-            position: fixed; display: flex; flex-direction: column; gap: 15px; z-index: 2000;
+            position: fixed; display: flex; gap: 10px; z-index: 2000;
         }
-        .controls-left { left: 20px; }
-        .controls-right { right: 20px; }
+        
+        @media (min-width: 769px) {
+            .side-controls { flex-direction: column; top: 50%; transform: translateY(-50%); }
+            .controls-left { left: 20px; }
+            .controls-right { right: 20px; }
+        }
+        
+        @media (max-width: 768px) {
+            .side-controls { flex-direction: row; left: 50%; transform: translateX(-50%); width: 95%; justify-content: center; flex-wrap: wrap; }
+            .controls-left { top: 10px; }
+            .controls-right { bottom: 10px; }
+            .btn-round { width: 42px !important; height: 42px !important; font-size: 1.1rem !important; }
+            .select-luxury { width: 65px !important; font-size: 0.6rem !important; }
+        }
 
         .btn-round {
             width: 55px; height: 55px; border-radius: 50%;
@@ -43,16 +56,14 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             backdrop-filter: blur(8px);
         }
-        .btn-round:hover { background: var(--gold); color: black; transform: scale(1.1); }
-        .btn-round.active { background: var(--gold); color: white; box-shadow: 0 0 20px var(--gold); }
+        .btn-round:hover { background: var(--gold); color: black; }
+        .btn-round.active { background: var(--gold); color: white; box-shadow: 0 0 15px var(--gold); }
 
         .select-luxury {
             width: 80px; height: 40px; border-radius: 20px;
             background: rgba(20, 20, 20, 0.9); border: 1px solid var(--gold);
             color: var(--gold); cursor: pointer; font-family: 'Inter', sans-serif;
-            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;
-            padding: 0 10px; appearance: none; text-align: center;
-            transition: 0.3s;
+            font-size: 0.7rem; text-transform: uppercase; padding: 0 5px; appearance: none; text-align: center;
         }
 
         /* --- BOOK STRUCTURE --- */
@@ -63,13 +74,23 @@
         }
 
         .page {
-            position: absolute; width: calc(50% - 10px); height: calc(100% - 20px);
-            top: 10px; background: var(--paper); color: var(--ink);
-            padding: 40px 50px; display: flex; flex-direction: column;
+            position: absolute; background: var(--paper); color: var(--ink);
+            padding: 30px 40px; display: flex; flex-direction: column;
             backface-visibility: hidden; z-index: 10; overflow: hidden;
+            transition: transform 0.4s ease;
         }
-        .page.left { left: 10px; border-radius: 10px 0 0 10px; }
-        .page.right { right: 10px; border-radius: 0 10px 10px 0; border-left: 1px solid rgba(0,0,0,0.05); }
+
+        @media (min-width: 769px) {
+            .page { width: calc(50% - 10px); height: calc(100% - 20px); top: 10px; }
+            .page.left { left: 10px; border-radius: 10px 0 0 10px; }
+            .page.right { right: 10px; border-radius: 0 10px 10px 0; border-left: 1px solid rgba(0,0,0,0.05); }
+        }
+
+        @media (max-width: 768px) {
+            #book { width: 95vw; height: 75vh; }
+            .page { width: calc(100% - 10px); height: calc(100% - 10px); top: 5px; left: 5px; border-radius: 10px; padding: 20px; }
+            .page.left { display: none; }
+        }
 
         #flipping-page {
             position: absolute; width: calc(50% - 10px); height: calc(100% - 20px);
@@ -83,59 +104,61 @@
         }
         .flip-side.back { transform: rotateY(180deg); }
 
-        .editor-container { position: relative; flex: 1; margin-top: 20px; }
+        .editor-container { position: relative; flex: 1; margin-top: 20px; overflow: hidden; }
         .editor {
             height: 100%; background-image: linear-gradient(transparent 34px, var(--line-color) 35px);
             background-size: 100% 35px; line-height: 35px; outline: none;
             padding-left: 15px; border-left: 2px solid var(--margin-color);
-            font-size: 1.6rem; white-space: pre-wrap; z-index: 1; position: relative;
-            /* Forza l'ereditarietà del font dinamico */
-            font-family: inherit; 
+            font-size: 1.4rem; white-space: pre-wrap; z-index: 1; position: relative;
+            font-family: inherit;
         }
         .draw-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
         body.pen-active .draw-layer { pointer-events: auto; cursor: crosshair; }
 
         .page-header { border-bottom: 3px solid var(--gold); display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 10px; }
-        .header-date-info h3 { text-transform: uppercase; letter-spacing: 4px; color: var(--gold); font-weight: 700; font-size: 1.1rem; margin: 0; }
-        .header-date-info h2 { margin: 5px 0 0 0; font-family: 'Playfair Display'; font-style: italic; font-weight: 400; font-size: 2.8rem; line-height: 1; }
-        .header-day-num { font-family: 'Playfair Display', serif; font-size: 7.5rem; color: var(--gold); line-height: 0.7; font-weight: 700; }
+        .header-date-info h3 { text-transform: uppercase; letter-spacing: 2px; color: var(--gold); font-weight: 700; font-size: 0.9rem; margin: 0; }
+        .header-date-info h2 { margin: 2px 0 0 0; font-family: 'Playfair Display'; font-style: italic; font-weight: 400; font-size: 2rem; line-height: 1; }
+        .header-day-num { font-family: 'Playfair Display', serif; font-size: 5rem; color: var(--gold); line-height: 0.7; font-weight: 700; }
         
-        .nav-zone { position: absolute; top: 0; width: 15%; height: 100%; z-index: 1500; cursor: pointer; }
+        .nav-zone { position: absolute; top: 0; width: 20%; height: 100%; z-index: 1500; cursor: pointer; }
         #nav-prev { left: 0; } #nav-next { right: 0; }
 
         #calendar-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.92); z-index: 3000; display: none;
-            justify-content: center; align-items: center; padding: 40px; backdrop-filter: blur(10px);
+            background: rgba(0,0,0,0.95); z-index: 3000; display: none;
+            justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(10px);
         }
-        .cal-grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; max-width: 1000px; max-height: 90vh; overflow-y: auto; }
+        .cal-grid-container { 
+            display: grid; gap: 15px; width: 100%; max-width: 1000px; max-height: 85vh; overflow-y: auto; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
     </style>
 </head>
 <body class="theme-light">
 
     <div class="side-controls controls-left">
-        <button class="btn-round" onclick="goDirectlyToToday()" title="Vai ad Oggi">🎯</button>
+        <button class="btn-round" onclick="goDirectlyToToday()" title="Oggi">🎯</button>
         <button class="btn-round" onclick="toggleTheme()" title="Tema">◑</button>
         <button class="btn-round" onclick="toggleCalendar()" title="Calendario">📅</button>
-        <button class="btn-round" onclick="exportData()" title="Esporta Backup">💾</button>
-        <button class="btn-round" onclick="document.getElementById('importFile').click()" title="Importa Backup">📂</button>
+        <button class="btn-round" onclick="exportData()" title="Salva Backup">💾</button>
+        <button class="btn-round" onclick="document.getElementById('importFile').click()" title="Carica Backup">📂</button>
         <input type="file" id="importFile" hidden onchange="importData(event)">
     </div>
 
     <div class="side-controls controls-right">
-        <button class="btn-round" id="pen-toggle" onclick="togglePen()" title="Scrittura Libera">✎</button>
+        <button class="btn-round" id="pen-toggle" onclick="togglePen()" title="Penna">✎</button>
         <div class="btn-round" style="padding:0; overflow:hidden;" title="Colore">
-            <input type="color" id="inkColor" onchange="updatePenSettings()" style="width:150%; height:150%; border:none; cursor:pointer; background:none;">
+            <input type="color" id="inkColor" onchange="updatePenSettings()" style="width:160%; height:160%; border:none; cursor:pointer; background:none;">
         </div>
         <select id="penSize" class="select-luxury" onchange="updatePenSettings()">
-            <option value="2">Sottile</option>
-            <option value="4" selected>Medio</option>
-            <option value="8">Grosso</option>
+            <option value="2">Fine</option>
+            <option value="4" selected>Med</option>
+            <option value="8">Big</option>
         </select>
-        <button class="btn-round" onclick="clearDraw()" title="Cancella Disegno">⌫</button>
+        <button class="btn-round" onclick="clearDraw()" title="Elimina">⌫</button>
         <select id="fontPicker" class="select-luxury" onchange="changeFont(this.value)">
             <option value="'Dancing Script'">Corsivo</option>
-            <option value="'Cormorant Garamond'">Garamond</option>
+            <option value="'Cormorant Garamond'">Gara</option>
             <option value="'Playfair Display'">Classico</option>
             <option value="'Inter'">Moderno</option>
         </select>
@@ -164,34 +187,33 @@
     let isAnimating = false, isPenActive = false;
 
     window.onload = () => {
-        const saved = localStorage.getItem('agenda_luxury_v23');
+        const saved = localStorage.getItem('agenda_luxury_v26_responsive');
         if (saved) state = JSON.parse(saved); else goToToday();
         
-        // Sincronizza UI
         document.getElementById('inkColor').value = state.penColor;
         document.getElementById('penSize').value = state.penWidth;
         document.getElementById('fontPicker').value = state.font;
 
-        // Ordine corretto di inizializzazione
-        renderStatic(); // Prima creo il contenuto
-        applyFont();    // Poi applico il font a ciò che ho creato
+        renderStatic();
         applyTheme();
         buildCalendar();
 
+        window.addEventListener('resize', renderStatic);
+
+        // --- GESTIONE ROTELLA MOUSE ---
         window.addEventListener('wheel', (e) => {
-            if (isAnimating || isPenActive) return;
-            if (e.deltaY > 30) turnPage('next');
-            else if (e.deltaY < -30) turnPage('prev');
+            if (isAnimating || isPenActive) return; // Non girare pagina se sto disegnando o se sta già girando
+            if (e.deltaY > 20) turnPage('next');
+            else if (e.deltaY < -20) turnPage('prev');
         }, { passive: true });
+        
+        // Impedisce il refresh a scorrimento su mobile mentre si disegna
+        document.body.addEventListener('touchstart', (e) => {
+            if (isPenActive) e.preventDefault();
+        }, {passive: false});
     };
 
-    function saveToLocal() { localStorage.setItem('agenda_luxury_v23', JSON.stringify(state)); }
-
-    function updatePenSettings() {
-        state.penColor = document.getElementById('inkColor').value;
-        state.penWidth = document.getElementById('penSize').value;
-        saveToLocal();
-    }
+    function saveToLocal() { localStorage.setItem('agenda_luxury_v26_responsive', JSON.stringify(state)); }
 
     function getPageHTML(day) {
         if (day < 1 || day > 365) return `<div style="display:flex; height:100%; align-items:center; justify-content:center; color:var(--gold); opacity:0.3"><h3>FINE</h3></div>`;
@@ -209,7 +231,7 @@
                      id="edit-${day}" oninput="state.content[${day}]=this.innerHTML; saveToLocal();">${state.content[day] || ""}</div>
                 <canvas id="canv-${day}" class="draw-layer"></canvas>
             </div>
-            <div style="margin-top:auto; font-size:0.7rem; opacity:0.5; text-align:center; letter-spacing:2px;">PAGINA ${day}</div>
+            <div style="margin-top:auto; font-size:0.6rem; opacity:0.4; text-align:center;">PAG. ${day}</div>
         `;
     }
 
@@ -228,51 +250,71 @@
         }
 
         let drawing = false;
-        const start = (e) => { if(!isPenActive) return; drawing = true; ctx.beginPath(); draw(e); };
-        const stop = () => { if(drawing) { drawing = false; state.draws[day] = canvas.toDataURL(); saveToLocal(); } };
-        const draw = (e) => {
-            if(!drawing || !isPenActive) return;
+        const getCoords = (e) => {
             const rect = canvas.getBoundingClientRect();
-            const x = (e.clientX || e.touches[0].clientX) - rect.left;
-            const y = (e.clientY || e.touches[0].clientY) - rect.top;
-            ctx.lineWidth = state.penWidth;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = state.penColor;
-            ctx.lineTo(x, y); ctx.stroke(); ctx.moveTo(x, y);
+            const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+            const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+            return { x, y };
         };
-        canvas.onmousedown = start; canvas.onmousemove = draw; canvas.onmouseup = stop;
+
+        const start = (e) => { if(!isPenActive) return; drawing = true; ctx.beginPath(); const p = getCoords(e); ctx.moveTo(p.x, p.y); };
+        const move = (e) => { if(!drawing || !isPenActive) return; const p = getCoords(e); ctx.lineWidth = state.penWidth; ctx.lineCap = 'round'; ctx.strokeStyle = state.penColor; ctx.lineTo(p.x, p.y); ctx.stroke(); };
+        const stop = () => { if(drawing) { drawing = false; state.draws[day] = canvas.toDataURL(); saveToLocal(); } };
+
+        canvas.onmousedown = start; canvas.onmousemove = move; window.onmouseup = stop;
+        canvas.ontouchstart = start; canvas.ontouchmove = move; canvas.ontouchend = stop;
     }
 
     function renderStatic() {
-        document.getElementById('p-left-static').innerHTML = getPageHTML(state.d);
-        document.getElementById('p-right-static').innerHTML = getPageHTML(state.d + 1);
-        initCanvas(state.d); initCanvas(state.d + 1);
-        applyFont(); // Riapplica il font ogni volta che rigenero l'HTML
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            document.getElementById('p-right-static').innerHTML = getPageHTML(state.d);
+            initCanvas(state.d);
+        } else {
+            document.getElementById('p-left-static').innerHTML = getPageHTML(state.d);
+            document.getElementById('p-right-static').innerHTML = getPageHTML(state.d + 1);
+            initCanvas(state.d); initCanvas(state.d + 1);
+        }
+        applyFont();
     }
 
     function turnPage(dir) {
         if (isAnimating) return;
-        if ((dir === 'next' && state.d >= 364) || (dir === 'prev' && state.d <= 1)) return;
+        const isMobile = window.innerWidth <= 768;
+        const step = isMobile ? 1 : 2;
+
+        if (dir === 'next' && state.d + step <= 365) {
+            if(!isMobile) animateFlip('next'); else { state.d += step; renderStatic(); }
+        } else if (dir === 'prev' && state.d - step >= 1) {
+            if(!isMobile) animateFlip('prev'); else { state.d -= step; renderStatic(); }
+        }
+        saveToLocal();
+    }
+
+    function animateFlip(dir) {
         isAnimating = true;
         const flip = document.getElementById('flipping-page');
         const front = document.getElementById('f-front'), back = document.getElementById('f-back');
         flip.style.display = 'block';
+        
         if (dir === 'next') {
             front.innerHTML = getPageHTML(state.d + 1); back.innerHTML = getPageHTML(state.d + 2);
-            setTimeout(() => { initCanvas(state.d+1); initCanvas(state.d+2); applyFont(); }, 0);
             flip.style.transition = 'none'; flip.style.transform = 'rotateY(0deg)';
             setTimeout(() => { flip.style.transition = `transform var(--speed) ease-in-out`; flip.style.transform = 'rotateY(-180deg)'; }, 50);
             setTimeout(() => { state.d += 2; finalizeTurn(); }, 800);
         } else {
             front.innerHTML = getPageHTML(state.d - 1); back.innerHTML = getPageHTML(state.d);
-            setTimeout(() => { initCanvas(state.d-1); initCanvas(state.d); applyFont(); }, 0);
             flip.style.transition = 'none'; flip.style.transform = 'rotateY(-180deg)';
             setTimeout(() => { flip.style.transition = `transform var(--speed) ease-in-out`; flip.style.transform = 'rotateY(0deg)'; }, 50);
             setTimeout(() => { state.d -= 2; finalizeTurn(); }, 800);
         }
     }
 
-    function finalizeTurn() { document.getElementById('flipping-page').style.display = 'none'; renderStatic(); isAnimating = false; saveToLocal(); }
+    function finalizeTurn() { 
+        document.getElementById('flipping-page').style.display = 'none'; 
+        renderStatic(); 
+        isAnimating = false; 
+    }
 
     function togglePen() {
         isPenActive = !isPenActive;
@@ -280,15 +322,10 @@
         document.getElementById('pen-toggle').classList.toggle('active', isPenActive);
     }
 
-    function clearDraw() {
-        if(confirm("Eliminare i disegni di queste pagine?")) {
-            [state.d, state.d+1].forEach(day => {
-                const c = document.getElementById(`canv-${day}`);
-                if(c) c.getContext('2d').clearRect(0,0,c.width,c.height);
-                delete state.draws[day];
-            });
-            saveToLocal();
-        }
+    function updatePenSettings() {
+        state.penColor = document.getElementById('inkColor').value;
+        state.penWidth = document.getElementById('penSize').value;
+        saveToLocal();
     }
 
     function toggleCalendar() {
@@ -301,14 +338,18 @@
         const months = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
         months.forEach((m, mi) => {
             const mDiv = document.createElement('div');
-            mDiv.innerHTML = `<h4 style="color:var(--gold); font-size:0.8rem; margin-bottom:5px;">${m}</h4>`;
+            mDiv.style.background = "rgba(255,255,255,0.05)"; mDiv.style.padding = "10px"; mDiv.style.borderRadius="10px";
+            mDiv.innerHTML = `<h4 style="color:var(--gold); margin:0 0 10px 0; text-align:center;">${m}</h4>`;
             let days = new Date(2026, mi+1, 0).getDate();
             for(let d=1; d<=days; d++) {
                 const doy = Math.round((new Date(2026, mi, d) - new Date(2026,0,0))/86400000);
                 const btn = document.createElement('button');
-                btn.style = "width:22px; height:22px; margin:1px; font-size:0.5rem; cursor:pointer; background:none; border:1px solid #444; color:#aaa;";
+                btn.style = "width:28px; height:28px; margin:2px; font-size:0.7rem; cursor:pointer; background:none; border:1px solid #444; color:#fff;";
                 btn.innerText = d;
-                btn.onclick = () => { state.d = (doy%2===0)?doy-1:doy; renderStatic(); toggleCalendar(); saveToLocal(); };
+                btn.onclick = () => { 
+                    state.d = (window.innerWidth > 768 && doy%2===0) ? doy-1 : doy; 
+                    renderStatic(); toggleCalendar(); saveToLocal(); 
+                };
                 mDiv.appendChild(btn);
             }
             box.appendChild(mDiv);
@@ -316,27 +357,23 @@
     }
 
     function goToToday() {
-        const n = new Date(); const start = new Date(2026, 0, 0);
-        const doy = Math.floor((new Date(2026, n.getMonth(), n.getDate()) - start)/86400000);
-        state.d = (doy%2===0)?doy-1:doy;
+        const n = new Date(); const doy = Math.floor((new Date(2026, n.getMonth(), n.getDate()) - new Date(2026,0,0))/86400000);
+        state.d = (window.innerWidth > 768 && doy%2===0) ? doy-1 : doy;
     }
 
-    function goDirectlyToToday() {
-        goToToday();
-        renderStatic();
-        saveToLocal();
-    }
-
+    function goDirectlyToToday() { goToToday(); renderStatic(); saveToLocal(); }
     function applyTheme() { document.body.className = state.dark ? 'theme-dark' : 'theme-light'; }
     function toggleTheme() { state.dark = !state.dark; applyTheme(); saveToLocal(); }
-    
-    function applyFont() { 
-        document.querySelectorAll('.editor').forEach(e => {
-            e.style.fontFamily = state.font;
-        });
-    }
-    
+    function applyFont() { document.querySelectorAll('.editor').forEach(e => e.style.fontFamily = state.font); }
     function changeFont(f) { state.font = f; applyFont(); saveToLocal(); }
+
+    function clearDraw() {
+        if(confirm("Eliminare i disegni di questa pagina?")) {
+            const c = document.getElementById(`canv-${state.d}`);
+            if(c) c.getContext('2d').clearRect(0,0,c.width,c.height);
+            delete state.draws[state.d]; saveToLocal();
+        }
+    }
 
     function exportData() {
         const blob = new Blob([JSON.stringify(state)], {type: 'application/json'});
@@ -349,10 +386,8 @@
         const reader = new FileReader();
         reader.onload = (ev) => { 
             state = JSON.parse(ev.target.result); 
-            document.getElementById('inkColor').value = state.penColor || "#1a1a1a";
-            document.getElementById('penSize').value = state.penWidth || "4";
             document.getElementById('fontPicker').value = state.font;
-            renderStatic(); applyTheme(); applyFont();
+            renderStatic(); applyTheme();
         };
         reader.readAsText(e.target.files[0]);
     }
