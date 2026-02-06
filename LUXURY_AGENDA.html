@@ -39,12 +39,21 @@
             .controls-right { right: 20px; }
         }
         
+        /* FIX MOBILE: Tutto in alto */
         @media (max-width: 768px) {
-            .side-controls { flex-direction: row; left: 50%; transform: translateX(-50%); width: 95%; justify-content: center; flex-wrap: wrap; }
-            .controls-left { top: 10px; }
-            .controls-right { bottom: 10px; }
-            .btn-round { width: 42px !important; height: 42px !important; font-size: 1.1rem !important; }
-            .select-luxury { width: 65px !important; font-size: 0.6rem !important; }
+            .side-controls { 
+                flex-direction: row; 
+                top: 10px; 
+                left: 50%; 
+                transform: translateX(-50%); 
+                width: 98%; 
+                justify-content: center; 
+                flex-wrap: wrap; 
+                gap: 5px;
+            }
+            .controls-right { top: 65px; } /* Seconda riga per non affollare */
+            .btn-round { width: 40px !important; height: 40px !important; font-size: 1rem !important; }
+            .select-luxury { width: 60px !important; font-size: 0.55rem !important; height: 35px !important; }
         }
 
         .btn-round {
@@ -87,11 +96,12 @@
         }
 
         @media (max-width: 768px) {
-            #book { width: 95vw; height: 75vh; }
+            #book { width: 95vw; height: 70vh; margin-top: 80px; }
             .page { width: calc(100% - 10px); height: calc(100% - 10px); top: 5px; left: 5px; border-radius: 10px; padding: 20px; }
             .page.left { display: none; }
         }
 
+        /* Resto degli stili invariato... */
         #flipping-page {
             position: absolute; width: calc(50% - 10px); height: calc(100% - 20px);
             top: 10px; left: 50%; transform-style: preserve-3d;
@@ -137,6 +147,7 @@
 <body class="theme-light">
 
     <div class="side-controls controls-left">
+        <button class="btn-round" onclick="toggleFullScreen()" title="Schermo Intero">⛶</button>
         <button class="btn-round" onclick="goDirectlyToToday()" title="Oggi">🎯</button>
         <button class="btn-round" onclick="toggleTheme()" title="Tema">◑</button>
         <button class="btn-round" onclick="toggleCalendar()" title="Calendario">📅</button>
@@ -180,6 +191,7 @@
     </div>
 
 <script>
+    // Logica JS (uguale alla precedente, inclusa la funzione Full Screen)
     let state = { 
         d: 1, dark: false, font: "'Dancing Script'", content: {}, draws: {},
         penColor: "#1a1a1a", penWidth: "4" 
@@ -200,18 +212,28 @@
 
         window.addEventListener('resize', renderStatic);
 
-        // --- GESTIONE ROTELLA MOUSE ---
         window.addEventListener('wheel', (e) => {
-            if (isAnimating || isPenActive) return; // Non girare pagina se sto disegnando o se sta già girando
+            if (isAnimating || isPenActive) return;
             if (e.deltaY > 20) turnPage('next');
             else if (e.deltaY < -20) turnPage('prev');
         }, { passive: true });
         
-        // Impedisce il refresh a scorrimento su mobile mentre si disegna
         document.body.addEventListener('touchstart', (e) => {
             if (isPenActive) e.preventDefault();
         }, {passive: false});
     };
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.log(err.message);
+            });
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
 
     function saveToLocal() { localStorage.setItem('agenda_luxury_v26_responsive', JSON.stringify(state)); }
 
