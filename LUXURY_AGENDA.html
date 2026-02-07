@@ -26,6 +26,31 @@
          justify-content: center; align-items: center;
          perspective: 2500px;
          }
+         /* Stile per simulare i tasti di una tastiera fisica */
+         .kb-key {
+         font-size: 1rem;
+         font-weight: 500;
+         }
+         /* Tasto ENTER laterale */
+         .key-enter {
+         background: var(--gold) !important;
+         color: #000 !important;
+         font-weight: bold;
+         min-width: 80px; /* Più largo, come sulle tastiere vere */
+         }
+         /* Tasto BACKSPACE in alto a destra */
+         .key-bksp {
+         background: #333 !important;
+         min-width: 70px;
+         }
+         /* Tasto SPACE lungo */
+         .key-space {
+         flex: 6 !important;
+         background: #2a2a2a;
+         }
+         /* Tasti freccia e CAPS */
+         .key-nav { background: #1a1a1a; flex: 0.5; }
+         .key-caps { min-width: 80px; }
          /* UI CONTROLS */
          .side-controls { position: fixed; display: flex; gap: 8px; z-index: 9999; }
          @media (min-width: 769px) {
@@ -146,52 +171,52 @@
          transform: rotateY(180deg);
          }
          /* NAVIGATION */
-/* MODIFICA NAV-ZONE PER CENTRARLE VERTICALMENTE */
-.nav-zone {
-    position: fixed; 
-    top: 50%;                /* Posiziona l'inizio al 50% dell'altezza */
-    transform: translateY(-50%); /* Centra perfettamente l'elemento */
-    width: 70px; 
-    height: 40%;             /* Regola questa percentuale per l'altezza desiderata */
-    z-index: 8000; 
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    color: var(--gold); 
-    font-size: 2.5rem; 
-    background: rgba(184, 147, 82, 0.08);
-    backdrop-filter: blur(5px);
-    opacity: 0.4;
-    transition: all 0.3s;
-    border: 1px solid rgba(184, 147, 82, 0.1);
-}
-.nav-zone:hover { 
-    opacity: 1; 
-    background: rgba(184, 147, 82, 0.15); 
-    /* Aggiungi translateY(-50%) anche qui per non farla spostare */
-    transform: translateY(-50%) scale(1.1); 
-}
-/* Mantieni le altre proprietà specifiche per i lati */
-.nav-left { 
-    left: 0; 
-    border-radius: 0 20px 20px 0;
-    border-left: none;
-}
-.nav-right { 
-    right: 0; 
-    border-radius: 20px 0 0 20px;
-    border-right: none;
-}
-/* Regolazione per Mobile */
-@media (max-width: 768px) {
-    .nav-zone { 
-        width: 50px; 
-        height: 30%; /* Leggermente più piccola su mobile se vuoi */
-        font-size: 2rem;
-        opacity: 0.6;
-    }
-}
+         /* MODIFICA NAV-ZONE PER CENTRARLE VERTICALMENTE */
+         .nav-zone {
+         position: fixed; 
+         top: 50%;                /* Posiziona l'inizio al 50% dell'altezza */
+         transform: translateY(-50%); /* Centra perfettamente l'elemento */
+         width: 70px; 
+         height: 40%;             /* Regola questa percentuale per l'altezza desiderata */
+         z-index: 8000; 
+         cursor: pointer; 
+         display: flex; 
+         align-items: center; 
+         justify-content: center;
+         color: var(--gold); 
+         font-size: 2.5rem; 
+         background: rgba(184, 147, 82, 0.08);
+         backdrop-filter: blur(5px);
+         opacity: 0.4;
+         transition: all 0.3s;
+         border: 1px solid rgba(184, 147, 82, 0.1);
+         }
+         .nav-zone:hover { 
+         opacity: 1; 
+         background: rgba(184, 147, 82, 0.15); 
+         /* Aggiungi translateY(-50%) anche qui per non farla spostare */
+         transform: translateY(-50%) scale(1.1); 
+         }
+         /* Mantieni le altre proprietà specifiche per i lati */
+         .nav-left { 
+         left: 0; 
+         border-radius: 0 20px 20px 0;
+         border-left: none;
+         }
+         .nav-right { 
+         right: 0; 
+         border-radius: 20px 0 0 20px;
+         border-right: none;
+         }
+         /* Regolazione per Mobile */
+         @media (max-width: 768px) {
+         .nav-zone { 
+         width: 50px; 
+         height: 30%; /* Leggermente più piccola su mobile se vuoi */
+         font-size: 2rem;
+         opacity: 0.6;
+         }
+         }
          /* EDITOR & GRAPHICS */
          .editor {
          height: 100%; background-image: linear-gradient(transparent 31px, var(--line-color) 32px);
@@ -203,64 +228,55 @@
          body.pen-active .draw-layer { pointer-events: auto; cursor: crosshair; }
          .page-header { border-bottom: 2px solid var(--gold); display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 5px; margin-bottom: 15px;}
          .header-day-num { font-family: 'Playfair Display'; font-size: 4rem; color: var(--gold); font-weight: 700; line-height: 0.8; }
-/* LUXURY CALENDAR */
-/* LUXURY CALENDAR - COMPACT VERSION */
-#calendar-overlay { 
-    position: fixed; inset: 0; background: rgba(0,0,0,0.96); 
-    z-index: 10000; display: none; justify-content: center; align-items: flex-start;
-    padding: 60px 20px; backdrop-filter: blur(20px); overflow-y: auto;
-}
-
-.cal-container { 
-    position: relative; width: 100%; max-width: 1300px; margin: 0 auto; 
-}
-
-/* Griglia Mesi: 4 colonne su desktop, 2 su tablet, 1 su mobile */
-.cal-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-    gap: 20px; 
-}
-
-.cal-month-title { 
-    color: var(--gold); font-family: 'Playfair Display'; border-bottom: 1px solid rgba(184, 147, 82, 0.3); 
-    margin-bottom: 10px; padding-bottom: 5px; text-transform: uppercase; 
-    letter-spacing: 2px; font-size: 0.9rem; text-align: center;
-}
-
-/* Griglia Giorni più piccoli */
-.cal-days-grid { 
-    display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; 
-}
-
-.cal-day {
-    background: rgba(255,255,255,0.05); border: 1px solid #222; color: #fff; 
-    padding: 6px 0; cursor: pointer; font-size: 0.75rem; transition: 0.2s; 
-    border-radius: 3px; text-align: center; font-family: 'Inter', sans-serif;
-}
-
-.cal-day:hover { background: var(--gold); color: #000; transform: scale(1.1); z-index: 10; }
-
-.cal-day.today { border: 1px solid var(--gold); color: var(--gold); font-weight: bold; }
-
-/* Pulsante Chiudi Fisso */
-.close-cal {
-    position: fixed; top: 20px; right: 20px; width: 45px; height: 45px;
-    background: var(--gold); color: #000; border: none; border-radius: 50%;
-    font-size: 1.5rem; cursor: pointer; z-index: 10001; 
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 0 20px rgba(184, 147, 82, 0.4);
-}
-
-/* Stile della scrollbar del calendario per coerenza luxury */
-#calendar-overlay::-webkit-scrollbar { width: 8px; }
-#calendar-overlay::-webkit-scrollbar-track { background: #000; }
-#calendar-overlay::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
-<div class="cal-container" onclick="event.stopPropagation()">
-    <button class="btn-round" onclick="toggleCalendar()" style="position: absolute; top: 15px; right: 15px;">✕</button>
-    <h2 style="color:var(--gold); text-align:center; font-family:'Playfair Display'; letter-spacing:8px; margin-top:0;">2026 LUXURY COLLECTOR</h2>
-    <div class="cal-grid" id="cal-grid"></div>
-</div>
+         /* LUXURY CALENDAR */
+         /* LUXURY CALENDAR - COMPACT VERSION */
+         #calendar-overlay { 
+         position: fixed; inset: 0; background: rgba(0,0,0,0.96); 
+         z-index: 10000; display: none; justify-content: center; align-items: flex-start;
+         padding: 60px 20px; backdrop-filter: blur(20px); overflow-y: auto;
+         }
+         .cal-container { 
+         position: relative; width: 100%; max-width: 1300px; margin: 0 auto; 
+         }
+         /* Griglia Mesi: 4 colonne su desktop, 2 su tablet, 1 su mobile */
+         .cal-grid { 
+         display: grid; 
+         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+         gap: 20px; 
+         }
+         .cal-month-title { 
+         color: var(--gold); font-family: 'Playfair Display'; border-bottom: 1px solid rgba(184, 147, 82, 0.3); 
+         margin-bottom: 10px; padding-bottom: 5px; text-transform: uppercase; 
+         letter-spacing: 2px; font-size: 0.9rem; text-align: center;
+         }
+         /* Griglia Giorni più piccoli */
+         .cal-days-grid { 
+         display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; 
+         }
+         .cal-day {
+         background: rgba(255,255,255,0.05); border: 1px solid #222; color: #fff; 
+         padding: 6px 0; cursor: pointer; font-size: 0.75rem; transition: 0.2s; 
+         border-radius: 3px; text-align: center; font-family: 'Inter', sans-serif;
+         }
+         .cal-day:hover { background: var(--gold); color: #000; transform: scale(1.1); z-index: 10; }
+         .cal-day.today { border: 1px solid var(--gold); color: var(--gold); font-weight: bold; }
+         /* Pulsante Chiudi Fisso */
+         .close-cal {
+         position: fixed; top: 20px; right: 20px; width: 45px; height: 45px;
+         background: var(--gold); color: #000; border: none; border-radius: 50%;
+         font-size: 1.5rem; cursor: pointer; z-index: 10001; 
+         display: flex; align-items: center; justify-content: center;
+         box-shadow: 0 0 20px rgba(184, 147, 82, 0.4);
+         }
+         /* Stile della scrollbar del calendario per coerenza luxury */
+         #calendar-overlay::-webkit-scrollbar { width: 8px; }
+         #calendar-overlay::-webkit-scrollbar-track { background: #000; }
+         #calendar-overlay::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
+         <div class="cal-container" onclick="event.stopPropagation()">
+            <button class="btn-round" onclick="toggleCalendar()" style="position: absolute; top: 15px; right: 15px;">✕</button>
+            <h2 style="color:var(--gold); text-align:center; font-family:'Playfair Display'; letter-spacing:8px; margin-top:0;">2026 LUXURY COLLECTOR</h2>
+            <div class="cal-grid" id="cal-grid"></div>
+         </div>
          .cal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 35px; }
          .cal-month-title { color: var(--gold); font-family: 'Playfair Display'; border-bottom: 1px solid #333; margin-bottom: 12px; padding-bottom: 5px; text-transform: uppercase; letter-spacing: 3px; font-size: 1.1rem; }
          .cal-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
@@ -272,10 +288,30 @@
          .cal-day.today { border: 1px solid var(--gold); color: var(--gold); box-shadow: inset 0 0 10px rgba(184, 147, 82, 0.2); }
          /* VIRTUAL KEYBOARD */
          #virtual-keyboard {
-         position: fixed; bottom: -100%; left: 0; width: 100%; 
-         background: #000; padding: 10px; z-index: 10001; 
-         transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+         position: fixed; 
+         bottom: -100%; /* Stato iniziale */
+         left: 0; 
+         width: 100%; 
+         background: #000; 
+         padding: 10px; 
+         z-index: 10001; 
          border-top: 2px solid var(--gold);
+         touch-action: none; /* Fondamentale per il trascinamento su mobile */
+         cursor: grab;
+         }
+         /* Aggiungiamo una maniglia visiva in alto alla tastiera */
+         #virtual-keyboard::before {
+         content: '';
+         display: block;
+         width: 40px;
+         height: 4px;
+         background: var(--gold);
+         margin: 0 auto 10px auto;
+         border-radius: 2px;
+         opacity: 0.5;
+         }
+         #virtual-keyboard:active {
+         cursor: grabbing;
          }
          .kb-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 6px; }
          .kb-key {
@@ -336,516 +372,581 @@
       <div id="virtual-keyboard">
          <div id="kb-container"></div>
       </div>
-<div id="calendar-overlay">
-    <button class="close-cal" onclick="toggleCalendar()">✕</button>
-    
-    <div class="cal-container">
-        <h2 style="color:var(--gold); text-align:center; font-family:'Playfair Display'; letter-spacing:8px; margin-bottom:40px;">
-            2026 ANNUAL VIEW
-        </h2>
-        <div class="cal-grid" id="cal-grid"></div>
-    </div>
-</div>
+      <div id="calendar-overlay">
+         <button class="close-cal" onclick="toggleCalendar()">✕</button>
+         <div class="cal-container">
+            <h2 style="color:var(--gold); text-align:center; font-family:'Playfair Display'; letter-spacing:8px; margin-bottom:40px;">
+               2026 ANNUAL VIEW
+            </h2>
+            <div class="cal-grid" id="cal-grid"></div>
+         </div>
+      </div>
       <script>
-         let state = { d: 1, dark: false, font: "'Dancing Script'", fSize: "1.3rem", content: {}, draws: {}, penColor: "#1a1a1a", penWidth: "5" };
-         let isPenActive = false, isEraserActive = false, focusedEditor = null, isKbOpen = false, isFlipping = false;
-         let kbMode = 'lower';
+         let isDragging = false;
+         let currentY;
+         let initialY;
+         let yOffset = 0;
          
-         const keys = {
-         lower: [
-             ['q','w','e','r','t','y','u','i','o','p'],
-             ['a','s','d','f','g','h','j','k','l'],
-             ['CAPS','z','x','c','v','b','n','m','BKSP'],
-             ['123','SPACE','ENTER','▲','▼','◀','▶','CHIUDI']
-         ],
-         upper: [
-             ['Q','W','E','R','T','Y','U','I','O','P'],
-             ['A','S','D','F','G','H','J','K','L'],
-             ['CAPS','Z','X','C','V','B','N','M','BKSP'],
-             ['123','SPACE','ENTER','▲','▼','◀','▶','CHIUDI']
-         ],
-         caps: [
-             ['Q','W','E','R','T','Y','U','I','O','P'],
-             ['A','S','D','F','G','H','J','K','L'],
-             ['CAPS','Z','X','C','V','B','N','M','BKSP'],
-             ['123','SPACE','ENTER','▲','▼','◀','▶','CHIUDI']
-         ],
-         symbols: [
-             ['1','2','3','4','5','6','7','8','9','0'],
-             ['@','#','€','&','*','-','+','(',')','/'],
-             ['ABC','.',',','?','!',"'",'"',':',';','BKSP'],
-             ['123','SPACE','ENTER','▲','▼','◀','▶','CHIUDI']
-         ]
-         };
+         const kbElement = document.getElementById('virtual-keyboard');
          
-         window.onload = () => {
-             const saved = localStorage.getItem('agenda_luxury_v26_3d_final_v3');
-             if (saved) state = JSON.parse(saved); else goDirectlyToToday();
-             applyTheme(); renderPages(); buildCalendar(); renderKeyboard();
-             
-             window.addEventListener('wheel', (e) => { 
-                 if(!isFlipping && !isPenActive && !isEraserActive) {
-                     e.preventDefault();
-                     e.deltaY > 0 ? turnPage('next') : turnPage('prev'); 
-                 }
-             }, { passive: false });
-         };
+         // Eventi per il trascinamento
+         kbElement.addEventListener('mousedown', dragStart);
+         kbElement.addEventListener('touchstart', dragStart, { passive: false });
+         window.addEventListener('mousemove', drag);
+         window.addEventListener('touchmove', drag, { passive: false });
+         window.addEventListener('mouseup', dragEnd);
+         window.addEventListener('touchend', dragEnd);
          
-         function getPageContentHTML(day) {
-             if (day < 1 || day > 365) return `<div style="display:flex; height:100%; align-items:center; justify-content:center; opacity:0.1;"><h3>FINE ANNO</h3></div>`;
-             const date = new Date(2026, 0, day);
-             return `
-<div class="page-header" style="border-bottom: 3px solid var(--gold); padding-bottom: 15px; margin-bottom: 30px;">
-            <div style="flex: 1;">
-                <div style="color: var(--gold); text-transform: uppercase; font-size: 1.4rem; font-weight: 800; letter-spacing: 5px; line-height: 1.2; margin-bottom: 5px;">
-                    ${date.toLocaleDateString('it-IT', {month:'long'})} 2026
-                </div>
-                <div style="font-family: 'Playfair Display'; font-size: 2.2rem; font-style: italic; color: var(--ink); line-height: 1;">
-                    ${date.toLocaleDateString('it-IT', {weekday:'long'})}
-                </div>
-            </div>
-            <div class="header-day-num">${date.getDate()}</div>
-        </div>
-                 <div style="position:relative; flex:1; display:flex; flex-direction:column;">
-
-<div class="editor" contenteditable="true" id="edit-${day}"  
-     onfocus="focusedEditor=this"
-     oninput="state.content[${day}] = this.innerHTML; saveToLocal();"
-     inputmode="${isKbOpen ? 'none' : 'text'}" 
-     style="font-family: ${state.font}; font-size: ${state.fSize}">
-     ${state.content[day] || ""}
-</div>
-                     <canvas id="canv-${day}" class="draw-layer"></canvas>
-                 </div>`;
+         function dragStart(e) {
+             // Inizia il trascinamento solo se non si sta cliccando su un tasto specifico
+             if (e.target.classList.contains('kb-key')) return;
+         
+             if (e.type === "touchstart") {
+                 initialY = e.touches[0].clientY - yOffset;
+             } else {
+                 initialY = e.clientY - yOffset;
+             }
+             isDragging = true;
          }
          
-         function renderPages() {
-             const isMobile = window.innerWidth <= 768;
-             const pRight = document.getElementById('p-right');
-             const pLeft = document.getElementById('p-left');
+         function drag(e) {
+             if (isDragging) {
+                 e.preventDefault();
+                 if (e.type === "touchmove") {
+                     currentY = e.touches[0].clientY - initialY;
+                 } else {
+                     currentY = e.clientY - initialY;
+                 }
+                 yOffset = currentY;
+                 setTranslate(currentY, kbElement);
+             }
+         }
+         
+         function setTranslate(yPos, el) {
+             // Impediamo alla tastiera di sparire troppo verso l'alto
+             el.style.transform = `translateY(${yPos}px)`;
+         }
+         
+         function dragEnd() {
+             initialY = currentY;
+             isDragging = false;
+         }
+         
+         // Reset della posizione quando si chiude/apre
+         function toggleKb() { 
+             isKbOpen = !isKbOpen; 
+             const kb = document.getElementById('virtual-keyboard');
              
-             pRight.innerHTML = getPageContentHTML(isMobile ? state.d : state.d + 1);
-             
-             if(!isMobile) {
-                 pLeft.innerHTML = getPageContentHTML(state.d);
+             if (isKbOpen) {
+                 kb.style.bottom = '0';
+                 kb.style.transform = 'translateY(0px)'; // Reset trascinamento
+                 yOffset = 0;
+             } else {
+                 kb.style.bottom = '-100%';
              }
              
-             setTimeout(() => { 
-                 initCanvas(state.d); 
-                 if(!isMobile) initCanvas(state.d + 1); 
-             }, 50);
+             // Gestione inputmode come discusso precedentemente
+             document.querySelectorAll('.editor').forEach(ed => {
+                 ed.setAttribute('inputmode', isKbOpen ? 'none' : 'text');
+             });
          }
+                  let state = { d: 1, dark: false, font: "'Dancing Script'", fSize: "1.3rem", content: {}, draws: {}, penColor: "#1a1a1a", penWidth: "5" };
+                  let isPenActive = false, isEraserActive = false, focusedEditor = null, isKbOpen = false, isFlipping = false;
+                  let kbMode = 'lower';
+                  
+          const keys = {
+             lower: [
+                 ['q','w','e','r','t','y','u','i','o','p','BKSP'],
+                 ['a','s','d','f','g','h','j','k','l','ENTER'],
+                 ['CAPS','z','x','c','v','b','n','m',',','.','▲'],
+                 ['123','SPACE','◀','▼','▶']
+             ],
+             upper: [
+                 ['Q','W','E','R','T','Y','U','I','O','P','BKSP'],
+                 ['A','S','D','F','G','H','J','K','L','ENTER'],
+                 ['CAPS','Z','X','C','V','B','N','M',';',':','▲'],
+                 ['123','SPACE','◀','▼','▶']
+             ],
+             caps: [
+                 ['Q','W','E','R','T','Y','U','I','O','P','BKSP'],
+                 ['A','S','D','F','G','H','J','K','L','ENTER'],
+                 ['CAPS','Z','X','C','V','B','N','M',';',':','▲'],
+                 ['123','SPACE','◀','▼','▶']
+             ],
+             symbols: [
+                 ['1','2','3','4','5','6','7','8','9','0','BKSP'],
+                 ['@','#','€','&','*','-','+','(',')','ENTER'],
+                 ['ABC','_','/','?','!',"'",'"','<','>','▲'],
+                 ['123','SPACE','◀','▼','▶']
+             ]
+         };
+                  
+                  window.onload = () => {
+                      const saved = localStorage.getItem('agenda_luxury_v26_3d_final_v3');
+                      if (saved) state = JSON.parse(saved); else goDirectlyToToday();
+                      applyTheme(); renderPages(); buildCalendar(); renderKeyboard();
+                      
+                      window.addEventListener('wheel', (e) => { 
+                          if(!isFlipping && !isPenActive && !isEraserActive) {
+                              e.preventDefault();
+                              e.deltaY > 0 ? turnPage('next') : turnPage('prev'); 
+                          }
+                      }, { passive: false });
+                  };
+                  
+                  function getPageContentHTML(day) {
+                      if (day < 1 || day > 365) return `<div style="display:flex; height:100%; align-items:center; justify-content:center; opacity:0.1;"><h3>FINE ANNO</h3></div>`;
+                      const date = new Date(2026, 0, day);
+                      return `
+         <div class="page-header" style="border-bottom: 3px solid var(--gold); padding-bottom: 15px; margin-bottom: 30px;">
+                     <div style="flex: 1;">
+                         <div style="color: var(--gold); text-transform: uppercase; font-size: 1.4rem; font-weight: 800; letter-spacing: 5px; line-height: 1.2; margin-bottom: 5px;">
+                             ${date.toLocaleDateString('it-IT', {month:'long'})} 2026
+                         </div>
+                         <div style="font-family: 'Playfair Display'; font-size: 2.2rem; font-style: italic; color: var(--ink); line-height: 1;">
+                             ${date.toLocaleDateString('it-IT', {weekday:'long'})}
+                         </div>
+                     </div>
+                     <div class="header-day-num">${date.getDate()}</div>
+                 </div>
+                          <div style="position:relative; flex:1; display:flex; flex-direction:column;">
          
-
-function turnPage(dir) {
-    if(isFlipping || isPenActive || isEraserActive) return;
-    
-    const isMobile = window.innerWidth <= 768;
-    const step = isMobile ? 1 : 2;
-    const oldDay = state.d;
-
-    if (dir === 'next' && state.d + step <= 365) {
-        performFlipAnimation(dir, isMobile);
-        state.d += step;
-
-        if(!isMobile) {
-            // DESKTOP: La pagina DESTRA (sottostante) si aggiorna SUBITO
-            document.getElementById('p-right').innerHTML = getPageContentHTML(state.d + 1);
-            // La pagina SINISTRA si aggiorna solo a fine volo (1000ms)
-            setTimeout(() => {
-                document.getElementById('p-left').innerHTML = getPageContentHTML(state.d);
-                initCanvas(state.d);
-            }, 1000);
-            initCanvas(state.d + 1);
-        } else {
-            // MOBILE: Aggiornamento a fine volo per evitare sfarfallii
-            setTimeout(() => { renderPages(); }, 1000);
-        }
-    } else if (dir === 'prev' && state.d - step >= 1) {
-        performFlipAnimation(dir, isMobile);
-        state.d -= step;
-
-        if(!isMobile) {
-            // DESKTOP: La pagina SINISTRA (sottostante) si aggiorna SUBITO
-            document.getElementById('p-left').innerHTML = getPageContentHTML(state.d);
-            // La pagina DESTRA si aggiorna a fine volo
-            setTimeout(() => {
-                document.getElementById('p-right').innerHTML = getPageContentHTML(state.d + 1);
-                initCanvas(state.d + 1);
-            }, 1000);
-            initCanvas(state.d);
-        } else {
-            setTimeout(() => { renderPages(); }, 1000);
-        }
-    }
-    saveToLocal();
-}
-
-
-function performFlipAnimation(direction, isMobile) {
-    isFlipping = true;
-    const book = document.getElementById('book');
-    const step = isMobile ? 1 : 2;
-    const currentDay = state.d; // Il giorno prima del cambio
-
-    const flipContainer = document.createElement('div');
-    flipContainer.className = 'flip-container';
-    flipContainer.classList.add(direction === 'next' ? 'flip-right' : 'flip-left');
-    
-    const flipFront = document.createElement('div');
-    flipFront.className = 'flip-front';
-    const flipBack = document.createElement('div');
-    flipBack.className = 'flip-back';
-    
-    if(direction === 'next') {
-        // Fronte: Pagina destra attuale
-        flipFront.innerHTML = getPageContentHTML(isMobile ? currentDay : currentDay + 1);
-        // Retro: Pagina che diventerà la nuova sinistra
-        flipBack.innerHTML = getPageContentHTML(isMobile ? currentDay + 1 : currentDay + 2);
-    } else {
-        // Fronte: Pagina sinistra attuale
-        flipFront.innerHTML = getPageContentHTML(currentDay);
-        // Retro: Pagina che diventerà la nuova destra
-        flipBack.innerHTML = getPageContentHTML(isMobile ? currentDay - 1 : currentDay - 1);
-    }
-    
-    flipContainer.appendChild(flipFront);
-    flipContainer.appendChild(flipBack);
-    book.appendChild(flipContainer);
-    
-    flipContainer.offsetHeight; 
-    setTimeout(() => {
-        flipContainer.classList.add(direction === 'next' ? 'flipping-forward' : 'flipping-backward');
-    }, 10);
-    
-    setTimeout(() => {
-        flipContainer.remove();
-        isFlipping = false;
-    }, 1050);
-}
-
-// Modifica la funzione buildCalendar per essere più pulita
-function buildCalendar() {
-    const grid = document.getElementById('cal-grid');
-    grid.innerHTML = ''; // Svuota prima di buildare
-    
-    const months = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-    
-    months.forEach((m, mi) => {
-        const mDiv = document.createElement('div');
-        mDiv.className = 'cal-month-container';
-        mDiv.innerHTML = `<div class="cal-month-title">${m}</div>`;
-        
-        const daysGrid = document.createElement('div');
-        daysGrid.className = 'cal-days-grid';
-        
-        let daysInMonth = new Date(2026, mi + 1, 0).getDate();
-        for(let d=1; d<=daysInMonth; d++) {
-            const btn = document.createElement('div');
-            btn.className = 'cal-day';
-            const today = new Date();
-            if(today.getFullYear() === 2026 && today.getMonth() === mi && today.getDate() === d) btn.classList.add('today');
-            btn.innerText = d;
-            btn.onclick = (e) => {
-                e.stopPropagation(); // Evita di chiudere il calendario due volte
-                const targetDate = new Date(2026, mi, d);
-                const startOfYear = new Date(2026, 0, 1);
-                state.d = Math.round((targetDate - startOfYear) / 86400000) + 1;
-                renderPages();
-                toggleCalendar();
-            };
-            daysGrid.appendChild(btn);
-        }
-        mDiv.appendChild(daysGrid);
-        grid.appendChild(mDiv);
-    });
-}
-
+         <div class="editor" contenteditable="true" id="edit-${day}"  
+              onfocus="focusedEditor=this"
+              oninput="state.content[${day}] = this.innerHTML; saveToLocal();"
+              inputmode="${isKbOpen ? 'none' : 'text'}" 
+              style="font-family: ${state.font}; font-size: ${state.fSize}">
+              ${state.content[day] || ""}
+         </div>
+                              <canvas id="canv-${day}" class="draw-layer"></canvas>
+                          </div>`;
+                  }
+                  
+                  function renderPages() {
+                      const isMobile = window.innerWidth <= 768;
+                      const pRight = document.getElementById('p-right');
+                      const pLeft = document.getElementById('p-left');
+                      
+                      pRight.innerHTML = getPageContentHTML(isMobile ? state.d : state.d + 1);
+                      
+                      if(!isMobile) {
+                          pLeft.innerHTML = getPageContentHTML(state.d);
+                      }
+                      
+                      setTimeout(() => { 
+                          initCanvas(state.d); 
+                          if(!isMobile) initCanvas(state.d + 1); 
+                      }, 50);
+                  }
+                  
          
-         function initCanvas(day) {
-             const canvas = document.getElementById(`canv-${day}`);
-             if(!canvas) return;
-             const ctx = canvas.getContext('2d'), container = canvas.parentElement;
-             canvas.width = container.offsetWidth; canvas.height = container.offsetHeight;
-             if(state.draws[day]) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0); img.src = state.draws[day]; }
+         function turnPage(dir) {
+             if(isFlipping || isPenActive || isEraserActive) return;
+             
+             const isMobile = window.innerWidth <= 768;
+             const step = isMobile ? 1 : 2;
+             const oldDay = state.d;
          
-             let drawing = false;
-             const getCoords = (e) => {
-                 const rect = canvas.getBoundingClientRect();
-                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                 return { x: clientX - rect.left, y: clientY - rect.top };
-             };
+             if (dir === 'next' && state.d + step <= 365) {
+                 performFlipAnimation(dir, isMobile);
+                 state.d += step;
          
-             canvas.onmousedown = canvas.ontouchstart = (e) => { 
-                 if(!isPenActive && !isEraserActive) return;
-                 e.preventDefault();
-                 drawing = true; ctx.beginPath(); const p = getCoords(e); ctx.moveTo(p.x, p.y); 
-             };
-             canvas.onmousemove = canvas.ontouchmove = (e) => {
-                 if(!drawing) return; 
-                 e.preventDefault();
-                 const p = getCoords(e);
-                 if(isEraserActive) ctx.clearRect(p.x-15, p.y-15, 30, 30);
-                 else { 
-                     ctx.lineWidth = state.penWidth; ctx.lineCap = 'round'; 
-                     ctx.strokeStyle = state.penColor; ctx.lineTo(p.x, p.y); ctx.stroke(); 
+                 if(!isMobile) {
+                     // DESKTOP: La pagina DESTRA (sottostante) si aggiorna SUBITO
+                     document.getElementById('p-right').innerHTML = getPageContentHTML(state.d + 1);
+                     // La pagina SINISTRA si aggiorna solo a fine volo (1000ms)
+                     setTimeout(() => {
+                         document.getElementById('p-left').innerHTML = getPageContentHTML(state.d);
+                         initCanvas(state.d);
+                     }, 1000);
+                     initCanvas(state.d + 1);
+                 } else {
+                     // MOBILE: Aggiornamento a fine volo per evitare sfarfallii
+                     setTimeout(() => { renderPages(); }, 1000);
                  }
-             };
-             canvas.onmouseup = canvas.ontouchend = (e) => { 
-                 if(drawing) { 
-                     e.preventDefault();
-                     drawing = false; 
-                     state.draws[day] = canvas.toDataURL(); 
-                     saveToLocal(); 
-                 } 
-             };
-         }
+             } else if (dir === 'prev' && state.d - step >= 1) {
+                 performFlipAnimation(dir, isMobile);
+                 state.d -= step;
          
-         // UTILITIES
-         // --- AGGIUNGI QUESTE FUNZIONI PER FAR FUNZIONARE LA SCRITTURA ---
-         function insertText(text) {
-         if (!focusedEditor) return;
-         // Non serve chiamare focus() qui se usiamo onmousedown con preventDefault
-         
-         if (text === '\n') {
-             document.execCommand('insertLineBreak', false, null);
-         } else {
-             document.execCommand('insertText', false, text);
-         }
-         }
-         
-         function deletePreviousChar() {
-         if (!focusedEditor) return;
-         document.execCommand('delete', false, null);
-         }
-         
-         function handleKeyPress(key) {
-         if(!focusedEditor) return;
-         
-         switch(key) {
-// Quando chiudi la tastiera virtuale col tasto "CHIUDI"
-case 'CHIUDI': 
-    toggleKb();
-    if (focusedEditor) {
-        focusedEditor.blur(); // Toglie il focus per resettare lo stato
-        // Opzionale: focusedEditor.focus(); // Se vuoi che la tastiera di sistema appaia subito
-    }
-    return;
-                 
-             case 'SHIFT': 
-                 kbMode = 'upper'; 
-                 renderKeyboard(); 
-                 return;
-                 
-             case 'shift': 
-                 kbMode = 'lower'; 
-                 renderKeyboard(); 
-                 return;
-                 
-             case 'CAPS':
-                 kbMode = kbMode === 'caps' ? 'lower' : 'caps';
-                 renderKeyboard();
-                 return;
-                 
-             case '123': 
-                 kbMode = 'symbols'; 
-                 renderKeyboard(); 
-                 return;
-                 
-             case 'ABC': 
-                 kbMode = 'lower'; 
-                 renderKeyboard(); 
-                 return;
-                 
-             case 'BKSP': 
-                 deletePreviousChar();
-                 break;
-                 
-             case 'ENTER': 
-                 insertText('\n');
-                 break;
-                 
-             case 'SPACE': 
-                 insertText(' ');
-                 break;
-                 
-             case '▲': 
-                 moveCursorVertical('up');
-                 return;
-                 
-             case '▼': 
-                 moveCursorVertical('down');
-                 return;
-                 
-             case '◀': 
-                 moveCursorHorizontal('left');
-                 return;
-                 
-             case '▶': 
-                 moveCursorHorizontal('right');
-                 return;
-                 
-             default: 
-                 insertText(key);
-                 // Torna a minuscolo dopo aver digitato (solo se SHIFT, non CAPS)
-                 if(kbMode === 'upper') { 
-                     kbMode = 'lower'; 
-                     renderKeyboard(); 
+                 if(!isMobile) {
+                     // DESKTOP: La pagina SINISTRA (sottostante) si aggiorna SUBITO
+                     document.getElementById('p-left').innerHTML = getPageContentHTML(state.d);
+                     // La pagina DESTRA si aggiorna a fine volo
+                     setTimeout(() => {
+                         document.getElementById('p-right').innerHTML = getPageContentHTML(state.d + 1);
+                         initCanvas(state.d + 1);
+                     }, 1000);
+                     initCanvas(state.d);
+                 } else {
+                     setTimeout(() => { renderPages(); }, 1000);
                  }
+             }
+             saveToLocal();
          }
          
-         // Salva il contenuto
-         state.content[focusedEditor.id.split('-')[1]] = focusedEditor.innerHTML;
-         saveToLocal();
+         
+         function performFlipAnimation(direction, isMobile) {
+             isFlipping = true;
+             const book = document.getElementById('book');
+             const step = isMobile ? 1 : 2;
+             const currentDay = state.d; // Il giorno prima del cambio
+         
+             const flipContainer = document.createElement('div');
+             flipContainer.className = 'flip-container';
+             flipContainer.classList.add(direction === 'next' ? 'flip-right' : 'flip-left');
+             
+             const flipFront = document.createElement('div');
+             flipFront.className = 'flip-front';
+             const flipBack = document.createElement('div');
+             flipBack.className = 'flip-back';
+             
+             if(direction === 'next') {
+                 // Fronte: Pagina destra attuale
+                 flipFront.innerHTML = getPageContentHTML(isMobile ? currentDay : currentDay + 1);
+                 // Retro: Pagina che diventerà la nuova sinistra
+                 flipBack.innerHTML = getPageContentHTML(isMobile ? currentDay + 1 : currentDay + 2);
+             } else {
+                 // Fronte: Pagina sinistra attuale
+                 flipFront.innerHTML = getPageContentHTML(currentDay);
+                 // Retro: Pagina che diventerà la nuova destra
+                 flipBack.innerHTML = getPageContentHTML(isMobile ? currentDay - 1 : currentDay - 1);
+             }
+             
+             flipContainer.appendChild(flipFront);
+             flipContainer.appendChild(flipBack);
+             book.appendChild(flipContainer);
+             
+             flipContainer.offsetHeight; 
+             setTimeout(() => {
+                 flipContainer.classList.add(direction === 'next' ? 'flipping-forward' : 'flipping-backward');
+             }, 10);
+             
+             setTimeout(() => {
+                 flipContainer.remove();
+                 isFlipping = false;
+             }, 1050);
          }
          
-         function moveCursorHorizontal(direction) {
-         const selection = window.getSelection();
-         if (selection.rangeCount > 0) {
-             // Usa il comando nativo 'modify' che è molto più stabile
-             selection.modify('move', direction === 'left' ? 'backward' : 'forward', 'character');
-         }
-         }
-         
-         function moveCursorVertical(direction) {
-         const selection = window.getSelection();
-         if(!selection.rangeCount) return;
-         
-         // Usa il metodo nativo del browser per muoversi verticalmente
-         selection.modify('move', direction === 'up' ? 'backward' : 'forward', 'line');
-         }
-         
-         function getPreviousTextNode(node) {
-         if(!node) return null;
-         
-         // Se ha un nodo precedente
-         if(node.previousSibling) {
-             node = node.previousSibling;
-             while(node.lastChild) node = node.lastChild;
-             if(node.nodeType === 3) return node;
-         }
-         
-         // Risali al parent
-         if(node.parentNode && node.parentNode !== focusedEditor) {
-             return getPreviousTextNode(node.parentNode);
-         }
-         
-         return null;
-         }
-         
-         function getNextTextNode(node) {
-         if(!node) return null;
-         
-         // Se ha un nodo successivo
-         if(node.nextSibling) {
-             node = node.nextSibling;
-             while(node.firstChild) node = node.firstChild;
-             if(node.nodeType === 3) return node;
+         // Modifica la funzione buildCalendar per essere più pulita
+         function buildCalendar() {
+             const grid = document.getElementById('cal-grid');
+             grid.innerHTML = ''; // Svuota prima di buildare
+             
+             const months = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+             
+             months.forEach((m, mi) => {
+                 const mDiv = document.createElement('div');
+                 mDiv.className = 'cal-month-container';
+                 mDiv.innerHTML = `<div class="cal-month-title">${m}</div>`;
+                 
+                 const daysGrid = document.createElement('div');
+                 daysGrid.className = 'cal-days-grid';
+                 
+                 let daysInMonth = new Date(2026, mi + 1, 0).getDate();
+                 for(let d=1; d<=daysInMonth; d++) {
+                     const btn = document.createElement('div');
+                     btn.className = 'cal-day';
+                     const today = new Date();
+                     if(today.getFullYear() === 2026 && today.getMonth() === mi && today.getDate() === d) btn.classList.add('today');
+                     btn.innerText = d;
+                     btn.onclick = (e) => {
+                         e.stopPropagation(); // Evita di chiudere il calendario due volte
+                         const targetDate = new Date(2026, mi, d);
+                         const startOfYear = new Date(2026, 0, 1);
+                         state.d = Math.round((targetDate - startOfYear) / 86400000) + 1;
+                         renderPages();
+                         toggleCalendar();
+                     };
+                     daysGrid.appendChild(btn);
+                 }
+                 mDiv.appendChild(daysGrid);
+                 grid.appendChild(mDiv);
+             });
          }
          
-         // Risali al parent
-         if(node.parentNode && node.parentNode !== focusedEditor) {
-             return getNextTextNode(node.parentNode);
-         }
-         
-         return null;
-         }
+                  
+                  function initCanvas(day) {
+                      const canvas = document.getElementById(`canv-${day}`);
+                      if(!canvas) return;
+                      const ctx = canvas.getContext('2d'), container = canvas.parentElement;
+                      canvas.width = container.offsetWidth; canvas.height = container.offsetHeight;
+                      if(state.draws[day]) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0); img.src = state.draws[day]; }
+                  
+                      let drawing = false;
+                      const getCoords = (e) => {
+                          const rect = canvas.getBoundingClientRect();
+                          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                          return { x: clientX - rect.left, y: clientY - rect.top };
+                      };
+                  
+                      canvas.onmousedown = canvas.ontouchstart = (e) => { 
+                          if(!isPenActive && !isEraserActive) return;
+                          e.preventDefault();
+                          drawing = true; ctx.beginPath(); const p = getCoords(e); ctx.moveTo(p.x, p.y); 
+                      };
+                      canvas.onmousemove = canvas.ontouchmove = (e) => {
+                          if(!drawing) return; 
+                          e.preventDefault();
+                          const p = getCoords(e);
+                          if(isEraserActive) ctx.clearRect(p.x-15, p.y-15, 30, 30);
+                          else { 
+                              ctx.lineWidth = state.penWidth; ctx.lineCap = 'round'; 
+                              ctx.strokeStyle = state.penColor; ctx.lineTo(p.x, p.y); ctx.stroke(); 
+                          }
+                      };
+                      canvas.onmouseup = canvas.ontouchend = (e) => { 
+                          if(drawing) { 
+                              e.preventDefault();
+                              drawing = false; 
+                              state.draws[day] = canvas.toDataURL(); 
+                              saveToLocal(); 
+                          } 
+                      };
+                  }
+                  
+                  // UTILITIES
+                  // --- AGGIUNGI QUESTE FUNZIONI PER FAR FUNZIONARE LA SCRITTURA ---
+                  function insertText(text) {
+                  if (!focusedEditor) return;
+                  // Non serve chiamare focus() qui se usiamo onmousedown con preventDefault
+                  
+                  if (text === '\n') {
+                      document.execCommand('insertLineBreak', false, null);
+                  } else {
+                      document.execCommand('insertText', false, text);
+                  }
+                  }
+                  
+                  function deletePreviousChar() {
+                  if (!focusedEditor) return;
+                  document.execCommand('delete', false, null);
+                  }
+                  
+                  function handleKeyPress(key) {
+                  if(!focusedEditor) return;
+                  
+                  switch(key) {
+         // Quando chiudi la tastiera virtuale col tasto "CHIUDI"
+         case 'CHIUDI': 
+             toggleKb();
+             if (focusedEditor) {
+                 focusedEditor.blur(); // Toglie il focus per resettare lo stato
+                 // Opzionale: focusedEditor.focus(); // Se vuoi che la tastiera di sistema appaia subito
+             }
+             return;
+                          
+                      case 'SHIFT': 
+                          kbMode = 'upper'; 
+                          renderKeyboard(); 
+                          return;
+                          
+                      case 'shift': 
+                          kbMode = 'lower'; 
+                          renderKeyboard(); 
+                          return;
+                          
+                      case 'CAPS':
+                          kbMode = kbMode === 'caps' ? 'lower' : 'caps';
+                          renderKeyboard();
+                          return;
+                          
+                      case '123': 
+                          kbMode = 'symbols'; 
+                          renderKeyboard(); 
+                          return;
+                          
+                      case 'ABC': 
+                          kbMode = 'lower'; 
+                          renderKeyboard(); 
+                          return;
+                          
+                      case 'BKSP': 
+                          deletePreviousChar();
+                          break;
+                          
+                      case 'ENTER': 
+                          insertText('\n');
+                          break;
+                          
+                      case 'SPACE': 
+                          insertText(' ');
+                          break;
+                          
+                      case '▲': 
+                          moveCursorVertical('up');
+                          return;
+                          
+                      case '▼': 
+                          moveCursorVertical('down');
+                          return;
+                          
+                      case '◀': 
+                          moveCursorHorizontal('left');
+                          return;
+                          
+                      case '▶': 
+                          moveCursorHorizontal('right');
+                          return;
+                          
+                      default: 
+                          insertText(key);
+                          // Torna a minuscolo dopo aver digitato (solo se SHIFT, non CAPS)
+                          if(kbMode === 'upper') { 
+                              kbMode = 'lower'; 
+                              renderKeyboard(); 
+                          }
+                  }
+                  
+                  // Salva il contenuto
+                  state.content[focusedEditor.id.split('-')[1]] = focusedEditor.innerHTML;
+                  saveToLocal();
+                  }
+                  
+                  function moveCursorHorizontal(direction) {
+                  const selection = window.getSelection();
+                  if (selection.rangeCount > 0) {
+                      // Usa il comando nativo 'modify' che è molto più stabile
+                      selection.modify('move', direction === 'left' ? 'backward' : 'forward', 'character');
+                  }
+                  }
+                  
+                  function moveCursorVertical(direction) {
+                  const selection = window.getSelection();
+                  if(!selection.rangeCount) return;
+                  
+                  // Usa il metodo nativo del browser per muoversi verticalmente
+                  selection.modify('move', direction === 'up' ? 'backward' : 'forward', 'line');
+                  }
+                  
+                  function getPreviousTextNode(node) {
+                  if(!node) return null;
+                  
+                  // Se ha un nodo precedente
+                  if(node.previousSibling) {
+                      node = node.previousSibling;
+                      while(node.lastChild) node = node.lastChild;
+                      if(node.nodeType === 3) return node;
+                  }
+                  
+                  // Risali al parent
+                  if(node.parentNode && node.parentNode !== focusedEditor) {
+                      return getPreviousTextNode(node.parentNode);
+                  }
+                  
+                  return null;
+                  }
+                  
+                  function getNextTextNode(node) {
+                  if(!node) return null;
+                  
+                  // Se ha un nodo successivo
+                  if(node.nextSibling) {
+                      node = node.nextSibling;
+                      while(node.firstChild) node = node.firstChild;
+                      if(node.nodeType === 3) return node;
+                  }
+                  
+                  // Risali al parent
+                  if(node.parentNode && node.parentNode !== focusedEditor) {
+                      return getNextTextNode(node.parentNode);
+                  }
+                  
+                  return null;
+                  }
+                  
          
          function renderKeyboard() {
-         const container = document.getElementById('kb-container'); 
-         container.innerHTML = '';
-         
-         keys[kbMode].forEach(row => {
-             const rowDiv = document.createElement('div'); 
-             rowDiv.className = 'kb-row';
+             const container = document.getElementById('kb-container'); 
+             container.innerHTML = '';
              
-         row.forEach(key => {
-         const btn = document.createElement('div'); 
-         btn.className = 'kb-key';
-         
-         if(['SHIFT','shift','CAPS','BKSP','123','ABC','ENTER','CHIUDI'].includes(key)) {
-             btn.classList.add('key-wide');
+             keys[kbMode].forEach(row => {
+                 const rowDiv = document.createElement('div'); 
+                 rowDiv.className = 'kb-row';
+                 
+                 row.forEach(key => {
+                     const btn = document.createElement('div'); 
+                     btn.className = 'kb-key';
+                     
+                     // Assegnazione classi specifiche per layout fisico
+                     if(key === 'ENTER') btn.classList.add('key-enter');
+                     if(key === 'BKSP') btn.classList.add('key-bksp');
+                     if(key === 'SPACE') btn.classList.add('key-space');
+                     if(key === 'CAPS') btn.classList.add('key-caps');
+                     if(['▲','▼','◀','▶'].includes(key)) btn.classList.add('key-nav');
+                     
+                     if(key === 'CAPS' && kbMode === 'caps') btn.classList.add('key-active');
+                     
+                     btn.innerText = (key === 'BKSP') ? '⌫' : (key === 'ENTER') ? '⏎' : key; 
+                     
+                     btn.onmousedown = (e) => { 
+                         e.preventDefault(); 
+                         handleKeyPress(key); 
+                     };
+                     
+                     rowDiv.appendChild(btn);
+                 });
+                 container.appendChild(rowDiv);
+             });
          }
-         if(key === 'SPACE') btn.style.flex = "4"; 
-         if(key === 'CHIUDI') btn.classList.add('key-gold');
-         
-         // Evidenzia CAPS quando attivo
-         if(key === 'CAPS' && kbMode === 'caps') {
-             btn.classList.add('key-active');
+         		 
+         function toggleKb() { 
+             isKbOpen = !isKbOpen; 
+             const kb = document.getElementById('virtual-keyboard');
+             kb.style.bottom = isKbOpen ? '0' : '-100%'; 
+             
+             // Recuperiamo tutti gli editor presenti (sinistra e destra)
+             const editors = document.querySelectorAll('.editor');
+             
+             editors.forEach(ed => {
+                 if (isKbOpen) {
+                     // Se la tastiera virtuale è APERTA, disabilitiamo quella di sistema
+                     ed.setAttribute('inputmode', 'none');
+                 } else {
+                     // Se la tastiera virtuale è CHIUSA, riabilitiamo quella di sistema
+                     ed.setAttribute('inputmode', 'text');
+                 }
+             });
          }
-         
-         btn.innerText = key; 
-         
-         // MODIFICA CRUCIALE: usa onmousedown e preventDefault()
-         btn.onmousedown = (e) => { 
-             e.preventDefault(); // Impedisce al cursore di lasciare l'editor
-             handleKeyPress(key); 
-         };
-         
-         rowDiv.appendChild(btn);
-         });
-         
-             container.appendChild(rowDiv);
-         });
+                  function togglePen() { isPenActive = !isPenActive; isEraserActive = false; updateUI(); }
+                  function toggleEraser() { isEraserActive = !isEraserActive; isPenActive = false; updateUI(); }
+                  function updateUI() {
+                      document.body.classList.toggle('pen-active', isPenActive || isEraserActive);
+                      document.getElementById('pen-toggle').classList.toggle('active', isPenActive);
+                      document.getElementById('eraser-toggle').classList.toggle('active', isEraserActive);
+                  }
+                  function clearDraw() {
+                      const id = focusedEditor ? focusedEditor.id.split('-')[1] : state.d;
+                      const c = document.getElementById(`canv-${id}`);
+                      if(c) { c.getContext('2d').clearRect(0,0,c.width,c.height); delete state.draws[id]; saveToLocal(); }
+                  }
+                  function saveToLocal() { localStorage.setItem('agenda_luxury_v26_3d_final_v3', JSON.stringify(state)); }
+                  function applyTheme() { document.body.className = state.dark ? 'theme-dark' : 'theme-light'; }
+                  function toggleTheme() { state.dark = !state.dark; applyTheme(); saveToLocal(); }
+                  function changeFont(f) { state.font = f; renderPages(); saveToLocal(); }
+                  function changeFontSize(s) { state.fSize = s; renderPages(); saveToLocal(); }
+                  function updatePenSettings() { state.penColor = document.getElementById('inkColor').value; state.penWidth = document.getElementById('penSize').value; }
+         function toggleCalendar() {
+             const cal = document.getElementById('calendar-overlay');
+             const isVisible = cal.style.display === 'flex';
+             
+             if (!isVisible) {
+                 // Opzionale: scrolla l'overlay in cima quando lo apri
+                 cal.scrollTop = 0;
+                 cal.style.display = 'flex';
+             } else {
+                 cal.style.display = 'none';
+             }
          }
-         
-function toggleKb() { 
-    isKbOpen = !isKbOpen; 
-    const kb = document.getElementById('virtual-keyboard');
-    kb.style.bottom = isKbOpen ? '0' : '-100%'; 
-    
-    // Recuperiamo tutti gli editor presenti (sinistra e destra)
-    const editors = document.querySelectorAll('.editor');
-    
-    editors.forEach(ed => {
-        if (isKbOpen) {
-            // Se la tastiera virtuale è APERTA, disabilitiamo quella di sistema
-            ed.setAttribute('inputmode', 'none');
-        } else {
-            // Se la tastiera virtuale è CHIUSA, riabilitiamo quella di sistema
-            ed.setAttribute('inputmode', 'text');
-        }
-    });
-}
-         function togglePen() { isPenActive = !isPenActive; isEraserActive = false; updateUI(); }
-         function toggleEraser() { isEraserActive = !isEraserActive; isPenActive = false; updateUI(); }
-         function updateUI() {
-             document.body.classList.toggle('pen-active', isPenActive || isEraserActive);
-             document.getElementById('pen-toggle').classList.toggle('active', isPenActive);
-             document.getElementById('eraser-toggle').classList.toggle('active', isEraserActive);
-         }
-         function clearDraw() {
-             const id = focusedEditor ? focusedEditor.id.split('-')[1] : state.d;
-             const c = document.getElementById(`canv-${id}`);
-             if(c) { c.getContext('2d').clearRect(0,0,c.width,c.height); delete state.draws[id]; saveToLocal(); }
-         }
-         function saveToLocal() { localStorage.setItem('agenda_luxury_v26_3d_final_v3', JSON.stringify(state)); }
-         function applyTheme() { document.body.className = state.dark ? 'theme-dark' : 'theme-light'; }
-         function toggleTheme() { state.dark = !state.dark; applyTheme(); saveToLocal(); }
-         function changeFont(f) { state.font = f; renderPages(); saveToLocal(); }
-         function changeFontSize(s) { state.fSize = s; renderPages(); saveToLocal(); }
-         function updatePenSettings() { state.penColor = document.getElementById('inkColor').value; state.penWidth = document.getElementById('penSize').value; }
-function toggleCalendar() {
-    const cal = document.getElementById('calendar-overlay');
-    const isVisible = cal.style.display === 'flex';
-    
-    if (!isVisible) {
-        // Opzionale: scrolla l'overlay in cima quando lo apri
-        cal.scrollTop = 0;
-        cal.style.display = 'flex';
-    } else {
-        cal.style.display = 'none';
-    }
-}
-         function goDirectlyToToday() { 
-             const now = new Date(); const start = new Date(2026, 0, 1);
-             state.d = Math.max(1, Math.floor((now - start) / 86400000) + 1);
-             renderPages(); 
-         }
-         function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], {type:'application/json'})); a.download = `agenda_luxury_2026.json`; a.click(); }
-         function importData(e) { const r = new FileReader(); r.onload = (ev) => { state = JSON.parse(ev.target.result); renderPages(); applyTheme(); }; r.readAsText(e.target.files[0]); }
-         function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+                  function goDirectlyToToday() { 
+                      const now = new Date(); const start = new Date(2026, 0, 1);
+                      state.d = Math.max(1, Math.floor((now - start) / 86400000) + 1);
+                      renderPages(); 
+                  }
+                  function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], {type:'application/json'})); a.download = `agenda_luxury_2026.json`; a.click(); }
+                  function importData(e) { const r = new FileReader(); r.onload = (ev) => { state = JSON.parse(ev.target.result); renderPages(); applyTheme(); }; r.readAsText(e.target.files[0]); }
+                  function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+               
       </script>
    </body>
 </html>
