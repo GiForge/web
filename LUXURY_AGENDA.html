@@ -407,11 +407,14 @@
             <div class="header-day-num">${date.getDate()}</div>
         </div>
                  <div style="position:relative; flex:1; display:flex; flex-direction:column;">
-         <div class="editor" contenteditable="true" id="edit-${day}" 
-          onfocus="focusedEditor=this"
-          oninput="state.content[${day}] = this.innerHTML; saveToLocal();"
-          inputmode="none"
-          style="font-family: ${state.font}; font-size: ${state.fSize}">${state.content[day] || ""}</div>
+
+<div class="editor" contenteditable="true" id="edit-${day}"  
+     onfocus="focusedEditor=this"
+     oninput="state.content[${day}] = this.innerHTML; saveToLocal();"
+     inputmode="${isKbOpen ? 'none' : 'text'}" 
+     style="font-family: ${state.font}; font-size: ${state.fSize}">
+     ${state.content[day] || ""}
+</div>
                      <canvas id="canv-${day}" class="draw-layer"></canvas>
                  </div>`;
          }
@@ -621,10 +624,14 @@ function buildCalendar() {
          if(!focusedEditor) return;
          
          switch(key) {
-             case 'CHIUDI': 
-                 toggleKb();
-                 focusedEditor.blur();
-                 return;
+// Quando chiudi la tastiera virtuale col tasto "CHIUDI"
+case 'CHIUDI': 
+    toggleKb();
+    if (focusedEditor) {
+        focusedEditor.blur(); // Toglie il focus per resettare lo stato
+        // Opzionale: focusedEditor.focus(); // Se vuoi che la tastiera di sistema appaia subito
+    }
+    return;
                  
              case 'SHIFT': 
                  kbMode = 'upper'; 
@@ -783,7 +790,24 @@ function buildCalendar() {
          });
          }
          
-         function toggleKb() { isKbOpen = !isKbOpen; document.getElementById('virtual-keyboard').style.bottom = isKbOpen ? '0' : '-100%'; }
+function toggleKb() { 
+    isKbOpen = !isKbOpen; 
+    const kb = document.getElementById('virtual-keyboard');
+    kb.style.bottom = isKbOpen ? '0' : '-100%'; 
+    
+    // Recuperiamo tutti gli editor presenti (sinistra e destra)
+    const editors = document.querySelectorAll('.editor');
+    
+    editors.forEach(ed => {
+        if (isKbOpen) {
+            // Se la tastiera virtuale è APERTA, disabilitiamo quella di sistema
+            ed.setAttribute('inputmode', 'none');
+        } else {
+            // Se la tastiera virtuale è CHIUSA, riabilitiamo quella di sistema
+            ed.setAttribute('inputmode', 'text');
+        }
+    });
+}
          function togglePen() { isPenActive = !isPenActive; isEraserActive = false; updateUI(); }
          function toggleEraser() { isEraserActive = !isEraserActive; isPenActive = false; updateUI(); }
          function updateUI() {
