@@ -218,12 +218,30 @@
          }
          }
          /* EDITOR & GRAPHICS */
-         .editor {
-         height: 100%; background-image: linear-gradient(transparent 31px, var(--line-color) 32px);
-         background-size: 100% 32px; line-height: 32px; outline: none;
-         padding-left: 15px; border-left: 2px solid var(--margin-color);
-         white-space: pre-wrap; position: relative; z-index: 1; overflow-y: auto;
-         }
+.editor {
+    height: 100%;
+    /* Fissiamo l'altezza riga: deve essere identica alla dimensione della griglia */
+    line-height: 32px !important; 
+    background-image: linear-gradient(transparent 31px, var(--line-color) 32px);
+    background-size: 100% 32px;
+    background-position: 0 0; /* Inizia la riga subito */
+    background-attachment: local;
+    
+    /* Rimuovi il padding-top per far partire il testo dall'inizio del canvas */
+    padding: 0 15px; 
+    margin: 0;
+    
+    outline: none;
+    border-left: 2px solid var(--margin-color);
+    white-space: pre-wrap;
+    position: relative;
+    z-index: 1;
+    overflow-y: auto;
+    box-sizing: border-box;
+    
+    /* Impedisce spostamenti dovuti a font diversi */
+    vertical-align: baseline;
+}
          .draw-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
          body.pen-active .draw-layer { pointer-events: auto; cursor: crosshair; }
          .page-header { border-bottom: 2px solid var(--gold); display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 5px; margin-bottom: 15px;}
@@ -498,28 +516,26 @@ const keys = {
                       if (day < 1 || day > 365) return `<div style="display:flex; height:100%; align-items:center; justify-content:center; opacity:0.1;"><h3>FINE ANNO</h3></div>`;
                       const date = new Date(2026, 0, day);
                       return `
-         <div class="page-header" style="border-bottom: 3px solid var(--gold); padding-bottom: 15px; margin-bottom: 30px;">
-                     <div style="flex: 1;">
-                         <div style="color: var(--gold); text-transform: uppercase; font-size: 1.4rem; font-weight: 800; letter-spacing: 5px; line-height: 1.2; margin-bottom: 5px;">
-                             ${date.toLocaleDateString('it-IT', {month:'long'})} 2026
-                         </div>
-                         <div style="font-family: 'Playfair Display'; font-size: 2.2rem; font-style: italic; color: var(--ink); line-height: 1;">
-                             ${date.toLocaleDateString('it-IT', {weekday:'long'})}
-                         </div>
-                     </div>
-                     <div class="header-day-num">${date.getDate()}</div>
-                 </div>
-                          <div style="position:relative; flex:1; display:flex; flex-direction:column;">
-         
-         <div class="editor" contenteditable="true" id="edit-${day}"  
-              onfocus="focusedEditor=this"
-              oninput="state.content[${day}] = this.innerHTML; saveToLocal();"
-              inputmode="${isKbOpen ? 'none' : 'text'}" 
-              style="font-family: ${state.font}; font-size: ${state.fSize}">
-              ${state.content[day] || ""}
-         </div>
-                              <canvas id="canv-${day}" class="draw-layer"></canvas>
-                          </div>`;
+    <div class="page-header">
+        <div style="flex: 1;">
+            <div style="color: var(--gold); text-transform: uppercase; font-size: 1.4rem; font-weight: 800; letter-spacing: 5px; line-height: 1.2; margin-bottom: 5px;">
+                ${date.toLocaleDateString('it-IT', {month:'long'})} 2026
+            </div>
+            <div style="font-family: 'Playfair Display'; font-size: 2.2rem; font-style: italic; color: var(--ink); line-height: 1;">
+                ${date.toLocaleDateString('it-IT', {weekday:'long'})}
+            </div>
+        </div>
+        <div class="header-day-num">${date.getDate()}</div>
+    </div>
+    <div style="position:relative; flex:1; display:flex; flex-direction:column; overflow:hidden;">
+        <canvas id="canv-${day}" class="draw-layer"></canvas>
+        
+        <div class="editor" contenteditable="true" id="edit-${day}"  
+             onfocus="focusedEditor=this"
+             oninput="state.content[${day}] = this.innerHTML; saveToLocal();"
+             inputmode="${isKbOpen ? 'none' : 'text'}" 
+             style="font-family: ${state.font}; font-size: ${state.fSize}">${state.content[day] || ""}</div>
+    </div>`;
                   }
                   
                   function renderPages() {
@@ -666,6 +682,7 @@ const keys = {
          
                   
                   function initCanvas(day) {
+
                       const canvas = document.getElementById(`canv-${day}`);
                       if(!canvas) return;
                       const ctx = canvas.getContext('2d'), container = canvas.parentElement;
