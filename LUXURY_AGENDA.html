@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agenda Luxury 2026 - Keyboard Pro</title>
+    <title>Agenda Luxury 2026 - Keyboard Pro 3D</title>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -24,6 +24,7 @@
             font-family: 'Cormorant Garamond', serif;
             height: 100vh; display: flex; overflow: hidden;
             justify-content: center; align-items: center;
+            perspective: 2000px;
         }
 
         /* UI CONTROLS */
@@ -33,10 +34,10 @@
             .controls-left { left: 15px; } .controls-right { right: 15px; }
         }
         @media (max-width: 768px) {
-            .side-controls { flex-direction: row; top: 10px; left: 50%; transform: translateX(-50%); width: 95%; justify-content: center; flex-wrap: wrap; }
-            .controls-right { top: 55px; }
-            .btn-round { width: 38px !important; height: 38px !important; font-size: 1rem !important; }
-            .select-luxury { width: 60px !important; font-size: 0.5rem !important; height: 30px !important; }
+            .side-controls { flex-direction: row; top: 5px; left: 50%; transform: translateX(-50%); width: 98%; justify-content: center; flex-wrap: wrap; }
+            .controls-right { top: 45px; }
+            .btn-round { width: 34px !important; height: 34px !important; font-size: 0.9rem !important; }
+            .select-luxury { width: 55px !important; font-size: 0.45rem !important; height: 28px !important; padding: 0 4px; }
         }
 
         .btn-round {
@@ -53,55 +54,78 @@
             color: var(--gold); cursor: pointer; font-size: 0.65rem; text-transform: uppercase;
         }
 
-        /* BOOK */
-        #book { width: 85vw; height: 85vh; position: relative; background: var(--leather); border-radius: 15px; box-shadow: 0 40px 80px rgba(0,0,0,0.8); }
-        .page { position: absolute; background: var(--paper); color: var(--ink); padding: 25px 35px; display: flex; flex-direction: column; z-index: 10; overflow: hidden; }
-        
-        @media (min-width: 769px) {
-            .page { width: calc(50% - 15px); height: calc(100% - 20px); top: 10px; }
-            .page.left { left: 10px; border-radius: 10px 0 0 10px; }
-            .page.right { right: 10px; border-radius: 0 10px 10px 0; border-left: 1px solid rgba(0,0,0,0.05); }
+        /* BOOK & 3D ANIMATION */
+        #book { 
+            width: 85vw; height: 85vh; position: relative; 
+            background: var(--leather); border-radius: 15px; 
+            box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
         }
+        
+        .page { 
+            position: absolute; background: var(--paper); color: var(--ink); 
+            padding: 25px 35px; display: flex; flex-direction: column; 
+            z-index: 10; overflow: hidden; backface-visibility: hidden;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.05);
+        }
+
+        @media (min-width: 769px) {
+            .page { width: calc(50% - 10px); height: calc(100% - 20px); top: 10px; }
+            .page.left { left: 10px; border-radius: 10px 0 0 10px; transform-origin: right; }
+            .page.right { right: 10px; border-radius: 0 10px 10px 0; border-left: 1px solid rgba(0,0,0,0.1); transform-origin: left; }
+            .flipping { z-index: 20; transition: transform 0.6s cubic-bezier(0.645, 0.045, 0.355, 1); }
+        }
+
         @media (max-width: 768px) {
-            #book { width: 98vw; height: 55vh; margin-top: 110px; top: -50px; }
-            .page { width: calc(100% - 10px); height: calc(100% - 10px); top: 5px; left: 5px; border-radius: 10px; padding: 15px; }
+            #book { width: 100vw; height: 100vh; border-radius: 0; }
+            .page { width: 100%; height: 100%; top: 0; left: 0; border-radius: 0; padding: 85px 15px 15px 15px; }
             .page.left { display: none; }
         }
 
+        /* SIDE NAVIGATION ZONES */
+        .nav-zone {
+            position: absolute; top: 0; width: 40px; height: 100%;
+            z-index: 100; cursor: pointer; background: rgba(184, 147, 82, 0.05);
+            transition: background 0.3s; display: flex; align-items: center; justify-content: center;
+            color: var(--gold); font-size: 1.5rem; opacity: 0.3;
+        }
+        .nav-zone:hover { background: rgba(184, 147, 82, 0.15); opacity: 1; }
+        .nav-left { left: 0; border-radius: 15px 0 0 15px; }
+        .nav-right { right: 0; border-radius: 0 15px 15px 0; }
+
+        /* EDITOR */
         .editor {
             height: 100%; background-image: linear-gradient(transparent 31px, var(--line-color) 32px);
             background-size: 100% 32px; line-height: 32px; outline: none;
             padding-left: 15px; border-left: 2px solid var(--margin-color);
-            font-size: 1.3rem; white-space: pre-wrap; position: relative; z-index: 1;
+            white-space: pre-wrap; position: relative; z-index: 1;
         }
+        
         .draw-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
         body.pen-active .draw-layer { pointer-events: auto; }
 
         .page-header { border-bottom: 2px solid var(--gold); display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 5px; margin-bottom: 10px;}
         .header-day-num { font-family: 'Playfair Display'; font-size: 3.5rem; color: var(--gold); font-weight: 700; line-height: 0.8; }
 
-        /* FULL VIRTUAL KEYBOARD */
+        /* VIRTUAL KEYBOARD */
         #virtual-keyboard {
             position: fixed; bottom: -100%; left: 0; width: 100%; 
-            background: #111; padding: 10px 5px; z-index: 10001; 
-            transition: bottom 0.3s ease; display: flex; flex-direction: column; 
-            gap: 5px; border-top: 3px solid var(--gold);
-            user-select: none;
+            background: #111; padding: 8px 4px; z-index: 10001; 
+            transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: flex; flex-direction: column; 
+            gap: 4px; border-top: 3px solid var(--gold);
         }
         .kb-row { display: flex; justify-content: center; gap: 4px; width: 100%; }
         .kb-key {
             background: #2a2a2a; color: white; border: 1px solid #444; 
             border-radius: 5px; height: 45px; flex: 1;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-family: 'Inter'; font-size: 1rem; font-weight: 600;
+            cursor: pointer; font-family: 'Inter'; font-size: 1rem;
         }
-        .kb-key:active { background: var(--gold); color: black; }
-        .key-special { background: #3d3d3d; flex: 1.5; font-size: 0.8rem; }
-        .key-space { flex: 4; }
-        .key-gold { background: var(--gold); color: black; border: none; }
-        .key-active { background: var(--gold); color: black; }
+        .key-gold { background: var(--gold) !important; color: black !important; font-weight: bold; }
 
-        #calendar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        #calendar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: none; justify-content: center; align-items: center; padding: 20px; }
         .cal-grid-container { display: grid; gap: 15px; width: 100%; max-width: 1000px; max-height: 80vh; overflow-y: auto; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); background: #111; padding: 20px; border: 1px solid var(--gold); }
         .cal-month button { background: none; border: 1px solid #333; color: white; margin: 2px; width: 30px; height: 30px; cursor: pointer; }
     </style>
@@ -119,6 +143,7 @@
     </div>
 
     <div class="side-controls controls-right">
+        <button class="btn-round" onclick="toggleKb()">⌨</button>
         <button class="btn-round" id="pen-toggle" onclick="togglePen()">✎</button>
         <button class="btn-round" id="eraser-toggle" onclick="toggleEraser()">🧹</button>
         <div class="btn-round" style="overflow:hidden;"><input type="color" id="inkColor" onchange="updatePenSettings()" style="transform:scale(2); cursor:pointer;"></div>
@@ -133,15 +158,19 @@
             <option value="'Inter'">Moderno</option>
             <option value="'Playfair Display'">Classico</option>
         </select>
+        <select id="fontSizePicker" class="select-luxury" onchange="changeFontSize(this.value)">
+            <option value="1.1rem">Small</option>
+            <option value="1.3rem" selected>Medium</option>
+            <option value="1.6rem">Large</option>
+        </select>
     </div>
 
     <main id="book">
-        <div style="position:absolute; width:100%; height:100%; display:flex; z-index:5;">
-            <div style="flex:1;" onclick="turnPage('prev')"></div>
-            <div style="flex:1;" onclick="turnPage('next')"></div>
-        </div>
-        <div class="page left" id="p-left-static"></div>
-        <div class="page right" id="p-right-static"></div>
+        <div class="nav-zone nav-left" onclick="turnPage('prev')">❮</div>
+        <div class="nav-zone nav-right" onclick="turnPage('next')">❯</div>
+        
+        <div class="page left" id="p-left"></div>
+        <div class="page right" id="p-right"></div>
     </main>
 
     <div id="virtual-keyboard">
@@ -153,35 +182,26 @@
     </div>
 
 <script>
-    let state = { d: 1, dark: false, font: "'Dancing Script'", content: {}, draws: {}, penColor: "#1a1a1a", penWidth: "5" };
-    let isPenActive = false, isEraserActive = false, focusedEditor = null;
-    let kbMode = 'lower'; // 'lower', 'upper', 'symbols'
+    let state = { d: 1, dark: false, font: "'Dancing Script'", fSize: "1.3rem", content: {}, draws: {}, penColor: "#1a1a1a", penWidth: "5" };
+    let isPenActive = false, isEraserActive = false, focusedEditor = null, isKbOpen = false;
+    let kbMode = 'lower';
 
     const keys = {
-        lower: [
-            ['q','w','e','r','t','y','u','i','o','p'],
-            ['a','s','d','f','g','h','j','k','l'],
-            ['SHIFT','z','x','c','v','b','n','m','BKSP'],
-            ['123','SPACE','ENTER','▲','▼','◀','▶','CHIUDI']
-        ],
-        upper: [
-            ['Q','W','E','R','T','Y','U','I','O','P'],
-            ['A','S','D','F','G','H','J','K','L'],
-            ['shift','Z','X','C','V','B','N','M','BKSP'],
-            ['123','SPACE','ENTER','▲','▼','◀','▶','CHIUDI']
-        ],
-        symbols: [
-            ['1','2','3','4','5','6','7','8','9','0'],
-            ['@','#','€','&','*','-','+','(',')','/'],
-            ['ABC','.',',','?','!',"'",'"',':',';','BKSP'],
-            ['123','SPACE','ENTER','▲','▼','◀','▶','CHIUDI']
-        ]
+        lower: [['q','w','e','r','t','y','u','i','o','p'],['a','s','d','f','g','h','j','k','l'],['SHIFT','z','x','c','v','b','n','m','BKSP'],['123','SPACE','ENTER','◀','▶','CHIUDI']],
+        upper: [['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L'],['shift','Z','X','C','V','B','N','M','BKSP'],['123','SPACE','ENTER','◀','▶','CHIUDI']],
+        symbols: [['1','2','3','4','5','6','7','8','9','0'],['@','#','€','&','*','-','+','(',')','/'],['ABC','.',',','?','!',"'",'"',':',';','BKSP'],['123','SPACE','ENTER','◀','▶','CHIUDI']]
     };
 
     window.onload = () => {
-        const saved = localStorage.getItem('agenda_luxury_v26_responsive');
+        const saved = localStorage.getItem('agenda_luxury_v26_3d');
         if (saved) state = JSON.parse(saved); else goDirectlyToToday();
-        applyTheme(); renderStatic(); buildCalendar(); renderKeyboard();
+        applyTheme(); renderPages(); buildCalendar(); renderKeyboard();
+        
+        // Mouse wheel navigation
+        window.addEventListener('wheel', (e) => {
+            if (e.deltaY > 0) turnPage('next');
+            else turnPage('prev');
+        });
     };
 
     function renderKeyboard() {
@@ -194,10 +214,8 @@
                 const btn = document.createElement('div');
                 btn.className = 'kb-key';
                 if(['SHIFT','shift','BKSP','123','ABC','ENTER','CHIUDI'].includes(key)) btn.classList.add('key-special');
-                if(key === 'SPACE') btn.classList.add('key-space');
+                if(key === 'SPACE') btn.style.flex = "4";
                 if(key === 'CHIUDI') btn.classList.add('key-gold');
-                if((kbMode === 'upper' && key === 'shift') || (kbMode === 'symbols' && key === '123')) btn.classList.add('key-active');
-                
                 btn.innerText = key;
                 btn.onclick = (e) => { e.preventDefault(); handleKeyPress(key); };
                 rowDiv.appendChild(btn);
@@ -209,9 +227,8 @@
     function handleKeyPress(key) {
         if(!focusedEditor) return;
         focusedEditor.focus();
-
         switch(key) {
-            case 'CHIUDI': closeKb(); break;
+            case 'CHIUDI': toggleKb(); break;
             case 'SHIFT': kbMode = 'upper'; renderKeyboard(); break;
             case 'shift': kbMode = 'lower'; renderKeyboard(); break;
             case '123': kbMode = 'symbols'; renderKeyboard(); break;
@@ -219,28 +236,16 @@
             case 'BKSP': document.execCommand('delete', false); break;
             case 'ENTER': document.execCommand('insertLineBreak', false); break;
             case 'SPACE': document.execCommand('insertText', false, ' '); break;
-            case '▲': moveCursor('up'); break;
-            case '▼': moveCursor('down'); break;
-            case '◀': moveCursor('left'); break;
-            case '▶': moveCursor('right'); break;
-            default:
-                document.execCommand('insertText', false, key);
-                if(kbMode === 'upper') { kbMode = 'lower'; renderKeyboard(); }
+            case '◀': window.getSelection().modify("move", "backward", "character"); break;
+            case '▶': window.getSelection().modify("move", "forward", "character"); break;
+            default: document.execCommand('insertText', false, key);
         }
         state.content[focusedEditor.id.split('-')[1]] = focusedEditor.innerHTML;
         saveToLocal();
     }
 
-    function moveCursor(dir) {
-        const sel = window.getSelection();
-        if(dir === 'left') sel.modify("move", "backward", "character");
-        if(dir === 'right') sel.modify("move", "forward", "character");
-        if(dir === 'up') sel.modify("move", "backward", "line");
-        if(dir === 'down') sel.modify("move", "forward", "line");
-    }
-
     function getPageHTML(day) {
-        if (day < 1 || day > 365) return `<div style="display:flex; height:100%; align-items:center; justify-content:center; opacity:0.2"><h3>FINE 2026</h3></div>`;
+        if (day < 1 || day > 365) return `<div style="display:flex; height:100%; align-items:center; justify-content:center; opacity:0.1"><h3>2027</h3></div>`;
         const date = new Date(2026, 0, day);
         return `
             <div class="page-header">
@@ -252,22 +257,53 @@
             </div>
             <div style="position:relative; flex:1;">
                 <div class="editor" contenteditable="true" id="edit-${day}" 
-                     onfocus="focusedEditor=this; openKb();"
+                     onfocus="focusedEditor=this"
                      oninput="state.content[${day}] = this.innerHTML; saveToLocal();"
-                     style="font-family: ${state.font}">${state.content[day] || ""}</div>
+                     style="font-family: ${state.font}; font-size: ${state.fSize}">${state.content[day] || ""}</div>
                 <canvas id="canv-${day}" class="draw-layer"></canvas>
             </div>`;
     }
 
-    function renderStatic() {
+    function renderPages() {
         const isMobile = window.innerWidth <= 768;
-        document.getElementById('p-right-static').innerHTML = getPageHTML(isMobile ? state.d : state.d + 1);
-        if(!isMobile) document.getElementById('p-left-static').innerHTML = getPageHTML(state.d);
-        setTimeout(() => { initCanvas(state.d); if(!isMobile) initCanvas(state.d + 1); }, 100);
+        document.getElementById('p-right').innerHTML = getPageHTML(isMobile ? state.d : state.d + 1);
+        if(!isMobile) document.getElementById('p-left').innerHTML = getPageHTML(state.d);
+        setTimeout(() => { initCanvas(state.d); if(!isMobile) initCanvas(state.d + 1); }, 50);
     }
 
-    function openKb() { if(window.innerWidth <= 768) document.getElementById('virtual-keyboard').style.bottom = '0'; }
-    function closeKb() { document.getElementById('virtual-keyboard').style.bottom = '-100%'; if(focusedEditor) focusedEditor.blur(); }
+    function turnPage(dir) {
+        if(isPenActive || isEraserActive) return;
+        const step = window.innerWidth <= 768 ? 1 : 2;
+        const oldD = state.d;
+        
+        if (dir === 'next' && state.d + step <= 365) state.d += step;
+        else if (dir === 'prev' && state.d - step >= 1) state.d -= step;
+        else return;
+
+        if(window.innerWidth > 768) {
+            // Animazione 3D per Desktop
+            const book = document.getElementById('book');
+            const flipPage = document.createElement('div');
+            flipPage.className = `page flipping ${dir === 'next' ? 'right' : 'left'}`;
+            flipPage.innerHTML = getPageHTML(dir === 'next' ? oldD + 1 : oldD);
+            book.appendChild(flipPage);
+
+            setTimeout(() => {
+                flipPage.style.transform = dir === 'next' ? 'rotateY(-180deg)' : 'rotateY(180deg)';
+                renderPages();
+            }, 10);
+
+            setTimeout(() => flipPage.remove(), 600);
+        } else {
+            renderPages();
+        }
+        saveToLocal();
+    }
+
+    function toggleKb() {
+        isKbOpen = !isKbOpen;
+        document.getElementById('virtual-keyboard').style.bottom = isKbOpen ? '0' : '-100%';
+    }
 
     function initCanvas(day) {
         const canvas = document.getElementById(`canv-${day}`);
@@ -290,18 +326,10 @@
         };
         canvas.onmousemove = canvas.ontouchmove = (e) => {
             if(!drawing) return; const p = getCoords(e);
-            if(isEraserActive) ctx.clearRect(p.x-12, p.y-12, 24, 24);
+            if(isEraserActive) ctx.clearRect(p.x-15, p.y-15, 30, 30);
             else { ctx.lineWidth = state.penWidth; ctx.lineCap = 'round'; ctx.strokeStyle = state.penColor; ctx.lineTo(p.x, p.y); ctx.stroke(); }
         };
         canvas.onmouseup = canvas.ontouchend = () => { if(drawing) { drawing = false; state.draws[day] = canvas.toDataURL(); saveToLocal(); } };
-    }
-
-    function turnPage(dir) {
-        if(isPenActive || isEraserActive) return;
-        const step = window.innerWidth <= 768 ? 1 : 2;
-        if (dir === 'next' && state.d + step <= 365) state.d += step;
-        else if (dir === 'prev' && state.d - step >= 1) state.d -= step;
-        renderStatic(); saveToLocal();
     }
 
     function togglePen() { isPenActive = !isPenActive; isEraserActive = false; updateUI(); }
@@ -316,13 +344,14 @@
         const c = document.getElementById(`canv-${id}`);
         if(c) { c.getContext('2d').clearRect(0,0,c.width,c.height); delete state.draws[id]; saveToLocal(); }
     }
-    function saveToLocal() { localStorage.setItem('agenda_luxury_v26_responsive', JSON.stringify(state)); }
+    function saveToLocal() { localStorage.setItem('agenda_luxury_v26_3d', JSON.stringify(state)); }
     function applyTheme() { document.body.className = state.dark ? 'theme-dark' : 'theme-light'; }
     function toggleTheme() { state.dark = !state.dark; applyTheme(); saveToLocal(); }
-    function changeFont(f) { state.font = f; renderStatic(); saveToLocal(); }
+    function changeFont(f) { state.font = f; renderPages(); saveToLocal(); }
+    function changeFontSize(s) { state.fSize = s; renderPages(); saveToLocal(); }
     function updatePenSettings() { state.penColor = document.getElementById('inkColor').value; state.penWidth = document.getElementById('penSize').value; }
     function toggleCalendar() { const c = document.getElementById('calendar-overlay'); c.style.display = (c.style.display==='flex')?'none':'flex'; }
-    function goDirectlyToToday() { const n = new Date(); const start = new Date(2026, 0, 0); state.d = Math.floor((new Date(2026, n.getMonth(), n.getDate()) - start) / 86400000); renderStatic(); }
+    function goDirectlyToToday() { const n = new Date(); const start = new Date(2026, 0, 0); state.d = Math.floor((new Date(2026, n.getMonth(), n.getDate()) - start) / 86400000); renderPages(); }
     function buildCalendar() {
         const box = document.getElementById('cal-box');
         const months = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
@@ -332,14 +361,14 @@
             let days = new Date(2026, mi+1, 0).getDate();
             for(let d=1; d<=days; d++) {
                 const btn = document.createElement('button'); btn.innerText = d;
-                btn.onclick = () => { state.d = Math.floor((new Date(2026, mi, d) - new Date(2026,0,0)) / 86400000); renderStatic(); toggleCalendar(); };
+                btn.onclick = () => { state.d = Math.floor((new Date(2026, mi, d) - new Date(2026,0,0)) / 86400000); renderPages(); toggleCalendar(); };
                 mDiv.appendChild(btn);
             }
             box.appendChild(mDiv);
         });
     }
     function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], {type:'application/json'})); a.download = `agenda_2026.json`; a.click(); }
-    function importData(e) { const r = new FileReader(); r.onload = (ev) => { state = JSON.parse(ev.target.result); renderStatic(); applyTheme(); }; r.readAsText(e.target.files[0]); }
+    function importData(e) { const r = new FileReader(); r.onload = (ev) => { state = JSON.parse(ev.target.result); renderPages(); applyTheme(); }; r.readAsText(e.target.files[0]); }
     function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
 </script>
 </body>
