@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Wallet Elite 3D - Paste Support</title>
+    <title>Smart Wallet Elite 3D - Ordinato A-Z</title>
     
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -20,14 +20,15 @@
         #wallet { padding: 20px; display: flex; flex-direction: column; padding-bottom: 150px; }
         .badge { width: 100%; height: 180px; border-radius: 20px; margin-bottom: -110px; position: relative; transition: all 0.3s ease; border-top: 1.5px solid rgba(255,255,255,0.25); box-shadow: 0 -10px 30px rgba(0,0,0,0.7); cursor: pointer; }
         .badge:last-child { margin-bottom: 0; }
+        .badge:active { transform: translateY(-30px) scale(1.02); z-index: 450 !important; }
         
         .badge-header { padding: 20px; display: flex; align-items: center; gap: 15px; }
-        .badge-logo { width: 45px; height: 45px; background: white; border-radius: 12px; padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .badge-logo { width: 45px; height: 45px; background: white; border-radius: 12px; padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); flex-shrink: 0; }
         .badge-logo img { width: 100%; height: 100%; object-fit: contain; }
-        .badge-name { font-size: 18px; font-weight: 700; text-transform: uppercase; flex: 1; }
+        .badge-name { font-size: 18px; font-weight: 700; text-transform: uppercase; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         .action-btns { display: flex; gap: 12px; }
-        .btn-icon { background: none; border: none; font-size: 20px; cursor: pointer; opacity: 0.6; }
+        .btn-icon { background: none; border: none; font-size: 20px; cursor: pointer; opacity: 0.6; padding: 5px; }
 
         .overlay { position: fixed; inset: 0; background: #121214; z-index: 1000; display: none; padding: 25px; overflow-y: auto; }
         .glass-card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1); }
@@ -41,8 +42,6 @@
         .fab { position: fixed; bottom: 35px; right: 25px; width: 65px; height: 65px; background: var(--accent); color: white; border-radius: 50%; font-size: 35px; border: none; box-shadow: 0 10px 30px rgba(0,122,255,0.4); z-index: 400; }
         .logo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
         .logo-item { width: 100%; aspect-ratio: 1; background: white; border-radius: 10px; padding: 5px; box-sizing: border-box; }
-
-        .hint-paste { font-size: 12px; color: #888; text-align: center; margin-top: 8px; }
 
         #presenter { position: fixed; inset: 0; background: white; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; color: black; }
     </style>
@@ -80,7 +79,7 @@
                 <button class="btn btn-ghost" onclick="document.getElementById('fileInp').click()">📷 CARICA FOTO</button>
                 <button class="btn btn-ghost" onclick="pasteUrl()">🔗 LINK URL</button>
             </div>
-            <div class="hint-paste">💡 Puoi anche incollare un'immagine copiata (Ctrl+V)</div>
+            <div style="font-size:11px; color:#888; text-align:center; margin-top:10px;">💡 Incolla un'immagine copiata (Ctrl+V)</div>
             
             <input type="file" id="fileInp" style="display:none" accept="image/*" onchange="handleFile(this.files[0])">
 
@@ -105,20 +104,15 @@
     </div>
 
 <script>
-    let cards = JSON.parse(localStorage.getItem('wallet_3d_final')) || [];
+    let cards = JSON.parse(localStorage.getItem('wallet_3d_v4')) || [];
     let curLogo = "", curColor = "#1c1c1e", cropper, html5QrCode, editId = null;
     const thief = new ColorThief();
 
-    // --- FUNZIONE PASTE (INCOLLA DA APPUNTI) ---
+    // --- PASTE LISTENER ---
     window.addEventListener('paste', e => {
         if (document.getElementById('add-ui').style.display !== 'block') return;
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (let item of items) {
-            if (item.type.indexOf("image") !== -1) {
-                const blob = item.getAsFile();
-                handleFile(blob);
-            }
-        }
+        for (let item of items) { if (item.type.indexOf("image") !== -1) handleFile(item.getAsFile()); }
     });
 
     function handleFile(file) {
@@ -137,34 +131,36 @@
     // --- LOGICA UI ---
     function openCreator(id = null) {
         editId = id;
-        const ui = document.getElementById('add-ui');
         if (id !== null) {
-            const card = cards.find(c => c.id === id);
+            const c = cards.find(x => x.id === id);
             document.getElementById('ui-title').innerText = "Modifica Card";
-            document.getElementById('nameInp').value = card.name;
-            document.getElementById('codeInp').value = card.code;
-            curLogo = card.logo; curColor = card.color;
+            document.getElementById('nameInp').value = c.name;
+            document.getElementById('codeInp').value = c.code;
+            curLogo = c.logo; curColor = c.color;
             document.getElementById('logoGrid').innerHTML = `<img src="${curLogo}" class="logo-item" style="border:2px solid var(--accent)">`;
         } else {
             document.getElementById('ui-title').innerText = "Nuova Card";
             document.getElementById('nameInp').value = ""; document.getElementById('codeInp').value = "";
             document.getElementById('logoGrid').innerHTML = ""; curLogo = "";
         }
-        ui.style.display = 'block';
+        document.getElementById('add-ui').style.display = 'block';
     }
 
     function closeCreator() { document.getElementById('add-ui').style.display = 'none'; }
 
     function saveCard() {
-        const name = document.getElementById('nameInp').value;
-        const code = document.getElementById('codeInp').value;
-        if(!name || !code || !curLogo) return alert("Dati incompleti");
+        const name = document.getElementById('nameInp').value.trim();
+        const code = document.getElementById('codeInp').value.trim();
+        if(!name || !code || !curLogo) return alert("Dati mancanti!");
+        
         const cardData = { id: editId || Date.now(), name, code, logo: curLogo, color: curColor };
+        
         if (editId !== null) {
             const idx = cards.findIndex(c => c.id === editId);
             cards[idx] = cardData;
         } else { cards.push(cardData); }
-        localStorage.setItem('wallet_3d_final', JSON.stringify(cards));
+
+        localStorage.setItem('wallet_3d_v4', JSON.stringify(cards));
         location.reload();
     }
 
@@ -175,25 +171,20 @@
         const grid = document.getElementById('logoGrid');
         if(val.length < 2) return;
         const clean = val.toLowerCase().trim().replace(/\s/g, '');
-        const urls = [`https://wsrv.nl/?url=https://logo.clearbit.com/${clean}.it&w=200`];
-        grid.innerHTML = "";
-        urls.forEach(url => {
-            const img = new Image(); img.crossOrigin = "anonymous";
-            img.onload = () => {
-                const el = document.createElement('img');
-                el.src = url; el.className = 'logo-item';
-                el.onclick = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width; canvas.height = img.height;
-                    canvas.getContext('2d').drawImage(img, 0, 0);
-                    curLogo = canvas.toDataURL();
-                    try { curColor = `rgb(${thief.getColor(img).join(',')})`; } catch(e) {}
-                    grid.innerHTML = `<img src="${curLogo}" class="logo-item" style="border-color:var(--accent)">`;
-                };
-                grid.appendChild(el);
+        const url = `https://wsrv.nl/?url=https://logo.clearbit.com/${clean}.it&w=200`;
+        const img = new Image(); img.crossOrigin = "anonymous";
+        img.onload = () => {
+            grid.innerHTML = "";
+            const el = document.createElement('img'); el.src = url; el.className = 'logo-item';
+            el.onclick = () => {
+                const canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height;
+                canvas.getContext('2d').drawImage(img, 0, 0); curLogo = canvas.toDataURL();
+                try { curColor = `rgb(${thief.getColor(img).join(',')})`; } catch(e) {}
+                grid.innerHTML = `<img src="${curLogo}" class="logo-item" style="border-color:var(--accent)">`;
             };
-            img.src = url;
-        });
+            grid.appendChild(el);
+        };
+        img.src = url;
     }
 
     function finalizeCrop() {
@@ -220,41 +211,59 @@
     function stopScanner() { if(html5QrCode) html5QrCode.stop().then(() => document.getElementById('scan-ui').style.display = 'none'); }
 
     function pasteUrl() {
-        const url = prompt("Incolla link:");
+        const url = prompt("Link immagine:");
         if(url) {
             const img = new Image(); img.crossOrigin = "anonymous";
             img.onload = () => {
-                const canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height;
-                canvas.getContext('2d').drawImage(img, 0, 0); curLogo = canvas.toDataURL();
+                const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+                cv.getContext('2d').drawImage(img, 0, 0); curLogo = cv.toDataURL();
                 document.getElementById('logoGrid').innerHTML = `<img src="${curLogo}" class="logo-item">`;
             };
             img.src = `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=400`;
         }
     }
 
+    // --- RENDER (Con Ordinamento Alfabetico) ---
     function render() {
         const wallet = document.getElementById('wallet');
-        wallet.innerHTML = cards.length ? "" : "<p style='text-align:center; opacity:0.4; margin-top:100px;'>Vuoto</p>";
+        
+        // 1. Ordina l'array 'cards' alfabeticamente per nome
+        cards.sort((a, b) => a.name.localeCompare(b.name, undefined, {sensitivity: 'base'}));
+
+        wallet.innerHTML = cards.length ? "" : "<p style='text-align:center; opacity:0.4; margin-top:100px;'>Nessuna tessera salvata</p>";
+        
         cards.forEach((c, i) => {
             const div = document.createElement('div');
-            div.className = 'badge'; div.style.backgroundColor = c.color; div.style.zIndex = i;
+            div.className = 'badge';
+            div.style.backgroundColor = c.color;
+            div.style.zIndex = i; // Z-index dinamico per mantenere lo stack
+            
             div.onclick = () => {
-                document.getElementById('p-logo').src = c.logo; document.getElementById('p-name').innerText = c.name;
-                document.getElementById('p-code').innerText = c.code; document.getElementById('p-bg').style.backgroundColor = c.color;
+                document.getElementById('p-logo').src = c.logo;
+                document.getElementById('p-name').innerText = c.name;
+                document.getElementById('p-code').innerText = c.code;
+                document.getElementById('p-bg').style.backgroundColor = c.color;
                 document.getElementById('presenter').style.display = 'flex';
                 JsBarcode("#p-barcode", c.code, { format: "CODE128", width: 2.5, height: 110, displayValue: false });
             };
+
             div.innerHTML = `
                 <div class="badge-header">
                     <div class="badge-logo"><img src="${c.logo}"></div>
                     <div class="badge-name">${c.name}</div>
                     <div class="action-btns">
                         <button class="btn-icon" onclick="event.stopPropagation(); openCreator(${c.id})">✏️</button>
-                        <button class="btn-icon" onclick="event.stopPropagation(); if(confirm('Elimina?')){cards.splice(${i},1); localStorage.setItem('wallet_3d_final', JSON.stringify(cards)); render();}">🗑️</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); if(confirm('Elimina ${c.name}?')){deleteCard(${c.id});}">🗑️</button>
                     </div>
                 </div>`;
             wallet.appendChild(div);
         });
+    }
+
+    function deleteCard(id) {
+        cards = cards.filter(c => c.id !== id);
+        localStorage.setItem('wallet_3d_v4', JSON.stringify(cards));
+        render();
     }
 
     function exportData() {
@@ -264,7 +273,7 @@
 
     function importData(input) {
         const reader = new FileReader();
-        reader.onload = e => { cards = JSON.parse(e.target.result); localStorage.setItem('wallet_3d_final', JSON.stringify(cards)); render(); };
+        reader.onload = e => { cards = JSON.parse(e.target.result); localStorage.setItem('wallet_3d_v4', JSON.stringify(cards)); render(); };
         reader.readAsText(input.files[0]);
     }
 
