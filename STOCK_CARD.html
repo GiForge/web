@@ -92,7 +92,7 @@
         .logo-preview-box { width: 100%; height: 120px; background: #111; border-radius: 15px; display: flex; align-items: center; justify-content: center; border: 2px dashed #444; margin: 10px 0; }
         .logo-preview-box img { max-height: 90%; max-width: 90%; object-fit: contain; }
 
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
         .btn { padding: 16px; border-radius: 15px; font-weight: 700; border: none; cursor: pointer; width: 100%; transition: 0.2s; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-secondary { background: #3a3a3c; color: white; }
@@ -138,9 +138,12 @@
             <div class="logo-preview-box" id="logoPreview">Anteprima Logo</div>
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="document.getElementById('fileInp').click()">🖼️ FOTO</button>
-                <button class="btn btn-secondary" onclick="pasteUrl()">🔗 URL</button>
+                <button class="btn btn-primary" onclick="pasteImageFromClipboard()">📋 INCOLLA</button>
             </div>
-            <button class="btn btn-secondary" style="margin-top:12px; background:var(--google);" onclick="searchOnGoogle()">🔍 GOOGLE IMAGES</button>
+            <div class="btn-row">
+                <button class="btn btn-secondary" onclick="pasteUrl()">🔗 URL</button>
+                <button class="btn btn-secondary" style="background:var(--google);" onclick="searchOnGoogle()">🔍 GOOGLE</button>
+            </div>
             <input type="file" id="fileInp" style="display:none" accept="image/*" onchange="handleFile(this.files[0])">
         </div>
 
@@ -169,16 +172,31 @@
     let curLogo = "", curColor = "#1c1c1e", cropper, html5QrCode, editId = null;
     const thief = new ColorThief();
 
-    // RIPRISTINATO: Event listener per il paste (incolla immagine)
     window.addEventListener('paste', e => {
         if (document.getElementById('add-ui').style.display !== 'block') return;
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let item of items) { 
-            if (item.type.indexOf("image") !== -1) {
-                handleFile(item.getAsFile()); 
-            }
+            if (item.type.indexOf("image") !== -1) handleFile(item.getAsFile()); 
         }
     });
+
+    async function pasteImageFromClipboard() {
+        try {
+            const clipboardItems = await navigator.clipboard.read();
+            for (const clipboardItem of clipboardItems) {
+                for (const type of clipboardItem.types) {
+                    if (type.startsWith('image/')) {
+                        const blob = await clipboardItem.getType(type);
+                        handleFile(blob);
+                        return;
+                    }
+                }
+            }
+            alert("Nessuna immagine trovata negli appunti.");
+        } catch (err) {
+            alert("Errore nell'accesso agli appunti.");
+        }
+    }
 
     function handleFile(file) {
         if (!file) return;
@@ -240,7 +258,6 @@
     function addLogoOption(rawUrl) {
         const grid = document.getElementById('logoGrid');
         const proxiedUrl = `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&w=128&n=-1`;
-        
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.className = 'logo-item';
@@ -279,7 +296,6 @@
         const name = document.getElementById('nameInp').value.trim();
         const code = document.getElementById('codeInp').value.trim();
         if(!name || !code || !curLogo) return alert("Dati incompleti!");
-        
         const cardData = { id: editId || Date.now(), name, code, logo: curLogo, color: curColor };
         if (editId !== null) {
             const index = cards.findIndex(c => c.id === editId);
@@ -287,7 +303,6 @@
         } else {
             cards.push(cardData);
         }
-
         localStorage.setItem('wallet_xl_v1', JSON.stringify(cards));
         closeCreator();
         render();
@@ -336,10 +351,12 @@
                 document.getElementById('presenter').style.display = 'flex';
                 JsBarcode("#p-barcode", c.code, { format: "CODE128", width: 2.8, height: 120, displayValue: false });
             };
+            
+            // CORRETTO: Logica di eliminazione migliorata
             div.innerHTML = `
                 <div class="action-btns">
                     <button class="btn-icon" onclick="event.stopPropagation(); openCreator(${c.id})">✏️</button>
-                    <button class="btn-icon" onclick="event.stopPropagation(); if(confirm('Eliminare ${c.name.replace(/'/g, "\\'")}?')){deleteCard(${c.id});}">🗑️</button>
+                    <button class="btn-icon" onclick="handleDelete(event, ${c.id})">🗑️</button>
                 </div>
                 <div class="badge-header">
                     <div class="badge-logo"><img src="${c.logo}"></div>
@@ -349,10 +366,14 @@
         });
     }
 
-    function deleteCard(id) {
-        cards = cards.filter(c => c.id !== id);
-        localStorage.setItem('wallet_xl_v1', JSON.stringify(cards));
-        render();
+    function handleDelete(event, id) {
+        event.stopPropagation();
+        const card = cards.find(c => c.id === id);
+        if (confirm(`Sei sicuro di voler eliminare ${card.name}?`)) {
+            cards = cards.filter(c => c.id !== id);
+            localStorage.setItem('wallet_xl_v1', JSON.stringify(cards));
+            render();
+        }
     }
 
     function exportData() {
