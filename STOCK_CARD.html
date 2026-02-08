@@ -62,7 +62,6 @@
             text-shadow: 2px 2px 5px rgba(0,0,0,0.6); 
         }
 
-        /* MODIFICA: Posizionamento pulsanti in alto a destra */
         .action-btns { 
             display: flex; 
             gap: 8px; 
@@ -169,6 +168,17 @@
     let cards = JSON.parse(localStorage.getItem('wallet_xl_v1')) || [];
     let curLogo = "", curColor = "#1c1c1e", cropper, html5QrCode, editId = null;
     const thief = new ColorThief();
+
+    // RIPRISTINATO: Event listener per il paste (incolla immagine)
+    window.addEventListener('paste', e => {
+        if (document.getElementById('add-ui').style.display !== 'block') return;
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let item of items) { 
+            if (item.type.indexOf("image") !== -1) {
+                handleFile(item.getAsFile()); 
+            }
+        }
+    });
 
     function handleFile(file) {
         if (!file) return;
