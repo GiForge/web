@@ -62,8 +62,27 @@
             text-shadow: 2px 2px 5px rgba(0,0,0,0.6); 
         }
 
-        .action-btns { display: flex; gap: 10px; position: absolute; right: 20px; bottom: 80px; z-index: 10; }
-        .btn-icon { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); font-size: 20px; cursor: pointer; padding: 12px; border-radius: 14px; color: white; backdrop-filter: blur(10px); }
+        /* MODIFICA: Posizionamento pulsanti in alto a destra */
+        .action-btns { 
+            display: flex; 
+            gap: 8px; 
+            position: absolute; 
+            right: 15px; 
+            top: 15px; 
+            z-index: 10; 
+        }
+        .btn-icon { 
+            background: rgba(0,0,0,0.4); 
+            border: 1px solid rgba(255,255,255,0.15); 
+            font-size: 16px; 
+            cursor: pointer; 
+            padding: 8px; 
+            border-radius: 12px; 
+            color: white; 
+            backdrop-filter: blur(15px); 
+            transition: 0.2s;
+        }
+        .btn-icon:active { background: var(--accent); transform: scale(0.9); }
 
         .overlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; padding: 20px; overflow-y: auto; }
         .wizard-section { background: var(--card); padding: 20px; border-radius: 25px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.08); }
@@ -151,12 +170,6 @@
     let curLogo = "", curColor = "#1c1c1e", cropper, html5QrCode, editId = null;
     const thief = new ColorThief();
 
-    window.addEventListener('paste', e => {
-        if (document.getElementById('add-ui').style.display !== 'block') return;
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (let item of items) { if (item.type.indexOf("image") !== -1) handleFile(item.getAsFile()); }
-    });
-
     function handleFile(file) {
         if (!file) return;
         const reader = new FileReader();
@@ -224,7 +237,6 @@
         img.onload = () => {
             if (img.naturalWidth <= 16) return;
             img.onclick = () => {
-                // CORREZIONE: naturalWidth/Height per mantenere l'immagine intera
                 const canvas = document.createElement('canvas');
                 canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
                 canvas.getContext('2d').drawImage(img, 0, 0);
@@ -315,13 +327,13 @@
                 JsBarcode("#p-barcode", c.code, { format: "CODE128", width: 2.8, height: 120, displayValue: false });
             };
             div.innerHTML = `
-                <div class="badge-header">
-                    <div class="badge-logo"><img src="${c.logo}"></div>
-                    <div class="badge-name">${c.name}</div>
-                </div>
                 <div class="action-btns">
                     <button class="btn-icon" onclick="event.stopPropagation(); openCreator(${c.id})">✏️</button>
                     <button class="btn-icon" onclick="event.stopPropagation(); if(confirm('Eliminare ${c.name.replace(/'/g, "\\'")}?')){deleteCard(${c.id});}">🗑️</button>
+                </div>
+                <div class="badge-header">
+                    <div class="badge-logo"><img src="${c.logo}"></div>
+                    <div class="badge-name">${c.name}</div>
                 </div>`;
             wallet.appendChild(div);
         });
