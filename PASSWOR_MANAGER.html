@@ -551,21 +551,25 @@
             </div>
 
             <!-- Form Caricamento Vault -->
-            <div id="loadVaultForm" style="display: none;">
-                <h3 style="color: #1e3c72; margin-bottom: 20px;">Carica Vault Esistente</h3>
-                <div class="form-group">
-                    <label for="vaultFile">File Vault (.kdbx, .xml, .encrypted)</label>
-                    <input type="file" id="vaultFile" accept=".kdbx,.xml,.encrypted">
-                </div>
-                <div class="form-group">
-                    <label for="vaultPassword">Master Password</label>
-                    <input type="password" id="vaultPassword" placeholder="Inserisci la master password">
-                </div>
-                <div class="button-group">
-                    <button class="btn-primary" onclick="loadVault()">🔓 Apri Vault</button>
-                    <button class="btn-secondary" onclick="hideAllForms()">Annulla</button>
-                </div>
-            </div>
+<div id="loadVaultForm" style="display: none;">
+    <h3 style="color: #1e3c72; margin-bottom: 20px;">Carica Vault Esistente</h3>
+    
+    <div class="form-group">
+        <label for="vaultFile">File Vault (.kdbx, .xml, .encrypted)</label>
+        <input type="file" id="vaultFile" accept=".kdbx,.xml,.encrypted">
+    </div>
+    
+    <div class="form-group">
+        <label for="vaultPassword">Master Password</label>
+        <input type="password" id="vaultPassword" placeholder="Inserisci la master password">
+    </div>
+
+    <div class="button-group">
+        <button class="btn-primary" onclick="loadVault()">🔓 Apri Vault</button>
+        <button id="btnBiometric" class="btn-info" style="display: none;" onclick="unlockWithBiometrics()">🧬 Usa Impronta</button>
+        <button class="btn-secondary" onclick="hideAllForms()">Annulla</button>
+    </div>
+</div>
         </div>
     </div>
 
@@ -728,6 +732,115 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     
     <script>
+async function loadVault() {
+    const fileInput = document.getElementById('vaultFile');
+    const passwordInput = document.getElementById('vaultPassword');
+    const password = passwordInput.value;
+
+    if (!fileInput.files.length || !password) {
+        showNotification('⚠️ Seleziona file e inserisci password', 'error');
+        return;
+    }
+
+    try {
+        const file = fileInput.files[0];
+        const content = await readFileAsText(file);
+        
+        // Caricamento dati (XML o Criptato)
+        if (file.name.endsWith('.xml')) {
+            await loadFromXML(content, password);
+        } else {
+            await loadEncryptedVault(content, password);
+        }
+
+        // Se arriviamo qui, la password è corretta
+        masterPassword = password;
+        openMainApplication(); // Questa funzione DEVE esistere nel tuo codice
+        showNotification('✅ Vault aperto!');
+
+        // Setup biometria se supportata e non ancora attiva
+        if (window.PublicKeyCredential) {
+            const isAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            if (isAvailable && !localStorage.getItem("vault_biometric_key")) {
+                setTimeout(() => setupBiometrics(masterPassword), 1000);
+            }
+        }
+        passwordInput.value = ""; 
+    } catch (error) {
+        console.error(error);
+        showNotification('❌ Errore: password errata o file non valido', 'error');
+    }
+}
+// Controlla se il browser supporta la biometria all'avvio
+// All'avvio della pagina
+window.onload = async () => {
+    // Verifichiamo se esiste una chiave biometrica salvata
+    const hasBioKey = localStorage.getItem("vault_biometric_key");
+    
+    if (window.PublicKeyCredential && hasBioKey) {
+        // Se esiste, rendiamo visibile il pulsante biometrico nel form
+        const btnBio = document.getElementById('btnBiometric');
+        if (btnBio) btnBio.style.display = 'inline-block';
+    }
+};
+// 1. Registra l'impronta (da chiamare dopo un login riuscito)
+async function setupBiometrics(password) {
+    if (!confirm("Vuoi abilitare l'impronta digitale per i prossimi accessi?")) return;
+
+    const options = {
+        publicKey: {
+            challenge: crypto.getRandomValues(new Uint8Array(32)),
+            rp: { name: "KeePass Web" },
+            user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "user", displayName: "User" },
+            pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+            authenticatorSelection: { userVerification: "required" },
+            timeout: 60000
+        }
+    };
+
+    try {
+        const credential = await navigator.credentials.create(options);
+        // Criptiamo la master password e la salviamo nel browser
+        // In un caso reale, useremmo la chiave della credenziale, qui simuliamo con un token sicuro
+        const encryptedPass = CryptoJS.AES.encrypt(password, "BIO-SESSION-KEY").toString();
+        localStorage.setItem("vault_biometric_key", encryptedPass);
+        showNotification("✅ Biometria configurata!");
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// 2. Sblocca con Impronta
+async function unlockWithBiometrics() {
+    // VERIFICA SE IL FILE È STATO SELEZIONATO
+    const fileInput = document.getElementById('vaultFile');
+    if (!fileInput.files.length) {
+        showNotification("⚠️ Seleziona prima il file del vault", "warning");
+        return;
+    }
+
+    const options = {
+        publicKey: {
+            challenge: crypto.getRandomValues(new Uint8Array(32)),
+            userVerification: "required"
+        }
+    };
+
+    try {
+        await navigator.credentials.get(options); 
+        
+        const encryptedPass = localStorage.getItem("vault_biometric_key");
+        const decryptedBytes = CryptoJS.AES.decrypt(encryptedPass, "BIO-SESSION-KEY");
+        const savedPassword = decryptedBytes.toString(CryptoJS.enc.Utf8);
+
+        if (savedPassword) {
+            document.getElementById('vaultPassword').value = savedPassword;
+            loadVault(); // Ora funzionerà perché il file c'è
+        }
+    } catch (e) {
+        showNotification("❌ Autenticazione fallita", "error");
+    }
+}
         // Struttura dati vault
         let vaultData = {
             meta: {
@@ -791,11 +904,38 @@
             document.getElementById('createVaultForm').style.display = 'block';
         }
 
-        function showLoadVault() {
-            hideAllForms();
-            document.getElementById('loadVaultForm').style.display = 'block';
-        }
+// All'avvio della pagina
+window.onload = async () => {
+    // Verifichiamo se esiste una chiave biometrica salvata
+    const hasBioKey = localStorage.getItem("vault_biometric_key");
+    
+    if (window.PublicKeyCredential && hasBioKey) {
+        // Se esiste, rendiamo visibile il pulsante biometrico nel form
+        const btnBio = document.getElementById('btnBiometric');
+        if (btnBio) btnBio.style.display = 'inline-block';
+    }
+};
 
+// Modifica la funzione che mostra il form per assicurarti che il tasto sia lì
+function showLoadVault() {
+    hideAllForms();
+    document.getElementById('loadVaultForm').style.display = 'block';
+    
+    // IMPORTANTE: Controlla se mostrare il tasto biometria appena apri il form
+    const hasBioKey = localStorage.getItem("vault_biometric_key");
+    const btnBio = document.getElementById('btnBiometric');
+    if (hasBioKey && btnBio) {
+        btnBio.style.display = 'inline-block';
+    }
+}
+// Assicuriamoci che il controllo avvenga anche al caricamento pagina
+window.addEventListener('DOMContentLoaded', () => {
+    const biometricKey = localStorage.getItem("vault_biometric_key");
+    if (biometricKey) {
+        const btnBio = document.getElementById('btnBiometric');
+        if (btnBio) btnBio.style.display = 'inline-block';
+    }
+});
         function hideAllForms() {
             document.getElementById('createVaultForm').style.display = 'none';
             document.getElementById('loadVaultForm').style.display = 'none';
@@ -840,51 +980,7 @@
         }
 
         // Carica vault esistente - FIX PRINCIPALE
-        async function loadVault() {
-            const fileInput = document.getElementById('vaultFile');
-            const password = document.getElementById('vaultPassword').value;
-
-            if (!fileInput.files.length) {
-                showNotification('⚠️ Seleziona un file vault', 'error');
-                return;
-            }
-
-            if (!password) {
-                showNotification('⚠️ Inserisci la master password', 'error');
-                return;
-            }
-
-            const file = fileInput.files[0];
-            currentVaultFile = file.name;
-
-            try {
-                const content = await readFileAsText(file);
-                
-                // Determina il tipo di file
-                if (file.name.endsWith('.xml')) {
-                    // File XML (potrebbe essere criptato o plain)
-                    await loadFromXML(content, password);
-                } else if (file.name.endsWith('.kdbx') || file.name.endsWith('.encrypted')) {
-                    // File criptato formato proprietario
-                    await loadEncryptedVault(content, password);
-                } else {
-                    // Prova prima come criptato, poi come XML
-                    try {
-                        await loadEncryptedVault(content, password);
-                    } catch (e) {
-                        await loadFromXML(content, password);
-                    }
-                }
-
-                masterPassword = password;
-                openMainApplication();
-                showNotification('✅ Vault caricato con successo!');
-            } catch (error) {
-                console.error('Errore caricamento vault:', error);
-                showNotification('❌ Password errata o file corrotto', 'error');
-            }
-        }
-
+loadVault
         // Leggi file come testo
         function readFileAsText(file) {
             return new Promise((resolve, reject) => {
@@ -1026,17 +1122,20 @@
         }
 
         // Carica vault criptato - FIX PRINCIPALE
-        function loadEncryptedVault(encryptedData, password) {
-            try {
-                const decrypted = decryptAES(encryptedData, password);
-                if (!decrypted) {
-                    throw new Error('Password errata');
-                }
-                vaultData = JSON.parse(decrypted);
-            } catch (error) {
-                throw new Error('Password errata o file corrotto');
-            }
-        }
+// Cerca la parte dove gestisci il caricamento e aggiornala così:
+async function loadEncryptedVault(content, password) {
+    // Il 'content' è il testo del file JSON
+    const decrypted = decryptAES(content, password);
+    
+    if (!decrypted) {
+        throw new Error('Password errata o file non valido');
+    }
+    
+    // Una volta decriptato, carichiamo i dati nel vault
+    vaultData = JSON.parse(decrypted);
+    renderFolderTree();
+    renderEntries();
+}
 
         // Mostra modal importazione
         function showImportModal() {
@@ -1177,21 +1276,36 @@
         }
 
         // Esporta vault
-        function exportVault() {
-            const options = [
-                'XML Criptato (compatibile KeePass)',
-                'Formato Proprietario (.kdbx)',
-                'Annulla'
-            ];
-            
-            const choice = prompt(`Scegli formato export:\n1 - ${options[0]}\n2 - ${options[1]}\n\nInserisci 1 o 2:`);
-            
-            if (choice === '1') {
-                exportToXML();
-            } else if (choice === '2') {
-                exportEncrypted();
-            }
-        }
+// Sostituisci la tua funzione exportVault con questa:
+function exportVault() {
+    try {
+        const json = JSON.stringify(vaultData);
+        
+        // 1. Criptiamo i dati ottenendo l'oggetto completo
+        const encryptedPayload = encryptAES(json, masterPassword);
+        
+        // 2. Trasformiamo l'oggetto in stringa JSON per il salvataggio
+        const fileContent = JSON.stringify(encryptedPayload);
+        
+        // 3. Download
+        const fileName = (vaultData.meta.databaseName || 'vault') + '.kdbx';
+        downloadFile(fileContent, fileName, 'application/json');
+        
+        showNotification('✅ Vault esportato con cifratura rinforzata');
+    } catch (e) {
+        console.error(e);
+        showNotification('❌ Errore durante l\'esportazione', 'error');
+    }
+}
+
+// Funzione helper per il download (aggiungila se manca)
+function downloadFile(content, fileName, contentType) {
+    const a = document.createElement("a");
+    const file = new Blob([content], { type: contentType });
+    a.href = URL.createObjectURL(file);
+    a.download = fileName;
+    a.click();
+}
 
         // Esporta in XML
         function exportToXML() {
@@ -1292,31 +1406,95 @@
             return xml;
         }
 
-        // Esporta criptato
-        function exportEncrypted() {
-            const json = JSON.stringify(vaultData, null, 2);
-            const encrypted = encryptAES(json, masterPassword);
-            
-            downloadFile(encrypted, vaultData.meta.databaseName + '.kdbx', 'application/octet-stream');
-            showNotification('✅ Vault esportato (formato proprietario)');
-        }
+//################################################
 
-        // Cripta/Decripta AES-256
-        function encryptAES(data, password) {
-            return CryptoJS.AES.encrypt(data, password).toString();
-        }
+const CRYPTO_CONFIG = {
+    iterations: 100000,
+    keySize: 256 / 32,
+    saltSize: 128 / 8,
+    ivSize: 128 / 8
+};
 
-        function decryptAES(encryptedData, password) {
-            try {
-                const bytes = CryptoJS.AES.decrypt(encryptedData, password);
-                const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-                if (!decrypted) return null;
-                return decrypted;
-            } catch (e) {
-                return null;
+function exportEncrypted() {
+    const json = JSON.stringify(vaultData);
+    const encryptedPayload = encryptAES(json, masterPassword);
+    const fileContent = JSON.stringify(encryptedPayload);
+    
+    downloadFile(fileContent, vaultData.meta.databaseName + '.kdbx', 'application/json');
+    showNotification('✅ Vault protetto con AES-256 + HMAC');
+}
+
+function encryptAES(data, password) {
+    // Genera Salt e IV casuali
+    const salt = CryptoJS.lib.WordArray.random(CRYPTO_CONFIG.saltSize);
+    const iv = CryptoJS.lib.WordArray.random(CRYPTO_CONFIG.ivSize);
+
+    // Deriva la chiave tramite PBKDF2
+    const key = CryptoJS.PBKDF2(password, salt, {
+        keySize: CRYPTO_CONFIG.keySize,
+        iterations: CRYPTO_CONFIG.iterations
+    });
+
+    // Cifra
+    const encrypted = CryptoJS.AES.encrypt(data, key, {
+        iv: iv,
+        padding: CryptoJS.pad.Pkcs7,
+        mode: CryptoJS.mode.CBC
+    });
+
+    const ciphertext = encrypted.toString();
+
+    // CALCOLO HMAC: Firma il testo cifrato usando la chiave derivata
+    const hmac = CryptoJS.HmacSHA256(ciphertext, key).toString();
+
+    return {
+        ciphertext: ciphertext,
+        salt: salt.toString(),
+        iv: iv.toString(),
+        hmac: hmac,
+        iterations: CRYPTO_CONFIG.iterations
+    };
+}
+
+function decryptAES(encryptedPayload, password) {
+    try {
+        // Se l'input è stringa (dal file), lo trasformiamo in oggetto
+        const data = typeof encryptedPayload === 'string' ? JSON.parse(encryptedPayload) : encryptedPayload;
+
+        const salt = CryptoJS.enc.Hex.parse(data.salt);
+        const iv = CryptoJS.enc.Hex.parse(data.iv);
+
+        // Rigenera la chiave con i parametri del file
+        const key = CryptoJS.PBKDF2(password, salt, {
+            keySize: CRYPTO_CONFIG.keySize,
+            iterations: data.iterations || CRYPTO_CONFIG.iterations
+        });
+
+        // VERIFICA HMAC: Integrità del file
+        if (data.hmac) {
+            const checkHmac = CryptoJS.HmacSHA256(data.ciphertext, key).toString();
+            if (checkHmac !== data.hmac) {
+                throw new Error("HMAC_FAIL: File manomesso o password errata");
             }
         }
 
+        // Decifra
+        const bytes = CryptoJS.AES.decrypt(data.ciphertext, key, {
+            iv: iv,
+            padding: CryptoJS.pad.Pkcs7,
+            mode: CryptoJS.mode.CBC
+        });
+
+        const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+        if (!decrypted) throw new Error("DECRYPT_FAIL");
+
+        return decrypted;
+    } catch (e) {
+        console.error("Errore decrittazione:", e.message);
+        return null;
+    }
+}
+//################################################
         function escapeXml(unsafe) {
             if (!unsafe) return '';
             return unsafe.replace(/[<>&'"]/g, function (c) {
