@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tetris Mobile Fullscreen</title>
+    <title>Tetris Pro Controller</title>
     <style>
         :root {
-            --bg-color: #050505;
+            --bg-color: #0a0a0a;
             --accent-color: #00f2ff;
-            --btn-bg: #1a1a1a;
+            --joy-bg: rgba(255, 255, 255, 0.1);
+            --btn-active: #00f2ff;
         }
 
         body {
@@ -19,147 +20,186 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-evenly;
             height: 100vh;
             width: 100vw;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: sans-serif;
             overflow: hidden;
             touch-action: none;
         }
 
-        #main-wrapper {
+        /* Schermo di gioco */
+        #game-screen {
             display: flex;
-            flex-direction: row;
-            gap: 15px;
-            align-items: flex-start;
-            max-width: 95vw;
-        }
-
-        @media (max-width: 600px) {
-            #main-wrapper {
-                flex-direction: column;
-                align-items: center;
-            }
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            width: 100%;
+            position: relative;
         }
 
         #canvas-container {
             position: relative;
-            border: 4px solid #333;
+            border: 3px solid #333;
+            background: #000;
         }
 
         canvas {
-            display: block;
-            background: #000;
-            max-height: 55vh; /* Ridotto leggermente per far spazio ai tasti */
+            max-height: 50vh;
             width: auto;
+            display: block;
         }
 
-        #side-panel {
+        /* Pannello Info sopra i controlli */
+        #status-bar {
+            width: 100%;
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-width: 100px;
-        }
-
-        @media (max-width: 600px) {
-            #side-panel { flex-direction: row; width: 100%; justify-content: center; }
-            .info-box h3 { display: none; }
-        }
-
-        .info-box {
+            justify-content: space-around;
+            padding: 10px 0;
             background: #111;
-            padding: 10px;
-            border: 1px solid #333;
-            text-align: center;
+            border-bottom: 1px solid #333;
         }
 
-        .info-box h3 { margin: 0; font-size: 10px; color: var(--accent-color); }
-        .info-value { font-size: 20px; font-weight: bold; }
+        .stat-item { text-align: center; }
+        .stat-label { font-size: 10px; color: var(--accent-color); display: block; }
+        .stat-value { font-size: 18px; font-weight: bold; }
 
-        #next-canvas { width: 50px; height: 50px; }
+        /* JOYPAD LAYOUT */
+        #joypad {
+            width: 100%;
+            height: 35vh;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            background: #151515;
+            border-top: 2px solid #333;
+        }
 
-        /* Controlli Touch */
-        #controls {
+        /* D-PAD (Sinistra) */
+        #d-pad {
             display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4 colonne per far stare FS e Pausa */
-            grid-template-rows: auto auto;
-            gap: 8px;
-            width: 95vw;
-            max-width: 450px;
-            padding: 5px;
+            grid-template-columns: repeat(3, 55px);
+            grid-template-rows: repeat(3, 55px);
+            gap: 2px;
         }
 
-        .btn {
-            background: var(--btn-bg);
-            border: 1px solid #444;
-            border-radius: 10px;
+        /* Pulsanti Azione (Destra) */
+        #action-buttons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .joy-btn {
+            background: var(--joy-bg);
+            border: 2px solid #444;
             color: white;
-            font-size: 22px;
-            padding: 12px 0;
             display: flex;
             align-items: center;
             justify-content: center;
             user-select: none;
+            border-radius: 10px;
             -webkit-tap-highlight-color: transparent;
+            font-weight: bold;
         }
 
-        .btn:active {
-            background: var(--accent-color);
+        .joy-btn:active {
+            background: var(--btn-active);
             color: black;
+            border-color: white;
         }
 
-        #btn-space { grid-column: span 4; font-size: 16px; background: #222; }
-        .small-btn { font-size: 14px; font-weight: bold; }
+        /* Specifiche D-PAD */
+        #btn-up { grid-column: 2; grid-row: 1; opacity: 0.3; } /* Inutilizzato o per debug */
+        #btn-left { grid-column: 1; grid-row: 2; font-size: 24px; }
+        #btn-right { grid-column: 3; grid-row: 2; font-size: 24px; }
+        #btn-down { grid-column: 2; grid-row: 2; font-size: 24px; }
+
+        /* Specifiche Azioni */
+        .circle-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        #btn-rotate { background: #333; border-color: var(--accent-color); font-size: 20px; }
+        #btn-drop { background: #442222; border-color: #ff4444; }
+
+        /* Utility Buttons */
+        #meta-controls {
+            position: absolute;
+            top: 70px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .meta-btn {
+            padding: 8px;
+            font-size: 12px;
+            background: #222;
+            border: 1px solid #444;
+            color: #aaa;
+        }
 
         #game-over {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.9);
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #ff3333;
             z-index: 100;
         }
     </style>
 </head>
 <body>
 
-    <div id="main-wrapper">
-        <div id="canvas-container">
-            <canvas id="tetris" width="300" height="600"></canvas>
-            <div id="game-over">
-                <h2>GAME OVER</h2>
-                <p style="color:white">Tocca DROP per riprovare</p>
-            </div>
+    <div id="status-bar">
+        <div class="stat-item">
+            <span class="stat-label">SCORE</span>
+            <span id="score" class="stat-value">0</span>
         </div>
-
-        <div id="side-panel">
-            <div class="info-box">
-                <h3>Next</h3>
-                <canvas id="next-canvas" width="100" height="100"></canvas>
-            </div>
-            <div class="info-box">
-                <h3>Score</h3>
-                <div id="score" class="info-value">0</div>
-            </div>
-            <div class="info-box">
-                <h3>Level</h3>
-                <div id="level" class="info-value">1</div>
-            </div>
+        <div class="stat-item">
+            <span class="stat-label">NEXT</span>
+            <canvas id="next-canvas" width="40" height="40" style="background:#000; border:1px solid #333;"></canvas>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">LEVEL</span>
+            <span id="level" class="stat-value">1</span>
         </div>
     </div>
 
-    <div id="controls">
-        <div class="btn" id="btn-left">←</div>
-        <div class="btn" id="btn-rotate">↻</div>
-        <div class="btn" id="btn-right">→</div>
-        <div class="btn" id="btn-down">↓</div>
-        
-        <div class="btn small-btn" id="btn-pause">PAUSE</div>
-        <div class="btn small-btn" id="btn-fs" style="color: #0f0;">FULL</div>
-        <div class="btn" id="btn-space" style="grid-column: span 2;">DROP</div>
+    <div id="game-screen">
+        <div id="canvas-container">
+            <canvas id="tetris" width="300" height="600"></canvas>
+            <div id="game-over">
+                <h2 style="color:red">GAME OVER</h2>
+                <button onclick="initGame()" style="padding:10px 20px">RESTART</button>
+            </div>
+        </div>
+
+        <div id="meta-controls">
+            <button class="joy-btn meta-btn" id="btn-fs">FULLSCREEN</button>
+            <button class="joy-btn meta-btn" id="btn-pause">PAUSE</button>
+        </div>
+    </div>
+
+    <div id="joypad">
+        <div id="d-pad">
+            <div class="joy-btn" id="btn-left">←</div>
+            <div class="joy-btn" id="btn-down">↓</div>
+            <div class="joy-btn" id="btn-right">→</div>
+        </div>
+
+        <div id="action-buttons">
+            <div class="joy-btn circle-btn" id="btn-rotate">ROTATE</div>
+            <div class="joy-btn circle-btn" id="btn-drop">HARD<br>DROP</div>
+        </div>
     </div>
 
     <script>
@@ -168,17 +208,14 @@
         const nextCanvas = document.getElementById('next-canvas');
         const nextCtx = nextCanvas.getContext('2d');
         
-        const COLS = 10;
-        const ROWS = 20;
-        const BLOCK_SIZE = 30;
+        const COLS = 10; const ROWS = 20; const BLOCK_SIZE = 30;
         const COLORS = [null, '#00F0F0', '#0000F0', '#F0A000', '#F0F000', '#00F000', '#A000F0', '#F00000'];
         const SHAPES = [
             [[1, 1, 1, 1]], [[2, 0, 0], [2, 2, 2]], [[0, 0, 3], [3, 3, 3]],
             [[4, 4], [4, 4]], [[0, 5, 5], [5, 5, 0]], [[0, 6, 0], [6, 6, 6]], [[7, 7, 0], [0, 7, 7]]
         ];
 
-        let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
-        let currentPiece, nextPiece, score, level, lines, gameOver, paused, dropCounter, dropInterval, lastTime;
+        let board, currentPiece, nextPiece, score, level, lines, gameOver, paused, dropCounter, dropInterval, lastTime;
 
         class Piece {
             constructor(shape) {
@@ -227,29 +264,32 @@
             drawNext();
         }
 
-        function drawBlock(c, x, y, color) {
+        function drawBlock(c, x, y, color, size = BLOCK_SIZE) {
             c.fillStyle = color;
-            c.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            c.fillRect(x * size, y * size, size, size);
             c.strokeStyle = 'rgba(0,0,0,0.3)';
-            c.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            c.strokeRect(x * size, y * size, size, size);
         }
 
         function draw() {
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             board.forEach((row, y) => row.forEach((val, x) => { if(val) drawBlock(ctx, x, y, COLORS[val]); }));
-            currentPiece.shape.forEach((row, y) => row.forEach((val, x) => {
-                if(val) drawBlock(ctx, currentPiece.x + x, currentPiece.y + y, COLORS[val]);
-            }));
+            if(currentPiece) {
+                currentPiece.shape.forEach((row, y) => row.forEach((val, x) => {
+                    if(val) drawBlock(ctx, currentPiece.x + x, currentPiece.y + y, COLORS[val]);
+                }));
+            }
         }
 
         function drawNext() {
-            nextCtx.fillStyle = '#111';
+            nextCtx.fillStyle = '#000';
             nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
-            const ox = (nextCanvas.width/BLOCK_SIZE - nextPiece.shape[0].length)/2;
-            const oy = (nextCanvas.height/BLOCK_SIZE - nextPiece.shape.length)/2;
+            const size = 10;
+            const ox = (nextCanvas.width/size - nextPiece.shape[0].length)/2;
+            const oy = (nextCanvas.height/size - nextPiece.shape.length)/2;
             nextPiece.shape.forEach((row, y) => row.forEach((val, x) => {
-                if(val) drawBlock(nextCtx, ox + x, oy + y, COLORS[val]);
+                if(val) drawBlock(nextCtx, ox + x, oy + y, COLORS[val], size);
             }));
         }
 
@@ -298,58 +338,38 @@
             requestAnimationFrame(update);
         }
 
-        // Funzione Fullscreen
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen();
-                } else if (document.documentElement.webkitRequestFullscreen) { /* Safari/iOS */
-                    document.documentElement.webkitRequestFullscreen();
-                } else if (document.documentElement.msRequestFullscreen) {
-                    document.documentElement.msRequestFullscreen();
-                }
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-            }
-        }
-
         function handleInput(action) {
-            if (action === 'fullscreen') { toggleFullscreen(); return; }
-            if (gameOver && action === 'drop') { initGame(); return; }
+            if (action === 'fs') { 
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>console.log(e));
+                else document.exitFullscreen();
+                return;
+            }
             if (gameOver) return;
             if (action === 'pause') { paused = !paused; return; }
             if (paused) return;
 
-            if (action === 'left') { currentPiece.x--; if(currentPiece.collides()) currentPiece.x++; }
-            if (action === 'right') { currentPiece.x++; if(currentPiece.collides()) currentPiece.x--; }
-            if (action === 'down') moveDown();
-            if (action === 'rotate') currentPiece.rotate();
-            if (action === 'drop') {
-                while(!currentPiece.collides()) currentPiece.y++;
-                currentPiece.y--;
-                moveDown();
+            switch(action) {
+                case 'left': currentPiece.x--; if(currentPiece.collides()) currentPiece.x++; break;
+                case 'right': currentPiece.x++; if(currentPiece.collides()) currentPiece.x--; break;
+                case 'down': moveDown(); break;
+                case 'rotate': currentPiece.rotate(); break;
+                case 'drop': 
+                    while(!currentPiece.collides()) currentPiece.y++;
+                    currentPiece.y--; moveDown(); break;
             }
         }
 
-        // Eventi Input
+        // Binding Controlli
         const btnMap = {
             'btn-left': 'left', 'btn-right': 'right', 'btn-down': 'down',
-            'btn-rotate': 'rotate', 'btn-pause': 'pause', 'btn-space': 'drop',
-            'btn-fs': 'fullscreen'
+            'btn-rotate': 'rotate', 'btn-drop': 'drop', 'btn-pause': 'pause', 'btn-fs': 'fs'
         };
 
         Object.keys(btnMap).forEach(id => {
             const el = document.getElementById(id);
-            el.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                handleInput(btnMap[id]);
-            }, {passive: false});
-            el.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                handleInput(btnMap[id]);
-            });
+            const trigger = (e) => { e.preventDefault(); handleInput(btnMap[id]); };
+            el.addEventListener('touchstart', trigger, {passive: false});
+            el.addEventListener('mousedown', trigger);
         });
 
         window.addEventListener('keydown', e => {
