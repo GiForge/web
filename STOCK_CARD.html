@@ -104,6 +104,8 @@
         .fab { position: fixed; bottom: 35px; right: 25px; width: 70px; height: 70px; background: var(--accent); color: white; border-radius: 50%; font-size: 40px; border: none; box-shadow: 0 15px 35px rgba(0,122,255,0.5); z-index: 400; }
         
         #presenter { position: fixed; inset: 0; background: white; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; color: black; }
+        #p-qr-area { display: none; margin-bottom: 10px; }
+        .format-badge { font-size: 10px; color: #888; text-transform: uppercase; margin-top: 10px; font-weight: bold; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -150,6 +152,7 @@
         <div class="wizard-section">
             <span class="step-tag">3. CODICE</span>
             <input type="text" id="codeInp" placeholder="Codice tessera">
+            <input type="hidden" id="formatInp">
             <button class="btn btn-primary" style="background:#34c759;" onclick="startScanner()">📷 SCANSIONA</button>
         </div>
 
@@ -163,8 +166,14 @@
         <div id="p-bg" style="position:absolute; top:0; width:100%; height:280px; z-index:-1;"></div>
         <div style="background:white; padding:20px; border-radius:25px; box-shadow:0 15px 40px rgba(0,0,0,0.1); margin-bottom:20px;"><img id="p-logo" style="max-width:200px; max-height:100px; object-fit:contain;"></div>
         <h2 id="p-name" style="margin-bottom:30px; font-size:28px; font-weight:800;"></h2>
-        <svg id="p-barcode"></svg>
+        
+        <div id="p-code-area">
+            <svg id="p-barcode"></svg>
+            <div id="p-qr-area"></div>
+        </div>
+
         <div id="p-code" style="font-family:monospace; margin-top:20px; letter-spacing:8px; font-size:1.4rem; font-weight:bold;"></div>
+        <div id="p-format-label" class="format-badge"></div>
     </div>
 
 <script>
@@ -219,12 +228,14 @@
             document.getElementById('ui-title').innerText = "Modifica Card";
             document.getElementById('nameInp').value = c.name;
             document.getElementById('codeInp').value = c.code;
+            document.getElementById('formatInp').value = c.format || "";
             curLogo = c.logo; curColor = c.color;
             updatePreview(curLogo);
         } else {
             document.getElementById('ui-title').innerText = "Nuova Card";
             document.getElementById('nameInp').value = ""; 
             document.getElementById('codeInp').value = "";
+            document.getElementById('formatInp').value = "";
             document.getElementById('logoPreview').innerHTML = "Anteprima Logo"; 
             curLogo = "";
             document.getElementById('logoGrid').innerHTML = "";
@@ -295,8 +306,9 @@
     function saveCard() {
         const name = document.getElementById('nameInp').value.trim();
         const code = document.getElementById('codeInp').value.trim();
+        const format = document.getElementById('formatInp').value;
         if(!name || !code || !curLogo) return alert("Dati incompleti!");
-        const cardData = { id: editId || Date.now(), name, code, logo: curLogo, color: curColor };
+        const cardData = { id: editId || Date.now(), name, code, format, logo: curLogo, color: curColor };
         if (editId !== null) {
             const index = cards.findIndex(c => c.id === editId);
             cards[index] = cardData;
@@ -308,13 +320,20 @@
         render();
     }
 
+    // PATCH: Scanner intelligente che rileva il formato
     function startScanner() {
         document.getElementById('scan-ui').style.display = 'block';
         html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (txt) => {
-            document.getElementById('codeInp').value = txt;
-            stopScanner();
-        });
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 20, qrbox: {width: 250, height: 150} }, 
+            (txt, result) => {
+                document.getElementById('codeInp').value = txt;
+                // Salvataggio dello standard rilevato (es. EAN_13, QR_CODE)
+                document.getElementById('formatInp').value = result.result.format.formatName;
+                stopScanner();
+            }
+        ).catch(err => alert("Errore fotocamera: " + err));
     }
 
     function stopScanner() { if(html5QrCode) html5QrCode.stop().then(() => document.getElementById('scan-ui').style.display = 'none'); }
@@ -335,7 +354,6 @@
 
 function render() {
     const wallet = document.getElementById('wallet');
-    // Ordina le tessere alfabeticamente
     cards.sort((a, b) => a.name.localeCompare(b.name));
     wallet.innerHTML = cards.length ? "" : "<p style='text-align:center; opacity:0.3; margin-top:100px;'>Nessuna tessera</p>";
     
@@ -346,50 +364,68 @@ function render() {
         div.style.zIndex = i;
         
         div.onclick = () => {
+            const barcodeSvg = document.getElementById('p-barcode');
+            const qrArea = document.getElementById('p-qr-area');
+            const formatLabel = document.getElementById('p-format-label');
+            
             document.getElementById('p-logo').src = c.logo;
             document.getElementById('p-name').innerText = c.name;
             document.getElementById('p-code').innerText = c.code;
             document.getElementById('p-bg').style.backgroundColor = c.color;
             document.getElementById('presenter').style.display = 'flex';
+            
+            // Reset aree
+            barcodeSvg.style.display = "none";
+            qrArea.style.display = "none";
+            qrArea.innerHTML = "";
 
-            // PULIZIA E IDENTIFICAZIONE FORMATO
             let cleanCode = c.code.trim();
-            let formatStr = "CODE128"; // Standard generico
+            let detectedFormat = c.format || "";
+            formatLabel.innerText = "Standard: " + (detectedFormat || "Auto-detect");
 
-            // Controllo se il codice è puramente numerico
-            if (/^\d+$/.test(cleanCode)) {
-                // Se ha 12 o 13 cifre, è lo standard dei supermercati (EAN13/UPC)
-                if (cleanCode.length === 13 || cleanCode.length === 12) {
-                    formatStr = "EAN13";
-                    // Se ha 12 cifre, JsBarcode aggiunge automaticamente lo 0 davanti per l'EAN13
-                } else if (cleanCode.length === 8) {
-                    formatStr = "EAN8";
+            // PATCH: Logica di output conforme allo standard
+            if (detectedFormat === "QR_CODE") {
+                qrArea.style.display = "block";
+                // Utilizza il motore html5-qrcode per generare il QR se disponibile, 
+                // o lo genera tramite lo scanner in modalità render
+                const qrCodeGenerated = new Html5QrcodeScanner("p-qr-area", { fps: 10, qrbox: 200 });
+                // Nota: In mancanza di libreria QRCode separata, usiamo un placeholder o Google APIs per velocità
+                qrArea.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(cleanCode)}" style="width:200px; height:200px;">`;
+            } else {
+                barcodeSvg.style.display = "block";
+                let formatStr = "CODE128";
+
+                // Mapping formati scanner -> JsBarcode
+                if (detectedFormat.includes("EAN_13")) formatStr = "EAN13";
+                else if (detectedFormat.includes("EAN_8")) formatStr = "EAN8";
+                else if (detectedFormat.includes("UPC")) formatStr = "UPC";
+                else if (detectedFormat.includes("ITF")) formatStr = "ITF";
+                else if (detectedFormat.includes("CODE_39")) formatStr = "CODE39";
+                else {
+                    // Fallback automatico basato su lunghezza se il formato non è salvato
+                    if (/^\d+$/.test(cleanCode)) {
+                        if (cleanCode.length === 13 || cleanCode.length === 12) formatStr = "EAN13";
+                        else if (cleanCode.length === 8) formatStr = "EAN8";
+                    }
                 }
-            }
 
-            try {
-                JsBarcode("#p-barcode", cleanCode, {
-                    format: formatStr,
-                    width: 2.8,        // Spessore barra ottimizzato per display
-                    height: 150,       // Altezza generosa per facilitare i laser
-                    displayValue: false, 
-                    background: "#ffffff",
-                    lineColor: "#000000",
-                    margin: 35,        // "Quiet Zone" ampia per evitare errori di lettura
-                    flat: true         // Disabilita anti-aliasing per bordi netti
-                });
-            } catch (e) {
-                console.warn("Errore formato specifico, uso fallback CODE128");
-                JsBarcode("#p-barcode", cleanCode, { 
-                    format: "CODE128", 
-                    width: 2, 
-                    height: 120,
-                    background: "#ffffff"
-                });
+                try {
+                    JsBarcode("#p-barcode", cleanCode, {
+                        format: formatStr,
+                        width: 2.8,
+                        height: 150,
+                        displayValue: false,
+                        background: "#ffffff",
+                        lineColor: "#000000",
+                        margin: 35,
+                        flat: true
+                    });
+                } catch (e) {
+                    JsBarcode("#p-barcode", cleanCode, { format: "CODE128", width: 2, height: 120 });
+                }
             }
         };
         
-        // Struttura HTML della tessera nel wallet
         div.innerHTML = `
             <div class="action-btns">
                 <button class="btn-icon" onclick="event.stopPropagation(); openCreator(${c.id})">✏️</button>
