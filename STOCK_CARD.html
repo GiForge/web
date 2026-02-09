@@ -451,7 +451,7 @@ function render() {
 
     function exportData() {
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(cards)], {type:'application/json'}));
-        a.download = 'wallet_backup.json'; a.click();
+        a.download = 'WALLET_BACKUP.json'; a.click();
     }
 
     function importData(input) {
@@ -464,3 +464,4 @@ function render() {
 </script>
 </body>
 </html>
+
