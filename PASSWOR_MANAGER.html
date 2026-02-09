@@ -739,6 +739,17 @@ async function loadVault() {
     const passwordInput = document.getElementById('vaultPassword');
     const password = passwordInput.value;
 
+
+async function initBiometrics() {
+    if (window.PublicKeyCredential) {
+        const isAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        if (isAvailable) {
+            // Mostra sempre il pulsante se il PC supporta l'impronta
+            document.getElementById('btnUnlockBiometric').style.display = 'inline-block';
+        }
+    }
+}
+    
     if (!fileInput.files.length || !password) {
         showNotification('⚠️ Seleziona file e inserisci password', 'error');
         return;
@@ -790,7 +801,7 @@ async function loadVault() {
 window.onload = async () => {
     // Verifichiamo se esiste una chiave biometrica salvata
     const hasBioKey = localStorage.getItem("vault_biometric_key");
-    
+    initBiometrics();
     if (window.PublicKeyCredential && hasBioKey) {
         // Se esiste, rendiamo visibile il pulsante biometrico nel form
         const btnBio = document.getElementById('btnBiometric');
@@ -2220,6 +2231,7 @@ function decryptAES(encryptedPayload, password) {
     </script>
 </body>
 </html>
+
 
 
 
