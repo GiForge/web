@@ -867,22 +867,30 @@ async function setupBiometrics(password, vaultName) { // <--- Aggiungi vaultName
 }
 
 // 2. Sblocca con Impronta
+
 async function unlockWithBiometrics() {
     const fileInput = document.getElementById('vaultFile');
     
-    // 1. Verifica se il file è selezionato e aggiorna il nome globale
+    // Verifica se il file è selezionato
     if (!fileInput.files.length) {
         showNotification("⚠️ Seleziona prima il file del vault", "warning");
         return;
     }
+    
     currentVaultName = fileInput.files[0].name;
+    const storageKey = "bio_key_" + currentVaultName;
+    const encryptedPass = localStorage.getItem(storageKey);
+    
+    if (!encryptedPass) {
+        showNotification("⚠️ Nessuna impronta configurata per questo vault", "warning");
+        return;
+    }
 
-    // 2. Prepariamo le opzioni per cercare la passkey specifica
+    // Prepara le opzioni per la verifica biometrica
     const options = {
         publicKey: {
             challenge: crypto.getRandomValues(new Uint8Array(32)),
             userVerification: "required",
-            // Limitiamo la ricerca alla passkey creata per questo specifico file
             allowCredentials: [{
                 id: new TextEncoder().encode(currentVaultName),
                 type: 'public-key'
@@ -891,31 +899,22 @@ async function unlockWithBiometrics() {
     };
 
     try {
-        // Il browser cercherà nel chip di sicurezza la passkey che corrisponde all'ID (nome file)
+        // Verifica l'impronta
         await navigator.credentials.get(options); 
         
-        // 3. RECUPERO MIRATO DELLA PASSWORD
-        // Usiamo il nome del file come chiave per il localStorage
-        const storageKey = "bio_key_" + currentVaultName;
-        const encryptedPass = localStorage.getItem(storageKey);
-        
-        if (!encryptedPass) {
-            showNotification("⚠️ Biometria non configurata per questo file", "warning");
-            return;
-        }
-
-        // Decriptazione (Usa la tua chiave di sessione o un segreto locale)
+        // Decripta la password salvata
         const decryptedBytes = CryptoJS.AES.decrypt(encryptedPass, "BIO-SESSION-KEY");
         const savedPassword = decryptedBytes.toString(CryptoJS.enc.Utf8);
 
         if (savedPassword) {
             document.getElementById('vaultPassword').value = savedPassword;
-            // Chiamiamo loadVault che ora userà la password inserita automaticamente
             loadVault(); 
+        } else {
+            showNotification("❌ Errore nel recupero della password", "error");
         }
     } catch (e) {
         console.error(e);
-        showNotification("❌ Autenticazione fallita o passkey non trovata", "error");
+        showNotification("❌ Autenticazione biometrica fallita", "error");
     }
 }
         
@@ -2290,6 +2289,7 @@ function decryptAES(encryptedPayload, password) {
     </script>
 </body>
 </html>
+
 
 
 
