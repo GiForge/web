@@ -732,6 +732,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     
     <script>
+        
+// Controlla se il browser supporta la biometria all'avvio
+// All'avvio della pagina
 let currentVaultName = "vault.json"; // Nome predefinito
         
 async function loadVault() {
@@ -786,9 +789,6 @@ async function loadVault() {
         showNotification('❌ Errore: password errata o file non valido', 'error');
     }
 }
-// Controlla se il browser supporta la biometria all'avvio
-// All'avvio della pagina
-
 
 window.onload = async () => {
     // Controlla se il browser supporta la biometria
@@ -2279,6 +2279,7 @@ function decryptAES(encryptedPayload, password) {
     </script>
 </body>
 </html>
+
 
 
 
