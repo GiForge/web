@@ -827,8 +827,11 @@ async function setupBiometrics(password, vaultName) { // <--- Aggiungi vaultName
 
     try {
         const credential = await navigator.credentials.create(options);
-        // Salva qui la chiave pubblica nel vault appena creato...
-        showNotification("✅ Biometria configurata per " + vaultName);
+        // Dentro setupBiometrics, dopo navigator.credentials.create:
+        const storageKey = "bio_key_" + vaultName;
+        const encrypted = CryptoJS.AES.encrypt(password, "BIO-SESSION-KEY").toString();
+        localStorage.setItem(storageKey, encrypted);        showNotification("✅ Biometria configurata per " + vaultName);
+        
     } catch (err) {
         console.error(err);
         showNotification("❌ Errore configurazione biometria", "error");
@@ -2217,5 +2220,6 @@ function decryptAES(encryptedPayload, password) {
     </script>
 </body>
 </html>
+
 
 
