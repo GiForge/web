@@ -6,6 +6,27 @@
     <title>Scanner Documenti - Rettificazione Prospettica</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
+#zoomHelper {
+    position: fixed; /* FONDAMENTALE: resta agganciato allo schermo, non alla pagina */
+    z-index: 10000;  /* Sopra a tutto */
+    pointer-events: none; /* Il tocco deve passare "attraverso" lo zoom */
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    display: none;
+}    
+    /* Impedisce al browser di gestire il tocco (niente scroll o zoom nativo) */
+#sourceContainer, #sourceCanvas {
+    touch-action: none !important;
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: contain;
+}
+
+/* Assicurati che il contenitore non tagli gli elementi */
+.workspace {
+    overflow: visible !important;
+    position: relative;
+}
         * {
             margin: 0;
             padding: 0;
@@ -754,44 +775,39 @@
 
         
      // --- SOSTITUISCI QUESTE VARIABILI E FUNZIONI ---
-        //const ZOOM_LEVEL = 5;
-        const TOUCH_OFFSET_Y = 60; // Distanza tra dito e vertice
+const TOUCH_OFFSET_Y = 60; // Il punto apparirà 60px sopra il dito
 
-        function handleMove(clientX, clientY, isTouch) {
-            if (selectedPoint === null) return;
+function handleMove(clientX, clientY, isTouch) {
+    if (selectedPoint === null) return;
 
-            const rect = sourceCanvas.getBoundingClientRect();
-            
-            // Calcolo scala tra canvas visualizzato e coordinate reali del canvas
-            const scaleX = sourceCanvas.width / rect.width;
-            const scaleY = sourceCanvas.height / rect.height;
+    const rect = sourceCanvas.getBoundingClientRect();
+    const scaleX = sourceCanvas.width / rect.width;
+    const scaleY = sourceCanvas.height / rect.height;
 
-            // Se è touch, spostiamo il punto verso l'alto rispetto al dito
-            const offsetY = isTouch ? TOUCH_OFFSET_Y : 0;
-            
-            // Coordinata X e Y relativa al canvas (scalata correttamente)
-            const x = (clientX - rect.left) * scaleX;
-            const y = ((clientY - rect.top) - offsetY) * scaleY;
+    // Applica l'offset solo se è un evento touch
+    const offsetY = isTouch ? TOUCH_OFFSET_Y : 0;
+    
+    const x = (clientX - rect.left) * scaleX;
+    const y = ((clientY - rect.top) - offsetY) * scaleY;
 
-            // Limiti per non uscire dal foglio
-            points[selectedPoint] = { 
-                x: Math.max(0, Math.min(sourceCanvas.width, x)), 
-                y: Math.max(0, Math.min(sourceCanvas.height, y)) 
-            };
+    points[selectedPoint] = { 
+        x: Math.max(0, Math.min(sourceCanvas.width, x)), 
+        y: Math.max(0, Math.min(sourceCanvas.height, y)) 
+    };
 
-            renderPoints();
-            updateZoomHelper(points[selectedPoint].x, points[selectedPoint].y, clientX, clientY - offsetY);
-        }
+    renderPoints();
+    // Aggiorna lo zoom helper considerando l'offset
+    updateZoomHelper(points[selectedPoint].x, points[selectedPoint].y, clientX, clientY - offsetY);
+}
 
-        // BLOCCA SCROLL E ABILITA UN DITO
-        document.addEventListener('touchmove', (e) => {
-            if (selectedPoint !== null) {
-                e.preventDefault(); // Impedisce lo scroll della pagina
-                const touch = e.touches[0];
-                handleMove(touch.clientX, touch.clientY, true);
-            }
-        }, { passive: false });
-
+// MANTIENI SOLO QUESTO LISTENER PER IL TOUCH
+document.addEventListener('touchmove', (e) => {
+    if (selectedPoint !== null) {
+        e.preventDefault(); // Blocca lo scroll della pagina
+        const touch = e.touches[0];
+        handleMove(touch.clientX, touch.clientY, true);
+    }
+}, { passive: false });
         // Aggiorna gli Event Listeners
 // Funzione universale per sganciare il punto
 const stopDragging = () => {
@@ -820,44 +836,48 @@ document.addEventListener('mousemove', (e) => {
     }
 });
 
-        // Sostituisci la funzione updateZoomHelper con questa "magnetica"
+// Sostituisci la funzione updateZoomHelper con questa "magnetica"
 function updateZoomHelper(canvasX, canvasY, screenX, screenY) {
     if (!sourceImage) return;
     
     zoomHelper.style.display = 'block';
-    const zw = 160; // larghezza riquadro zoom
-    const zh = 160; // altezza riquadro zoom
-    
-    // 1. Calcolo posizione orizzontale (Preferenza: a sinistra del dito/cursore)
-    let left = screenX - zw - 40; 
-    
-    // Se esce a sinistra (meno di 10px dal bordo), spostalo a destra del dito
-    if (left < 10) {
-        left = screenX + 40;
-    }
-    
-    // Se esce a destra (oltre la larghezza finestra), forza il rientro
-    if (left + zw > window.innerWidth - 10) {
-        left = window.innerWidth - zw - 10;
+    // Usiamo variabili per rendere il codice leggibile
+    const zw = 160; 
+    const zh = 160; 
+    const margin = 15; // Margine di sicurezza dai bordi dello schermo
+    const offset = 60; // Distanza dal punto di contatto (più alta per non coprire col dito)
+
+    // 1. POSIZIONAMENTO ORIZZONTALE
+    // Proviamo a metterlo centrato sopra il dito
+    let left = screenX - zw / 2; 
+
+    // Controllo bordi laterali
+    if (left < margin) left = margin;
+    if (left + zw > window.innerWidth - margin) {
+        left = window.innerWidth - zw - margin;
     }
 
-    // 2. Calcolo posizione verticale (Preferenza: sopra il dito)
-    let top = screenY - zh - 40;
+    // 2. POSIZIONAMENTO VERTICALE (Il vero problema su Mobile)
+    // Proviamo a metterlo SOPRA il dito (screenY è la coordinata del tocco)
+    let top = screenY - zh - offset;
     
-    // Se esce in alto, spostalo sotto il dito
-    if (top < 10) {
-        top = screenY + 40;
+    // Se esce in alto (top < margin), lo spostiamo SOTTO il dito
+    if (top < margin) {
+        top = screenY + offset; 
     }
     
-    // Se esce in basso, forza il rientro
-    if (top + zh > window.innerHeight - 10) {
-        top = window.innerHeight - zh - 10;
+    // Se nonostante tutto esce in basso (perché siamo a fondo pagina)
+    // lo forziamo a risalire per restare visibile
+    const vh = window.innerHeight;
+    if (top + zh > vh - margin) {
+        top = vh - zh - margin;
     }
 
+    // Applichiamo le coordinate
     zoomHelper.style.left = left + 'px';
     zoomHelper.style.top = top + 'px';
     
-    // --- RENDERING ZOOM (Pura qualità) ---
+    // --- RENDERING ZOOM ---
     const scaleX = sourceImage.width / sourceCanvas.width;
     const scaleY = sourceImage.height / sourceCanvas.height;
     
@@ -874,15 +894,14 @@ function updateZoomHelper(canvasX, canvasY, screenX, screenY) {
         0, 0, zw, zh
     );
     
-    // Disegna un mirino centrale nello zoom per precisione
-    zoomCtx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-    zoomCtx.lineWidth = 1;
+    // Mirino (Crosshair)
+    zoomCtx.strokeStyle = '#3b82f6'; // Blu per visibilità
+    zoomCtx.lineWidth = 2;
     zoomCtx.beginPath();
     zoomCtx.moveTo(zw/2, 0); zoomCtx.lineTo(zw/2, zh);
     zoomCtx.moveTo(0, zh/2); zoomCtx.lineTo(zw, zh/2);
     zoomCtx.stroke();
-}
-        
+}        
         // View toggle per mobile
         const viewToggle = document.querySelectorAll('.view-toggle button');
         const sourceWrapper = document.getElementById('sourceWrapper');
