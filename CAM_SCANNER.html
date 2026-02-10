@@ -783,7 +783,7 @@
     const zoomCanvas = document.getElementById('zoomCanvas');
     const zoomCtx = zoomCanvas.getContext('2d');
 
-    // 2. GESTIONE INPUT (FILE E FOTOCAMERA)
+    // 2. GESTIONE INPUT
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -813,9 +813,8 @@
             captureBtn.className = 'btn btn-primary btn-lg';
             captureBtn.onclick = () => {
                 const canvas = document.createElement('canvas');
-                const settings = track.getSettings();
-                canvas.width = settings.width;
-                canvas.height = settings.height;
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
                 canvas.getContext('2d').drawImage(video, 0, 0);
                 stream.getTracks().forEach(t => t.stop());
                 document.body.removeChild(modal);
@@ -843,7 +842,6 @@
             document.getElementById('sourcePlaceholder').style.display = 'none';
             sourceCanvas.style.display = 'block';
 
-            // Reset punti e auto-detection (se disponibile nel tuo CSS/HTML)
             const m = 40;
             points = [{x:m, y:m}, {x:width-m, y:m}, {x:width-m, y:height-m}, {x:m, y:height-m}];
             renderPoints();
@@ -853,7 +851,7 @@
         img.src = src;
     }
 
-    // 3. TRASCINAMENTO E ZOOM
+    // 3. TRASCINAMENTO
     function getCanvasCoords(e) {
         const rect = sourceCanvas.getBoundingClientRect();
         return {
@@ -867,7 +865,6 @@
         const coords = getCanvasCoords(e);
         let minDist = 50; 
         selectedPoint = null;
-
         points.forEach((p, index) => {
             const dist = Math.hypot(p.x - coords.x, p.y - coords.y);
             if (dist < minDist) { minDist = dist; selectedPoint = index; }
@@ -902,7 +899,6 @@
         let left = screenX - zw/2, top = screenY - zh - 60;
         if (left < 10) left = 10;
         if (top < 10) top = screenY + 60;
-        
         zoomHelper.style.left = left + 'px';
         zoomHelper.style.top = top + 'px';
 
@@ -911,7 +907,6 @@
         zoomCanvas.width = zw; zoomCanvas.height = zh;
         zoomCtx.imageSmoothingEnabled = false;
         zoomCtx.drawImage(sourceImage, canvasX*scaleX-20, canvasY*scaleY-20, 40, 40, 0, 0, zw, zh);
-        
         zoomCtx.strokeStyle = '#3b82f6'; zoomCtx.lineWidth = 2;
         zoomCtx.beginPath(); zoomCtx.moveTo(zw/2,0); zoomCtx.lineTo(zw/2,zh); zoomCtx.moveTo(0,zh/2); zoomCtx.lineTo(zw,zh/2); zoomCtx.stroke();
     }
@@ -925,7 +920,6 @@
         sourceCtx.moveTo(points[0].x, points[0].y);
         points.forEach(p => sourceCtx.lineTo(p.x, p.y));
         sourceCtx.closePath(); sourceCtx.stroke();
-
         points.forEach((p, i) => {
             const el = document.createElement('div');
             el.className = 'point';
@@ -936,12 +930,44 @@
         });
     }
 
-    // 4. MATEMATICA OMOGRAFICA
+    // 4. MATEMATICA SISTEMI (IMPORTANTE!)
+    function solveLinearSystem(A, b) {
+        const n = b.length;
+        for (let i = 0; i < n; i++) {
+            let max = i;
+            for (let k = i + 1; k < n; k++) if (Math.abs(A[k][i]) > Math.abs(A[max][i])) max = k;
+            [A[i], A[max]] = [A[max], A[i]]; [b[i], b[max]] = [b[max], b[i]];
+            for (let k = i + 1; k < n; k++) {
+                const f = A[k][i] / A[i][i];
+                b[k] -= f * b[i];
+                for (let j = i; j < n; j++) A[k][j] -= f * A[i][j];
+            }
+        }
+        const x = new Array(n);
+        for (let i = n - 1; i >= 0; i--) {
+            x[i] = b[i];
+            for (let j = i + 1; j < n; j++) x[i] -= A[i][j] * x[j];
+            x[i] /= A[i][i];
+        }
+        return x;
+    }
+
     function distance(p1, p2) { return Math.sqrt((p2.x-p1.x)**2 + (p2.y-p1.y)**2); }
-    
     function orderPointsClockwise(pts) {
         const center = pts.reduce((acc, p) => ({x:acc.x+p.x/4, y:acc.y+p.y/4}), {x:0, y:0});
         return [...pts].sort((a,b) => Math.atan2(a.y-center.y, a.x-center.x) - Math.atan2(b.y-center.y, b.x-center.x));
+    }
+
+    function computeHomography(src, dst) {
+        const A = []; const b = [];
+        for (let i = 0; i < 4; i++) {
+            const {x: sx, y: sy} = src[i];
+            const {x: dx, y: dy} = dst[i];
+            A.push([sx, sy, 1, 0, 0, 0, -sx * dx, -sy * dx]); b.push(dx);
+            A.push([0, 0, 0, sx, sy, 1, -sx * dy, -sy * dy]); b.push(dy);
+        }
+        const h = solveLinearSystem(A, b);
+        return [[h[0], h[1], h[2]], [h[3], h[4], h[5]], [h[6], h[7], 1]];
     }
 
     function invertHomography(H) {
@@ -955,35 +981,7 @@
         ];
     }
 
-    function computeHomography(src, dst) {
-        const A = []; const b = [];
-        for (let i = 0; i < 4; i++) {
-            A.push([src[i].x, src[i].y, 1, 0, 0, 0, -dst[i].x*src[i].x, -dst[i].x*src[i].y]);
-            b.push(dst[i].x);
-            A.push([0, 0, 0, src[i].x, src[i].y, 1, -dst[i].y*src[i].x, -dst[i].y*src[i].y]);
-            b.push(dst[i].y);
-        }
-        const n = b.length;
-        for (let i=0; i<n; i++) {
-            let max = i;
-            for (let k=i+1; k<n; k++) if (Math.abs(A[k][i]) > Math.abs(A[max][i])) max = k;
-            [A[i], A[max]] = [A[max], A[i]]; [b[i], b[max]] = [b[max], b[i]];
-            for (let k=i+1; k<n; k++) {
-                const f = A[k][i] / A[i][i];
-                b[k] -= f * b[i];
-                for (let j=i; j<n; j++) A[k][j] -= f * A[i][j];
-            }
-        }
-        const x = new Array(n);
-        for (let i=n-1; i>=0; i--) {
-            x[i] = b[i];
-            for (let j=i+1; j<n; j++) x[i] -= A[i][j] * x[j];
-            x[i] /= A[i][i];
-        }
-        return [[x[0],x[1],x[2]], [x[3],x[4],x[5]], [x[6],x[7],1]];
-    }
-
-    // 5. FILTRI E NITIDEZZA
+    // 5. FILTRI
     function applySharpen(imageData, amount) {
         const w = imageData.width, h = imageData.height;
         const output = new ImageData(new Uint8ClampedArray(imageData.data), w, h);
@@ -1011,62 +1009,57 @@
         const brightness = brightnessSlider.value / 100;
         const mode = colorModeSelect.value;
         const thr = parseInt(thresholdSlider.value);
-        
         let img = new ImageData(new Uint8ClampedArray(rectifiedImageData.data), rectifiedImageData.width, rectifiedImageData.height);
         const d = img.data;
-
         for (let i = 0; i < d.length; i += 4) {
             let r = d[i], g = d[i+1], b = d[i+2];
-            if (mode === 'grayscale' || mode === 'bw') {
-                r = g = b = (r * 0.299 + g * 0.587 + b * 0.114);
-            }
+            if (mode === 'grayscale' || mode === 'bw') r = g = b = (r * 0.299 + g * 0.587 + b * 0.114);
             r = ((r - 128) * contrast + 128) * brightness;
             g = ((g - 128) * contrast + 128) * brightness;
             b = ((b - 128) * contrast + 128) * brightness;
-            
             if (mode === 'bw') {
                 const v = (r + g + b) / 3 > thr ? 255 : 0;
                 r = g = b = v;
             }
             d[i] = r; d[i+1] = g; d[i+2] = b;
         }
-
         if (sharpnessSlider.value > 0) img = applySharpen(img, sharpnessSlider.value / 100);
         resultCtx.putImageData(img, 0, 0);
     }
 
-    // 6. RETTIFICA E ESPORTAZIONE
+    // 6. RETTIFICA
     function autoRectify() {
         if (!sourceImage || points.length < 4) return;
         const ratioX = sourceImage.width / sourceCanvas.width;
         const ratioY = sourceImage.height / sourceCanvas.height;
         const sorted = orderPointsClockwise(points);
         const realSrc = sorted.map(p => ({x: p.x*ratioX, y: p.y*ratioY}));
-        const w = Math.max(distance(realSrc[0], realSrc[1]), distance(realSrc[3], realSrc[2]));
-        const h = Math.max(distance(realSrc[0], realSrc[3]), distance(realSrc[1], realSrc[2]));
-
+        const w = Math.round(Math.max(distance(realSrc[0], realSrc[1]), distance(realSrc[3], realSrc[2])));
+        const h = Math.round(Math.max(distance(realSrc[0], realSrc[3]), distance(realSrc[1], realSrc[2])));
+        
         resultCanvas.width = w; resultCanvas.height = h;
-        const Hinv = invertHomography(computeHomography(realSrc, [{x:0,y:0},{x:w,y:0},{x:w,y:h},{x:0,y:h}]));
+        const H = computeHomography(realSrc, [{x:0,y:0}, {x:w,y:0}, {x:w,y:h}, {x:0,y:h}]);
+        const Hinv = invertHomography(H);
 
         const tCanvas = document.createElement('canvas');
         tCanvas.width = sourceImage.width; tCanvas.height = sourceImage.height;
         const tCtx = tCanvas.getContext('2d');
         tCtx.drawImage(sourceImage, 0, 0);
-        const srcData = tCtx.getImageData(0,0,tCanvas.width,tCanvas.height);
+        const srcData = tCtx.getImageData(0, 0, tCanvas.width, tCanvas.height);
         const dstData = resultCtx.createImageData(w, h);
 
-        for (let y=0; y<h; y++) {
-            for (let x=0; x<w; x++) {
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
                 const den = Hinv[2][0]*x + Hinv[2][1]*y + Hinv[2][2];
-                const sx = (Hinv[0][0]*x + Hinv[0][1]*y + Hinv[0][2]) / den;
-                const sy = (Hinv[1][0]*x + Hinv[1][1]*y + Hinv[1][2]) / den;
-                if (sx>=0 && sx<srcData.width-1 && sy>=0 && sy<srcData.height-1) {
-                    const idx = (y*Math.floor(w)+x)*4;
-                    const sidx = (Math.floor(sy)*srcData.width + Math.floor(sx))*4;
-                    dstData.data[idx]=srcData.data[sidx];
-                    dstData.data[idx+1]=srcData.data[sidx+1];
-                    dstData.data[idx+2]=srcData.data[sidx+2];
-                    dstData.data[idx+3]=255;
+                const sx = Math.floor((Hinv[0][0]*x + Hinv[0][1]*y + Hinv[0][2]) / den);
+                const sy = Math.floor((Hinv[1][0]*x + Hinv[1][1]*y + Hinv[1][2]) / den);
+                if (sx >= 0 && sx < srcData.width && sy >= 0 && sy < srcData.height) {
+                    const di = (y * w + x) * 4;
+                    const si = (sy * srcData.width + sx) * 4;
+                    dstData.data[di] = srcData.data[si];
+                    dstData.data[di+1] = srcData.data[si+1];
+                    dstData.data[di+2] = srcData.data[si+2];
+                    dstData.data[di+3] = 255;
                 }
             }
         }
@@ -1077,13 +1070,12 @@
         saveJpgBtn.disabled = savePdfBtn.disabled = false;
     }
 
-    // 7. LISTENER PULSANTI E SLIDER
+    // 7. LISTENER
     resetBtn.addEventListener('click', () => {
         if (!sourceImage) return;
         const m = 40;
         points = [{x:m, y:m}, {x:sourceCanvas.width-m, y:m}, {x:sourceCanvas.width-m, y:sourceCanvas.height-m}, {x:m, y:sourceCanvas.height-m}];
         renderPoints(); autoRectify();
-        showStatus('Vertici resettati');
     });
 
     [contrastSlider, brightnessSlider, sharpnessSlider, thresholdSlider].forEach(s => s.addEventListener('input', () => {
@@ -1102,7 +1094,6 @@
         link.download = `scan_${Date.now()}.jpg`;
         link.href = resultCanvas.toDataURL('image/jpeg', 0.95);
         link.click();
-        showStatus('JPG salvato!');
     });
 
     savePdfBtn.addEventListener('click', () => {
@@ -1114,11 +1105,9 @@
         });
         pdf.addImage(resultCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, resultCanvas.width, resultCanvas.height);
         pdf.save(`scan_${Date.now()}.pdf`);
-        showStatus('PDF salvato!');
     });
 
     function showStatus(msg) { status.textContent = msg; status.classList.add('show'); setTimeout(()=>status.classList.remove('show'), 2000); }
 </script>
-
 </body>
 </html>
