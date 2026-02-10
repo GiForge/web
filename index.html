@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Server Index | Risorse HTML</title>
+    <title>GI-FORGE Hub | Risorse HTML</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -14,187 +14,222 @@
             --text-color: #f8fafc;
             --accent-color: #38bdf8;
             --hover-color: #7dd3fc;
+            --grid-gap: 20px;
         }
+
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
             color: var(--text-color);
             margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 40px 20px;
             min-height: 100vh;
-            padding: 20px;
         }
+
         .container {
-            width: 90%;
-            max-width: 650px;
-            background: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 1100px;
+            margin: 0 auto;
         }
+
         header {
             text-align: center;
-            margin-bottom: 2.5rem;
-            border-bottom: 2px solid rgba(56, 189, 248, 0.2);
-            padding-bottom: 1.5rem;
+            margin-bottom: 4rem;
         }
+
         h2 {
-            font-weight: 700;
-            letter-spacing: -0.5px;
+            font-size: 2.5rem;
             margin: 0;
-            font-size: 2rem;
-            background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 100%);
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-weight: 800;
         }
-        h2 i { -webkit-text-fill-color: #38bdf8; }
-        p.subtitle {
-            font-size: 0.95rem;
+
+        .subtitle {
             opacity: 0.6;
-            margin-top: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: 300;
+            letter-spacing: 1px;
+            margin-top: 10px;
         }
-        ul { list-style: none; padding: 0; margin: 0; }
-        li { margin-bottom: 16px; transition: transform 0.3s ease; }
-        li:hover { transform: translateX(8px); }
-        a {
+
+        /* Category Section */
+        .category-section {
+            margin-bottom: 50px;
+        }
+
+        .category-title {
             display: flex;
             align-items: center;
-            text-decoration: none;
-            color: var(--text-color);
-            background: rgba(255,255,255,0.05);
-            padding: 20px 24px;
-            border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.08);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: var(--accent-color);
         }
-        a:hover {
-            background: rgba(56, 189, 248, 0.15);
-            border-color: var(--accent-color);
-            box-shadow: 0 8px 24px rgba(56, 189, 248, 0.2);
-        }
-        .icon-wrapper {
-            width: 50px; height: 50px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; margin-right: 18px; font-size: 1.5rem;
-            position: relative; z-index: 1; transition: transform 0.3s ease;
-        }
-        a:hover .icon-wrapper { transform: scale(1.1) rotate(5deg); }
-        
-        /* Icon Categories Colors */
-        .clock-icon { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; }
-        .agenda-icon { background: linear-gradient(135deg, #c8a96a, #8a6a3a); color: #fff; }
-        .stock-icon { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
-        .pass-icon { background: linear-gradient(135deg, #f43f5e, #9f1239); color: #fff; }
-        .gantt-icon { background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; }
-        .tetris-icon { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff; }
-        .space-icon { background: linear-gradient(135deg, #06b6d4, #0891b2); color: #fff; }
 
-        .link-content { flex-grow: 1; position: relative; z-index: 1; }
-        .link-text { font-weight: 600; font-size: 1.05rem; display: block; margin-bottom: 4px; }
-        .link-description { font-size: 0.85rem; opacity: 0.6; font-weight: 300; }
-        .arrow { font-size: 1rem; opacity: 0.4; transition: all 0.3s ease; }
-        a:hover .arrow { opacity: 1; transform: translateX(4px); }
-        a:hover .link-text { color: var(--accent-color); }
+        .category-title i { margin-right: 10px; }
+
+        /* Responsive Grid */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--grid-gap);
+        }
+
+        /* App Card Style */
+        .app-card {
+            text-decoration: none;
+            color: inherit;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4), 0 0 15px rgba(56, 189, 248, 0.1);
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .icon-wrapper {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .link-text {
+            font-weight: 700;
+            font-size: 1.1rem;
+            line-height: 1.2;
+        }
+
+        .link-description {
+            font-size: 0.9rem;
+            opacity: 0.5;
+            line-height: 1.4;
+            font-weight: 300;
+        }
+
+        /* Specific Icon Gradients */
+        .util { background: linear-gradient(135deg, #0ea5e9, #2563eb); }
+        .prod { background: linear-gradient(135deg, #8b5cf6, #d946ef); }
+        .game { background: linear-gradient(135deg, #f43f5e, #fb923c); }
+        .lux  { background: linear-gradient(135deg, #c8a96a, #8a6a3a); }
+
+        /* Responsive Adjustments */
+        @media (max-width: 600px) {
+            .app-grid { grid-template-columns: 1fr; }
+            h2 { font-size: 1.8rem; }
+            body { padding: 20px 15px; }
+        }
     </style>
 </head>
 <body>
+
 <div class="container">
     <header>
-        <h2><i class="fas fa-folder-open"></i> GI-FORGE</h2>
-        <p class="subtitle">Select a Web-App (open source html)</p>        
-        <p class="subtitle">All apps are free, OpenSource and can be used offline</p>        
+        <h2><i class="fas fa-rocket"></i> GI-FORGE</h2>
+        <p class="subtitle">Open Source Web-App Dashboard</p>        
     </header>
-    <ul>         
-        <li>
-            <a href="CLOCK_NIGHT_DAY.html">
-                <div class="icon-wrapper clock-icon"><i class="fas fa-clock"></i></div>
-                <div class="link-content">
-                    <span class="link-text">BEST METEO NIGHT/DAY CLOCK</span>
-                    <span class="link-description">Orologio notturno con ciclo giorno/notte</span>
-                </div>
-                <i class="fas fa-chevron-right arrow"></i>
-            </a>
-        </li>
-        <li>
-            <a href="LUXURY_AGENDA.html">
-                <div class="icon-wrapper agenda-icon"><i class="fas fa-calendar-alt"></i></div>
-                <div class="link-content">
+
+    <section class="category-section">
+        <div class="category-title"><i class="fas fa-briefcase"></i> Productivity & Management</div>
+        <div class="app-grid">
+            <a href="LUXURY_AGENDA.html" class="app-card">
+                <div class="card-header">
+                    <div class="icon-wrapper lux"><i class="fas fa-calendar-alt"></i></div>
                     <span class="link-text">AGENDA LUXURY</span>
-                    <span class="link-description">Luxury Agenda 3D (import/export su file)</span>
                 </div>
-                <i class="fas fa-chevron-right arrow"></i>
+                <span class="link-description">Luxury Agenda 3D con supporto import/export file.</span>
             </a>
-        </li>
-        <li>
-            <a href="CAM_SCANNER.html">
-                <div class="icon-wrapper agenda-icon"><i class="fas fa-calendar-alt"></i></div>
-                <div class="link-content">
+
+            <a href="WORK_GANTT_PROJECT.html" class="app-card">
+                <div class="card-header">
+                    <div class="icon-wrapper prod"><i class="fas fa-chart-gantt"></i></div>
+                    <span class="link-text">WORK GANTT</span>
+                </div>
+                <span class="link-description">Timeline e gestione progetti professionale in HTML.</span>
+            </a>
+
+            <a href="PASSWOR_MANAGER.html" class="app-card">
+                <div class="card-header">
+                    <div class="icon-wrapper util" style="background: linear-gradient(135deg, #ef4444, #991b1b);"><i class="fas fa-key"></i></div>
+                    <span class="link-text">PASS MANAGER</span>
+                </div>
+                <span class="link-description">Vault sicuro per le tue credenziali (offline-first).</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="category-section">
+        <div class="category-title"><i class="fas fa-tools"></i> Utility Tools</div>
+        <div class="app-grid">
+            <a href="CLOCK_NIGHT_DAY.html" class="app-card">
+                <div class="card-header">
+                    <div class="icon-wrapper util" style="background: linear-gradient(135deg, #f59e0b, #d97706);"><i class="fas fa-clock"></i></div>
+                    <span class="link-text">NIGHT/DAY CLOCK</span>
+                </div>
+                <span class="link-description">Orologio meteo avanzato con ciclo solare dinamico.</span>
+            </a>
+
+            <a href="CAM_SCANNER.html" class="app-card">
+                <div class="card-header">
+                    <div class="icon-wrapper util"><i class="fas fa-camera"></i></div>
                     <span class="link-text">CAM SCANNER</span>
-                    <span class="link-description">SCANNER FOTOCAMERA </span>
                 </div>
-                <i class="fas fa-chevron-right arrow"></i>
+                <span class="link-description">Trasforma la tua fotocamera in uno scanner documenti.</span>
             </a>
-        </li>        
-        <li>
-            <a href="STOCK_CARD.html">
-                <div class="icon-wrapper stock-icon"><i class="fas fa-wallet"></i></div>
-                <div class="link-content">
+
+            <a href="STOCK_CARD.html" class="app-card">
+                <div class="card-header">
+                    <div class="icon-wrapper util" style="background: linear-gradient(135deg, #10b981, #047857);"><i class="fas fa-wallet"></i></div>
                     <span class="link-text">STOCK CARD</span>
-                    <span class="link-description">POINT/GIFT SHOPPING CARD ARCHIVE</span>
                 </div>
-                <i class="fas fa-chevron-right arrow"></i>
+                <span class="link-description">Archivio digitale per gift card e carte fedeltà.</span>
             </a>
-        </li>        
-        <li>
-            <a href="PASSWOR_MANAGER.html">
-                <div class="icon-wrapper pass-icon"><i class="fas fa-key"></i></div>
-                <div class="link-content">
-                    <span class="link-text">PASSWORD MANAGER</span>
-                    <span class="link-description">Gestione sicura delle tue credenziali</span>
+        </div>
+    </section>
+
+    <section class="category-section">
+        <div class="category-title"><i class="fas fa-gamepad"></i> Entertainment</div>
+        <div class="app-grid">
+            <a href="GAME_TETRIS.html" class="app-card">
+                <div class="card-header">
+                    <div class="icon-wrapper game"><i class="fas fa-shapes"></i></div>
+                    <span class="link-text">TETRIS CLASSIC</span>
                 </div>
-                <i class="fas fa-chevron-right arrow"></i>
+                <span class="link-description">Il leggendario puzzle game a blocchi.</span>
             </a>
-        </li>    
-        <li>
-            <a href="WORK_GANTT_PROJECT.html">
-                <div class="icon-wrapper gantt-icon"><i class="fas fa-chart-gantt"></i></div>
-                <div class="link-content">
-                    <span class="link-text">WORK GANTT PROJECT</span>
-                    <span class="link-description">Gestione progetti e timeline attività</span>
+
+            <a href="GAME_SPACE_INVADERS.html" class="app-card">
+                <div class="card-header">
+                    <div class="icon-wrapper game" style="background: linear-gradient(135deg, #6366f1, #3730a3);"><i class="fas fa-rocket"></i></div>
+                    <span class="link-text">SPACE INVADERS</span>
                 </div>
-                <i class="fas fa-chevron-right arrow"></i>
+                <span class="link-description">Difendi la terra in questo classico arcade shooter.</span>
             </a>
-        </li>
-        <li>
-            <a href="GAME_TETRIS.html">
-                <div class="icon-wrapper tetris-icon"><i class="fas fa-shapes"></i></div>
-                <div class="link-content">
-                    <span class="link-text">GAME TETRIS</span>
-                    <span class="link-description">Classico gioco puzzle con blocchi</span>
-                </div>
-                <i class="fas fa-chevron-right arrow"></i>
-            </a>
-        </li>
-        <li>
-            <a href="GAME_SPACE_INVADERS.html">
-                <div class="icon-wrapper space-icon"><i class="fas fa-rocket"></i></div>
-                <div class="link-content">
-                    <span class="link-text">GAME SPACE INVADERS</span>
-                    <span class="link-description">Arcade shooter spaziale retrò</span>
-                </div>
-                <i class="fas fa-chevron-right arrow"></i>
-            </a>
-        </li>
-    </ul>
+        </div>
+    </section>
 </div>
+
 </body>
 </html>
