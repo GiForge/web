@@ -1192,6 +1192,26 @@ function autoRectify() {
     });
 
     function showStatus(msg) { status.textContent = msg; status.classList.add('show'); setTimeout(()=>status.classList.remove('show'), 2000); }
+    
+ // Gestione dei Tab su Mobile
+    document.querySelectorAll('.view-toggle button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Rimuove classe active dai bottoni
+            document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Mostra/Nasconde i wrapper
+            const view = btn.getAttribute('data-view');
+            if (view === 'source') {
+                document.getElementById('sourceWrapper').classList.add('active');
+                document.getElementById('resultWrapper').classList.remove('active');
+            } else {
+                document.getElementById('sourceWrapper').classList.remove('active');
+                document.getElementById('resultWrapper').classList.add('active');
+            }
+        });
+    });
+ 
 </script>
 </body>
 </html>
