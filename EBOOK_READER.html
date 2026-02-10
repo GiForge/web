@@ -348,16 +348,55 @@ async function loadBook(id) {
     function resize() {
         const wrap = document.getElementById('book-wrapper');
         const vp = document.getElementById('viewport-main');
-        if(!wrap || !vp) return;
-        const scale = Math.min((vp.clientWidth-20)/500, (vp.clientHeight-20)/700);
-        wrap.style.transform = `scale(${scale})`;
+        if (!wrap || !vp) return;
+
+        // Calcoliamo quanto spazio abbiamo nel contenitore nero
+        const containerW = vp.clientWidth - 20;
+        const containerH = vp.clientHeight - 20;
+
+        // Scala base per far stare la pagina nel monitor
+        let baseScale = Math.min(containerW / 500, containerH / 700);
+        
+        // Applichiamo lo zoom dell'utente (se è un PDF)
+        let finalScale = baseScale;
+        if (currentBook && currentBook.type === 'pdf') {
+            finalScale = baseScale * (window.pdfZoom || 1);
+            
+            // Se lo zoom è grande, permettiamo di scorrere la pagina
+            vp.style.overflow = (window.pdfZoom > 1) ? "auto" : "hidden";
+        }
+
+        wrap.style.transform = `scale(${finalScale})`;
+        
+        // Centratura corretta quando scalato
+        wrap.style.display = "block"; 
+        wrap.style.margin = "auto";
     }
 
     function changeFontSize(d) {
-        currentFontSize += d;
-        document.querySelectorAll('.page-content').forEach(p => p.style.fontSize = currentFontSize+'px');
-    }
+        if (!currentBook) return;
 
+        if (currentBook.type === 'epub') {
+            currentFontSize += d;
+            document.querySelectorAll('.page-content').forEach(p => {
+                p.style.fontSize = currentFontSize + 'px';
+            });
+        } else {
+            // PDF: Gestione Zoom Reale
+            if (!window.pdfZoom) window.pdfZoom = 1;
+            
+            if (d > 0) window.pdfZoom += 0.2; // Ingrandisce del 20%
+            else window.pdfZoom -= 0.2;      // Rimpicciolisce del 20%
+
+            // Limiti per non sparire o diventare giganti
+            if (window.pdfZoom < 1) window.pdfZoom = 1;
+            if (window.pdfZoom > 5) window.pdfZoom = 5;
+
+            console.log("Zoom attuale PDF:", window.pdfZoom); // Per controllo in console
+            resize(); // Applica lo zoom
+        }
+    }
+    
     function toggleTTS() {
         if(isReading) { synth.cancel(); isReading = false; }
         else {
