@@ -8,18 +8,18 @@
     <style>
     
 /* Applica questo a Canvas e punti per bloccare ogni movimento della pagina */
-#sourceCanvas, .point {
-    touch-action: none !important;
-    /* Assicurati che non ci siano sovrapposizioni invisibili */
-    pointer-events: auto !important; 
-    cursor: move;
+#sourceCanvas {
+    /* Disabilita TUTTI i gesti del browser (scroll, zoom, menu contestuale) */
+    touch-action: none !important; 
+    user-select: none !important;
+    -webkit-user-select: none;
+    /* Evita che il tocco venga intercettato da elementi sovrapposti */
+    pointer-events: auto !important;
 }
-/* Rendi i punti visivamente più grandi ma non bloccare il tocco sotto di essi */
+
 .point {
-    z-index: 1000;
-    /* Area di contatto virtuale */
-    padding: 20px; 
-    margin: -20px; 
+    /* Rende i punti "trasparenti" ai Pointer Events così il canvas legge sempre il tocco */
+    pointer-events: none !important; 
 }
   
 #zoomHelper {
