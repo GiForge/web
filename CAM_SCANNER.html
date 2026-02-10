@@ -776,49 +776,104 @@
         }
 
         // Aggiorna gli Event Listeners
-        document.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY, false));
-        document.addEventListener('touchmove', (e) => {
-            if (selectedPoint !== null) {
-                handleMove(e.touches[0].clientX, e.touches[0].clientY, true);
-                e.preventDefault();
-            }
-        }, { passive: false });
+// Funzione universale per sganciare il punto
+const stopDragging = () => {
+    if (selectedPoint !== null) {
+        zoomHelper.style.display = 'none';
+        
+        // Auto-rettifica al rilascio per feedback immediato
+        if (points.length === 4 && sourceImage) {
+            autoRectify(); 
+        }
+        
+        selectedPoint = null; // SGANCIA IL PUNTO
+        renderPoints(); 
+    }
+};
+
+// Eventi Globali di Rilascio
+window.addEventListener('mouseup', stopDragging);
+window.addEventListener('touchend', stopDragging);
+window.addEventListener('mouseleave', stopDragging); // Protezione se esci dal browser
+
+// Evento Movimento Mouse
+document.addEventListener('mousemove', (e) => {
+    if (selectedPoint !== null) {
+        handleMove(e.clientX, e.clientY, false);
+    }
+});
+
+// Evento Movimento Touch
+document.addEventListener('touchmove', (e) => {
+    if (selectedPoint !== null) {
+        e.preventDefault(); // Impedisce lo scroll mentre trascini
+        handleMove(e.touches[0].clientX, e.touches[0].clientY, true);
+    }
+}, { passive: false });
+
 
         // Sostituisci la funzione updateZoomHelper con questa "magnetica"
-        function updateZoomHelper(canvasX, canvasY, screenX, screenY) {
-            if (!sourceImage) return;
-            
-            zoomHelper.style.display = 'block';
-            const hw = 150; // larghezza zoomHelper
-            const hh = 150; // altezza zoomHelper
+function updateZoomHelper(canvasX, canvasY, screenX, screenY) {
+    if (!sourceImage) return;
+    
+    zoomHelper.style.display = 'block';
+    const zw = 160; // larghezza riquadro zoom
+    const zh = 160; // altezza riquadro zoom
+    
+    // 1. Calcolo posizione orizzontale (Preferenza: a sinistra del dito/cursore)
+    let left = screenX - zw - 40; 
+    
+    // Se esce a sinistra (meno di 10px dal bordo), spostalo a destra del dito
+    if (left < 10) {
+        left = screenX + 40;
+    }
+    
+    // Se esce a destra (oltre la larghezza finestra), forza il rientro
+    if (left + zw > window.innerWidth - 10) {
+        left = window.innerWidth - zw - 10;
+    }
 
-            // Posizionamento: di base sopra il cursore/dito
-            let left = screenX - hw / 2;
-            let top = screenY - hh - 70;
+    // 2. Calcolo posizione verticale (Preferenza: sopra il dito)
+    let top = screenY - zh - 40;
+    
+    // Se esce in alto, spostalo sotto il dito
+    if (top < 10) {
+        top = screenY + 40;
+    }
+    
+    // Se esce in basso, forza il rientro
+    if (top + zh > window.innerHeight - 10) {
+        top = window.innerHeight - zh - 10;
+    }
 
-            // Vincoli per non uscire dallo schermo (UX Ergonomica)
-            if (left < 10) left = 10;
-            if (left + hw > window.innerWidth - 10) left = window.innerWidth - hw - 10;
-            if (top < 10) top = screenY + 40; // Se tocca il bordo alto, spostalo sotto
-
-            zoomHelper.style.left = left + 'px';
-            zoomHelper.style.top = top + 'px';
-            
-            // Logica di disegno dello zoom (rimane simile ma ottimizzata)
-            const scaleX = sourceImage.width / sourceCanvas.width;
-            const scaleY = sourceImage.height / sourceCanvas.height;
-            
-            zoomCanvas.width = hw;
-            zoomCanvas.height = hh;
-            zoomCtx.imageSmoothingEnabled = false;
-            
-            const size = 30; // area campionata
-            zoomCtx.drawImage(
-                sourceImage,
-                canvasX * scaleX - size/2, canvasY * scaleY - size/2, size, size,
-                0, 0, hw, hh
-            );
-        }        
+    zoomHelper.style.left = left + 'px';
+    zoomHelper.style.top = top + 'px';
+    
+    // --- RENDERING ZOOM (Pura qualità) ---
+    const scaleX = sourceImage.width / sourceCanvas.width;
+    const scaleY = sourceImage.height / sourceCanvas.height;
+    
+    zoomCanvas.width = zw;
+    zoomCanvas.height = zh;
+    zoomCtx.imageSmoothingEnabled = false;
+    
+    const regionSize = 40; 
+    zoomCtx.drawImage(
+        sourceImage,
+        canvasX * scaleX - regionSize/2, 
+        canvasY * scaleY - regionSize/2, 
+        regionSize, regionSize,
+        0, 0, zw, zh
+    );
+    
+    // Disegna un mirino centrale nello zoom per precisione
+    zoomCtx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    zoomCtx.lineWidth = 1;
+    zoomCtx.beginPath();
+    zoomCtx.moveTo(zw/2, 0); zoomCtx.lineTo(zw/2, zh);
+    zoomCtx.moveTo(0, zh/2); zoomCtx.lineTo(zw, zh/2);
+    zoomCtx.stroke();
+}
         
         // View toggle per mobile
         const viewToggle = document.querySelectorAll('.view-toggle button');
@@ -854,47 +909,75 @@
         });
 
         // Fotocamera
-        cameraBtn.addEventListener('click', async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
-                });
-                
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                video.play();
-
-                const modal = document.createElement('div');
-                modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-                
-                video.style.cssText = 'max-width:90%;max-height:80vh;';
-                modal.appendChild(video);
-
-                const captureBtn = document.createElement('button');
-                captureBtn.textContent = '📸 Cattura';
-                captureBtn.className = 'btn btn-success';
-                captureBtn.style.marginTop = '20px';
-                modal.appendChild(captureBtn);
-
-                document.body.appendChild(modal);
-
-                captureBtn.addEventListener('click', () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    canvas.getContext('2d').drawImage(video, 0, 0);
-                    
-                    stream.getTracks().forEach(track => track.stop());
-                    document.body.removeChild(modal);
-                    
-                    loadImage(canvas.toDataURL('image/jpeg'));
-                    showStatus('Foto catturata con successo!');
-                });
-
-            } catch (err) {
-                showStatus('Errore accesso fotocamera: ' + err.message);
-            }
+cameraBtn.addEventListener('click', async () => {
+    try {
+        // Richiediamo la risoluzione massima disponibile
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment',
+                width: { ideal: 4096 },
+                height: { ideal: 2160 }
+            } 
         });
+        
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        await video.play();
+
+        // Controllo Flash/Torcia (se supportato)
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:10000;display:flex;flex-direction:column;';
+        
+        video.style.cssText = 'width:100%;flex-grow:1;object-fit:contain;';
+        modal.appendChild(video);
+
+        const controls = document.createElement('div');
+        controls.style.cssText = 'padding:20px;display:flex;justify-content:space-around;background:#111;';
+        
+        // Bottone Flash
+        if (capabilities.torch) {
+            const flashBtn = document.createElement('button');
+            flashBtn.textContent = '🔦 Flash OFF';
+            flashBtn.className = 'btn btn-outline-light';
+            let flashOn = false;
+            flashBtn.onclick = () => {
+                flashOn = !flashOn;
+                track.applyConstraints({ advanced: [{ torch: flashOn }] });
+                flashBtn.textContent = flashOn ? '🔦 Flash ON' : '🔦 Flash OFF';
+            };
+            controls.appendChild(flashBtn);
+        }
+
+        const captureBtn = document.createElement('button');
+        captureBtn.innerHTML = '📸 SCATTA';
+        captureBtn.className = 'btn btn-primary btn-lg';
+        captureBtn.onclick = () => {
+            const canvas = document.createElement('canvas');
+            // Usiamo le dimensioni REALI dello stream video
+            const settings = track.getSettings();
+            canvas.width = settings.width;
+            canvas.height = settings.height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            stream.getTracks().forEach(t => t.stop());
+            document.body.removeChild(modal);
+            
+            loadImage(canvas.toDataURL('image/jpeg', 1.0));
+        };
+        
+        controls.appendChild(captureBtn);
+        modal.appendChild(controls);
+        document.body.appendChild(modal);
+
+    } catch (err) {
+        showStatus('Errore: ' + err.message);
+    }
+});
 
         // Carica immagine
         function loadImage(src) {
@@ -1233,18 +1316,30 @@
             updateZoomHelper(x, y, e.clientX, e.clientY);
         });
 
-        document.addEventListener('mouseup', () => {
+     // Funzione universale per sganciare il punto
+        const handleRelease = () => {
             if (selectedPoint !== null) {
-                // Nascondi zoom helper
+                // 1. Nascondi lo zoom helper
                 zoomHelper.style.display = 'none';
                 
-                // Auto-ricalcola rettificazione se ci sono 4 punti
+                // 2. Se abbiamo i 4 punti, ricalcola la rettificazione (UX fluida)
                 if (points.length === 4 && sourceImage) {
-                    autoRectify();
+                    autoRectify(); 
                 }
+                
+                // 3. IMPORTANTE: Resetta il punto selezionato a null
+                selectedPoint = null; 
+                
+                // 4. Rinfresca la grafica per togliere lo stato "attivo" dal punto
+                renderPoints(); 
             }
-            selectedPoint = null;
-        });
+        };
+
+        // Applichiamo a entrambi per sicurezza
+        document.addEventListener('mouseup', handleRelease);
+        document.addEventListener('touchend', handleRelease);
+        // Protezione aggiuntiva se il mouse esce dalla finestra del browser
+        document.addEventListener('mouseleave', handleRelease);
 
         // Drag punti (touch per mobile)
         document.addEventListener('touchmove', (e) => {
@@ -1443,66 +1538,71 @@
         }
 
         // Applica trasformazione prospettica inversa
-        function applyPerspectiveTransform(srcCanvas, dstCanvas, H, width, height) {
-            // Crea un canvas temporaneo con l'immagine PULITA (senza poligono)
-            const cleanCanvas = document.createElement('canvas');
-            cleanCanvas.width = srcCanvas.width;
-            cleanCanvas.height = srcCanvas.height;
-            const cleanCtx = cleanCanvas.getContext('2d');
-            
-            // Disegna solo l'immagine originale senza poligono né punti
-            cleanCtx.drawImage(sourceImage, 0, 0, cleanCanvas.width, cleanCanvas.height);
-            
-            const srcData = cleanCtx.getImageData(0, 0, cleanCanvas.width, cleanCanvas.height);
-            const dstCtx = dstCanvas.getContext('2d');
-            const dstData = dstCtx.createImageData(width, height);
+function applyPerspectiveTransform(srcCanvas, dstCanvas, H, width, height) {
+    // 1. Creiamo un canvas temporaneo alla risoluzione ORIGINALE della foto
+    const fullResCanvas = document.createElement('canvas');
+    fullResCanvas.width = sourceImage.width;
+    fullResCanvas.height = sourceImage.height;
+    const fullResCtx = fullResCanvas.getContext('2d');
+    fullResCtx.drawImage(sourceImage, 0, 0);
+    
+    // 2. Ricalcoliamo l'omografia usando i punti scalati sulla foto reale
+    const ratioX = sourceImage.width / srcCanvas.width;
+    const ratioY = sourceImage.height / srcCanvas.height;
+    
+    const scaledSrcPoints = orderPointsClockwise(points).map(p => ({
+        x: p.x * ratioX,
+        y: p.y * ratioY
+    }));
 
-            // Inverti la matrice di omografia per mappare dst -> src
-            const Hinv = invertHomography(H);
+    const dstPoints = [
+        { x: 0, y: 0 },
+        { x: width, y: 0 },
+        { x: width, y: height },
+        { x: 0, y: height }
+    ];
 
-            // Per ogni pixel di destinazione, trova il pixel sorgente corrispondente
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    // Applica trasformazione inversa
-                    const denom = Hinv[2][0] * x + Hinv[2][1] * y + Hinv[2][2];
-                    const srcX = (Hinv[0][0] * x + Hinv[0][1] * y + Hinv[0][2]) / denom;
-                    const srcY = (Hinv[1][0] * x + Hinv[1][1] * y + Hinv[1][2]) / denom;
+    const realH = computeHomography(scaledSrcPoints, dstPoints);
+    const Hinv = invertHomography(realH);
 
-                    // Interpolazione bilineare per qualità migliore
-                    if (srcX >= 0 && srcX < cleanCanvas.width - 1 && 
-                        srcY >= 0 && srcY < cleanCanvas.height - 1) {
-                        
-                        const x0 = Math.floor(srcX);
-                        const y0 = Math.floor(srcY);
-                        const x1 = x0 + 1;
-                        const y1 = y0 + 1;
-                        const dx = srcX - x0;
-                        const dy = srcY - y0;
+    // 3. Estraiamo i dati dell'immagine originale
+    const srcData = fullResCtx.getImageData(0, 0, fullResCanvas.width, fullResCanvas.height);
+    const dstCtx = dstCanvas.getContext('2d');
+    const dstData = dstCtx.createImageData(width, height);
 
-                        const dstIdx = (y * width + x) * 4;
+    // 4. Algoritmo di trasformazione con Interpolazione Bilineare
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const denom = Hinv[2][0] * x + Hinv[2][1] * y + Hinv[2][2];
+            const srcX = (Hinv[0][0] * x + Hinv[0][1] * y + Hinv[0][2]) / denom;
+            const srcY = (Hinv[1][0] * x + Hinv[1][1] * y + Hinv[1][2]) / denom;
 
-                        // Interpola ogni canale colore
-                        for (let c = 0; c < 3; c++) {
-                            const v00 = srcData.data[(y0 * cleanCanvas.width + x0) * 4 + c];
-                            const v10 = srcData.data[(y0 * cleanCanvas.width + x1) * 4 + c];
-                            const v01 = srcData.data[(y1 * cleanCanvas.width + x0) * 4 + c];
-                            const v11 = srcData.data[(y1 * cleanCanvas.width + x1) * 4 + c];
+            if (srcX >= 0 && srcX < fullResCanvas.width - 1 && srcY >= 0 && srcY < fullResCanvas.height - 1) {
+                const x0 = Math.floor(srcX);
+                const y0 = Math.floor(srcY);
+                const dx = srcX - x0;
+                const dy = srcY - y0;
 
-                            const v0 = v00 * (1 - dx) + v10 * dx;
-                            const v1 = v01 * (1 - dx) + v11 * dx;
-                            const v = v0 * (1 - dy) + v1 * dy;
+                const dstIdx = (y * width + x) * 4;
 
-                            dstData.data[dstIdx + c] = Math.round(v);
-                        }
-                        dstData.data[dstIdx + 3] = 255; // Alpha
-                    }
+                for (let c = 0; c < 3; c++) {
+                    const v00 = srcData.data[(y0 * fullResCanvas.width + x0) * 4 + c];
+                    const v10 = srcData.data[(y0 * fullResCanvas.width + (x0 + 1)) * 4 + c];
+                    const v01 = srcData.data[((y0 + 1) * fullResCanvas.width + x0) * 4 + c];
+                    const v11 = srcData.data[((y0 + 1) * fullResCanvas.width + (x0 + 1)) * 4 + c];
+
+                    const v = v00 * (1 - dx) * (1 - dy) + v10 * dx * (1 - dy) + v01 * (1 - dx) * dy + v11 * dx * dy;
+                    dstData.data[dstIdx + c] = v;
                 }
+                dstData.data[dstIdx + 3] = 255;
             }
-
-            dstCtx.putImageData(dstData, 0, 0);
-            rectifiedImageData = dstData;
-            applyFilters();
         }
+    }
+
+    dstCtx.putImageData(dstData, 0, 0);
+    rectifiedImageData = dstData;
+    applyFilters();
+}
 
         // Inverti matrice di omografia 3x3
         function invertHomography(H) {
