@@ -72,6 +72,14 @@ body { font-family: system-ui, sans-serif; background: var(--bg); margin: 0; dis
     <div style="display:flex; gap:10px">
         <select id="voice-select" class="btn" style="background:#333"></select>
         <button id="tts-btn" class="btn" onclick="toggleTTS()">🔊 Leggi</button>
+		<select id="speed-select" class="btn" style="background:#333; width: 70px;">
+		    <option value="0.8">0.8x</option>
+		    <option value="1" selected>1x</option>
+		    <option value="1.2">1.2x</option>
+		    <option value="1.5">1.5x</option>
+		    <option value="2">2x</option>
+		</select>
+        
     </div>
 </div>
 
@@ -398,13 +406,37 @@ async function loadBook(id) {
     }
     
     function toggleTTS() {
-        if(isReading) { synth.cancel(); isReading = false; }
-        else {
+        if (isReading) { 
+            synth.cancel(); 
+            isReading = false; 
+            document.getElementById('tts-btn').innerText = "🔊 Leggi";
+        } else {
+            if (!currentBook) return;
+            
             isReading = true;
+            document.getElementById('tts-btn').innerText = "⏹️ Stop";
+
+            // Recuperiamo il testo della pagina attuale
             const text = currentBook.text[pageFlip.getCurrentPageIndex()];
+            if (!text) {
+                isReading = false;
+                return;
+            }
+
             const msg = new SpeechSynthesisUtterance(text);
+            
+            // Impostiamo la Voce selezionata
             msg.voice = synth.getVoices().find(v => v.name === document.getElementById('voice-select').value);
-            msg.onend = () => isReading = false;
+            
+            // --- NUOVO: Impostiamo la Velocità ---
+            const speed = document.getElementById('speed-select').value;
+            msg.rate = parseFloat(speed); 
+
+            msg.onend = () => {
+                isReading = false;
+                document.getElementById('tts-btn').innerText = "🔊 Leggi";
+            };
+
             synth.speak(msg);
         }
     }
