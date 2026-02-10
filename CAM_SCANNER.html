@@ -6,6 +6,15 @@
     <title>Scanner Documenti - Rettificazione Prospettica</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
+    
+/* Applica questo a Canvas e punti per bloccare ogni movimento della pagina */
+#sourceCanvas, .point, #sourceContainer {
+    touch-action: none !important; 
+    -ms-touch-action: none !important;
+    user-select: none !important;
+    -webkit-user-drag: none !important;
+}    
+    
 #zoomHelper {
     position: fixed; /* FONDAMENTALE: resta agganciato allo schermo, non alla pagina */
     z-index: 10000;  /* Sopra a tutto */
@@ -801,13 +810,18 @@ function handleMove(clientX, clientY, isTouch) {
 }
 
 // MANTIENI SOLO QUESTO LISTENER PER IL TOUCH
+// 2. Quando muovi il dito
 document.addEventListener('touchmove', (e) => {
     if (selectedPoint !== null) {
-        e.preventDefault(); // Blocca lo scroll della pagina
+        // BLOCCA lo scroll durante tutto il movimento
+        if (e.cancelable) e.preventDefault(); 
+        
         const touch = e.touches[0];
+        // Passa 'true' per attivare l'offset ed evitare che il dito copra il vertice
         handleMove(touch.clientX, touch.clientY, true);
     }
 }, { passive: false });
+
         // Aggiorna gli Event Listeners
 // Funzione universale per sganciare il punto
 const stopDragging = () => {
@@ -1229,12 +1243,23 @@ cameraBtn.addEventListener('click', async () => {
                 });
 
                 // Touch events per mobile
-                pointEl.addEventListener('touchstart', (e) => {
-                    selectedPoint = index;
-                    renderPoints(); // Re-render per aggiornare i colori
-                    e.preventDefault();
-                    e.stopPropagation();
-                }, { passive: false });
+// 1. Quando tocchi il punto
+sourceCanvas.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    const rect = sourceCanvas.getBoundingClientRect();
+    const touchX = (touch.clientX - rect.left) * (sourceCanvas.width / rect.width);
+    const touchY = (touch.clientY - rect.top) * (sourceCanvas.height / rect.height);
+
+    // Cerca se hai toccato un punto (tolleranza 44px per dita grandi)
+    points.forEach((p, index) => {
+        const dist = Math.hypot(p.x - touchX, p.y - touchY);
+        if (dist < 44) { 
+            selectedPoint = index;
+            // BLOCCA lo scroll immediatamente al contatto
+            if (e.cancelable) e.preventDefault(); 
+        }
+    });
+}, { passive: false });
 
                 sourceContainer.appendChild(pointEl);
                 pointElements.push(pointEl);
