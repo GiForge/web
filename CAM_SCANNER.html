@@ -755,25 +755,42 @@
         
      // --- SOSTITUISCI QUESTE VARIABILI E FUNZIONI ---
         //const ZOOM_LEVEL = 5;
-        const TOUCH_OFFSET_Y = 50; // Offset per non coprire il punto con il dito
+        const TOUCH_OFFSET_Y = 60; // Distanza tra dito e vertice
 
         function handleMove(clientX, clientY, isTouch) {
             if (selectedPoint === null) return;
 
             const rect = sourceCanvas.getBoundingClientRect();
             
-            // Se è touch, applichiamo l'offset verso l'alto
+            // Calcolo scala tra canvas visualizzato e coordinate reali del canvas
+            const scaleX = sourceCanvas.width / rect.width;
+            const scaleY = sourceCanvas.height / rect.height;
+
+            // Se è touch, spostiamo il punto verso l'alto rispetto al dito
             const offsetY = isTouch ? TOUCH_OFFSET_Y : 0;
             
-            const x = Math.max(0, Math.min(sourceCanvas.width, clientX - rect.left));
-            const y = Math.max(0, Math.min(sourceCanvas.height, clientY - rect.top - offsetY));
+            // Coordinata X e Y relativa al canvas (scalata correttamente)
+            const x = (clientX - rect.left) * scaleX;
+            const y = ((clientY - rect.top) - offsetY) * scaleY;
 
-            points[selectedPoint] = { x, y };
+            // Limiti per non uscire dal foglio
+            points[selectedPoint] = { 
+                x: Math.max(0, Math.min(sourceCanvas.width, x)), 
+                y: Math.max(0, Math.min(sourceCanvas.height, y)) 
+            };
+
             renderPoints();
-            
-            // Passiamo le coordinate per lo zoom helper
-            updateZoomHelper(x, y, clientX, clientY);
+            updateZoomHelper(points[selectedPoint].x, points[selectedPoint].y, clientX, clientY - offsetY);
         }
+
+        // BLOCCA SCROLL E ABILITA UN DITO
+        document.addEventListener('touchmove', (e) => {
+            if (selectedPoint !== null) {
+                e.preventDefault(); // Impedisce lo scroll della pagina
+                const touch = e.touches[0];
+                handleMove(touch.clientX, touch.clientY, true);
+            }
+        }, { passive: false });
 
         // Aggiorna gli Event Listeners
 // Funzione universale per sganciare il punto
@@ -802,15 +819,6 @@ document.addEventListener('mousemove', (e) => {
         handleMove(e.clientX, e.clientY, false);
     }
 });
-
-// Evento Movimento Touch
-document.addEventListener('touchmove', (e) => {
-    if (selectedPoint !== null) {
-        e.preventDefault(); // Impedisce lo scroll mentre trascini
-        handleMove(e.touches[0].clientX, e.touches[0].clientY, true);
-    }
-}, { passive: false });
-
 
         // Sostituisci la funzione updateZoomHelper con questa "magnetica"
 function updateZoomHelper(canvasX, canvasY, screenX, screenY) {
@@ -1341,36 +1349,6 @@ cameraBtn.addEventListener('click', async () => {
         // Protezione aggiuntiva se il mouse esce dalla finestra del browser
         document.addEventListener('mouseleave', handleRelease);
 
-        // Drag punti (touch per mobile)
-        document.addEventListener('touchmove', (e) => {
-            if (selectedPoint === null) return;
-
-            const rect = sourceCanvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            const x = Math.max(0, Math.min(sourceCanvas.width, touch.clientX - rect.left));
-            const y = Math.max(0, Math.min(sourceCanvas.height, touch.clientY - rect.top));
-
-            points[selectedPoint] = { x, y };
-            renderPoints();
-            
-            // Mostra zoom helper
-            updateZoomHelper(x, y, touch.clientX, touch.clientY);
-            
-            e.preventDefault();
-        }, { passive: false });
-
-        document.addEventListener('touchend', () => {
-            if (selectedPoint !== null) {
-                // Nascondi zoom helper
-                zoomHelper.style.display = 'none';
-                
-                // Auto-ricalcola rettificazione se ci sono 4 punti
-                if (points.length === 4 && sourceImage) {
-                    autoRectify();
-                }
-            }
-            selectedPoint = null;
-        });
 
         // Auto-rettifica (chiamata quando si rilascia un punto)
         function autoRectify() {
