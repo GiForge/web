@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEURAL SCAN PRO // FIXED</title>
+    <title>NEURAL SCAN PRO // AUTO-GEOMETRY</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script async src="https://docs.opencv.org/4.5.4/opencv.js" onload="onOpenCvReady()"></script>
@@ -14,7 +14,6 @@
         #video-bg, #display-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; }
         #display-canvas { z-index: 5; display: none; }
 
-        /* HUD & Controlli */
         .control-panel {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 500px; z-index: 100;
@@ -29,23 +28,31 @@
             padding: 14px; font-weight: bold; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 8px;
             clip-path: polygon(0 0, 92% 0, 100% 50%, 92% 100%, 0 100%);
+            font-family: var(--font);
         }
 
-        .btn-sec { background: rgba(0,243,255,0.1); border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 12px; cursor: pointer; }
-
-        /* Vertici */
+        /* Overlay e Geometria */
         #crop-overlay { position: fixed; inset: 0; z-index: 10; display: none; }
         .corner { 
-            position: absolute; width: 40px; height: 40px; border: 2px solid var(--neon-blue); 
+            position: absolute; width: 44px; height: 44px; border: 2px solid var(--neon-blue); 
             border-radius: 50%; transform: translate(-50%, -50%); 
-            background: rgba(0, 243, 255, 0.3); z-index: 20; touch-action: none;
+            background: rgba(0, 243, 255, 0.4); z-index: 30; touch-action: none;
         }
 
-        /* Risultati */
-        .results-drawer { position: fixed; inset: 0; background: var(--glass); z-index: 200; padding: 20px; display: none; flex-direction: column; }
-        textarea { width: 100%; flex-grow: 1; background: #000; border: 1px solid var(--neon-amber); color: #fff; padding: 10px; font-family: var(--font); margin: 15px 0; }
+        /* Handle per i lati potenziati */
+        .edge-handle {
+            position: absolute; z-index: 20; touch-action: none;
+            width: 50px; height: 30px; background: rgba(0, 243, 255, 0.2);
+            border: 1px solid var(--neon-blue); border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            transform: translate(-50%, -50%); color: var(--neon-blue);
+        }
+
+        .results-drawer { position: fixed; inset: 0; background: var(--glass); z-index: 200; padding: 25px; display: none; flex-direction: column; }
+        textarea { width: 100%; flex-grow: 1; background: #000; border: 1px solid var(--neon-amber); color: #fff; padding: 15px; font-family: var(--font); margin: 15px 0; }
         
         #file-input { display: none; }
+        .btn-icon { background: none; border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -54,27 +61,35 @@
     <canvas id="display-canvas"></canvas>
     
     <div id="crop-overlay">
+        <div id="eh-0" class="edge-handle"><i data-lucide="grip-horizontal" size="16"></i></div>
+        <div id="eh-1" class="edge-handle" style="transform: translate(-50%, -50%) rotate(90deg);"><i data-lucide="grip-horizontal" size="16"></i></div>
+        <div id="eh-2" class="edge-handle"><i data-lucide="grip-horizontal" size="16"></i></div>
+        <div id="eh-3" class="edge-handle" style="transform: translate(-50%, -50%) rotate(90deg);"><i data-lucide="grip-horizontal" size="16"></i></div>
+        
         <div id="c0" class="corner"></div><div id="c1" class="corner"></div>
         <div id="c2" class="corner"></div><div id="c3" class="corner"></div>
     </div>
 
     <div id="drawer" class="results-drawer">
-        <span style="color: var(--neon-amber)">[ DATA_DECRYPTED ]</span>
         <textarea id="output-text"></textarea>
-        <button class="btn-main" onclick="location.reload()">CLOSE & RESET</button>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-main" onclick="copyText()">COPY</button>
+            <button class="btn-main" onclick="location.reload()">NEW_SCAN</button>
+        </div>
     </div>
 
     <div class="control-panel">
-        <div id="status" style="font-size: 0.7rem; color: var(--neon-blue)">CORE_LOADING...</div>
-        <div class="action-row" id="ui-init" style="display: flex; gap: 10px;">
-            <label for="file-input" class="btn-sec"><i data-lucide="image"></i></label>
+        <div id="status" style="font-size: 0.7rem; color: var(--neon-blue)">AI_SYSTEM_READY</div>
+        
+        <div id="ui-init" style="display: flex; gap: 10px;">
+            <label for="file-input" class="btn-icon"><i data-lucide="file-plus"></i></label>
             <input type="file" id="file-input" accept="image/*">
-            <button class="btn-main" onclick="captureLive()"><i data-lucide="camera"></i> CAPTURE_LIVE</button>
+            <button class="btn-main" onclick="captureLive()">CAPTURE_LIVE</button>
         </div>
-        <div class="action-row" id="ui-edit" style="display: none; gap: 10px;">
-            <button class="btn-main" style="background:var(--neon-amber)" onclick="processFinal()">
-                <i data-lucide="zap"></i> EXECUTE_OCR
-            </button>
+
+        <div id="ui-edit" style="display: none; gap: 10px;">
+            <button class="btn-icon" onclick="resetArea()" title="Reset Area"><i data-lucide="refresh-cw"></i></button>
+            <button class="btn-main" style="background:var(--neon-amber)" onclick="processFinal()">EXTRACT_TEXT</button>
         </div>
     </div>
 
@@ -87,118 +102,132 @@
     let stream, originalImg = null;
     let corners = [];
 
-    function onOpenCvReady() { status.innerText = "SYSTEM_READY"; startCamera(); }
+    function onOpenCvReady() { startCamera(); }
 
     async function startCamera() {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         video.srcObject = stream;
     }
 
-    // ACQUISIZIONE
     function captureLive() {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0);
-        initEditMode();
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0); initEditMode();
     }
 
     document.getElementById('file-input').onchange = (e) => {
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = (ev) => {
             const img = new Image();
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                initEditMode();
-            };
-            img.src = event.target.result;
+            img.onload = () => { canvas.width = img.width; canvas.height = img.height; ctx.drawImage(img, 0, 0); initEditMode(); };
+            img.src = ev.target.result;
         };
         reader.readAsDataURL(e.target.files[0]);
     };
 
     function initEditMode() {
-        // Salviamo l'immagine originale in una variabile separata
         originalImg = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        
-        const w = window.innerWidth, h = window.innerHeight;
-        corners = [
-            {x: w*0.2, y: h*0.2}, {x: w*0.8, y: h*0.2},
-            {x: w*0.8, y: h*0.7}, {x: w*0.2, y: h*0.7}
-        ];
+        resetArea(); // Calcolo iniziale automatico
         
         video.style.display = 'none';
         canvas.style.display = 'block';
         document.getElementById('crop-overlay').style.display = 'block';
         document.getElementById('ui-init').style.display = 'none';
         document.getElementById('ui-edit').style.display = 'flex';
-        status.innerText = "ADJUST_CORNERS";
-        updateUI();
+        status.innerText = "CALIBRATE_AREA";
     }
 
-    // DRAG LOGIC
+    // FUNZIONE DI RESET / AUTOCALCOLO
+    function resetArea() {
+        const w = window.innerWidth, h = window.innerHeight;
+        const marginX = w * 0.05;
+        const marginY = h * 0.1;
+        
+        // Definisce un quadrilatero perfetto ai bordi del viewport
+        corners = [
+            {x: marginX, y: marginY},           // Top-Left
+            {x: w - marginX, y: marginY},       // Top-Right
+            {x: w - marginX, y: h - 160},       // Bottom-Right (lascia spazio per la UI)
+            {x: marginX, y: h - 160}            // Bottom-Left
+        ];
+        updateUI();
+        status.innerText = "AREA_RESET_COMPLETE";
+    }
+
+    // LOGICA VERTICI
     document.querySelectorAll('.corner').forEach((el, i) => {
         const move = (e) => {
-            e.preventDefault();
-            const touch = e.touches ? e.touches[0] : e;
-            corners[i].x = touch.clientX;
-            corners[i].y = touch.clientY;
+            e.preventDefault(); const t = e.touches ? e.touches[0] : e;
+            corners[i].x = t.clientX; corners[i].y = t.clientY;
             updateUI();
         };
-        el.onmousedown = el.ontouchstart = () => {
+        el.ontouchstart = el.onmousedown = () => {
+            window.onmousemove = window.ontouchmove = move;
+            window.onmouseup = window.ontouchend = () => window.onmousemove = window.ontouchmove = null;
+        };
+    });
+
+    // LOGICA LATI COERENTE (Vettoriale)
+    const edgePairs = [[0, 1], [1, 2], [2, 3], [3, 0]];
+    edgePairs.forEach((pair, i) => {
+        const el = document.getElementById(`eh-${i}`);
+        let lastX, lastY;
+        const move = (e) => {
+            e.preventDefault(); const t = e.touches ? e.touches[0] : e;
+            const dx = t.clientX - lastX; const dy = t.clientY - lastY;
+            corners[pair[0]].x += dx; corners[pair[0]].y += dy;
+            corners[pair[1]].x += dx; corners[pair[1]].y += dy;
+            lastX = t.clientX; lastY = t.clientY;
+            updateUI();
+        };
+        el.ontouchstart = el.onmousedown = (e) => {
+            const t = e.touches ? e.touches[0] : e;
+            lastX = t.clientX; lastY = t.clientY;
             window.onmousemove = window.ontouchmove = move;
             window.onmouseup = window.ontouchend = () => window.onmousemove = window.ontouchmove = null;
         };
     });
 
     function updateUI() {
-        corners.forEach((c, i) => {
-            const el = document.getElementById(`c${i}`);
-            el.style.left = c.x + 'px';
-            el.style.top = c.y + 'px';
-        });
-        
-        // Disegno linee su canvas di anteprima
         ctx.putImageData(originalImg, 0, 0);
-        ctx.strokeStyle = '#00f3ff'; ctx.lineWidth = 5;
-        const sX = canvas.width / window.innerWidth;
-        const sY = canvas.height / window.innerHeight;
+        ctx.strokeStyle = '#00f3ff'; ctx.lineWidth = 4;
+        const sX = canvas.width/window.innerWidth, sY = canvas.height/window.innerHeight;
         
         ctx.beginPath();
         ctx.moveTo(corners[0].x * sX, corners[0].y * sY);
-        corners.forEach(c => ctx.lineTo(c.x * sX, c.y * sY));
+        corners.forEach((c, i) => {
+            const next = corners[(i + 1) % 4];
+            ctx.lineTo(next.x * sX, next.y * sY);
+            
+            document.getElementById(`c${i}`).style.left = c.x + 'px';
+            document.getElementById(`c${i}`).style.top = c.y + 'px';
+            
+            const hEl = document.getElementById(`eh-${i}`);
+            hEl.style.left = (c.x + next.x) / 2 + 'px';
+            hEl.style.top = (c.y + next.y) / 2 + 'px';
+        });
         ctx.closePath(); ctx.stroke();
     }
 
-    // PROCESSING FINALE
     async function processFinal() {
-        status.innerText = "WARPING...";
-        const sX = canvas.width / window.innerWidth;
-        const sY = canvas.height / window.innerHeight;
-        
-        let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
-            corners[0].x * sX, corners[0].y * sY, corners[1].x * sX, corners[1].y * sY,
-            corners[2].x * sX, corners[2].y * sY, corners[3].x * sX, corners[3].y * sY
-        ]);
-
-        const outW = 800, outH = 1100;
+        status.innerText = "OPTIMIZING_WARP...";
+        const sX = canvas.width/window.innerWidth, sY = canvas.height/window.innerHeight;
+        let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [corners[0].x*sX, corners[0].y*sY, corners[1].x*sX, corners[1].y*sY, corners[2].x*sX, corners[2].y*sY, corners[3].x*sX, corners[3].y*sY]);
+        const outW = 1000, outH = 1400;
         let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, outW, 0, outW, outH, 0, outH]);
         let M = cv.getPerspectiveTransform(srcPts, dstPts);
-        
-        // Usiamo l'immagine originale (senza linee blu) per il warp
         let src = cv.matFromImageData(originalImg);
         let dst = new cv.Mat();
         cv.warpPerspective(src, dst, M, new cv.Size(outW, outH));
         cv.imshow(canvas, dst);
-
-        status.innerText = "EXTRACTING_TEXT...";
-        const { data: { text } } = await Tesseract.recognize(canvas.toDataURL());
         
+        status.innerText = "NEURAL_OCR_ACTIVE...";
+        const { data: { text } } = await Tesseract.recognize(canvas.toDataURL());
         document.getElementById('output-text').value = text;
         document.getElementById('drawer').style.display = 'flex';
-        
         src.delete(); dst.delete(); M.delete(); srcPts.delete(); dstPts.delete();
     }
+    
+    function copyText() { navigator.clipboard.writeText(document.getElementById('output-text').value); status.innerText = "COPIED"; }
 </script>
 </body>
 </html>
