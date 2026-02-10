@@ -3,143 +3,119 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GI-FORGE Hub | Risorse HTML</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>GI-FORGE | Minimal Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-color: #f8fafc;
-            --accent-color: #38bdf8;
-            --hover-color: #7dd3fc;
-            --grid-gap: 20px;
+            --bg: #0b0f1a;
+            --card: #161e2e;
+            --accent: #38bdf8;
+            --text: #f1f5f9;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
-            color: var(--text-color);
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
+            display: flex;
+            justify-content: center;
             padding: 40px 20px;
-            min-height: 100vh;
         }
 
         .container {
-            max-width: 1100px;
-            margin: 0 auto;
+            width: 100%;
+            max-width: 800px;
         }
 
         header {
             text-align: center;
-            margin-bottom: 4rem;
-        }
-
-        h2 {
-            font-size: 2.5rem;
-            margin: 0;
-            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 800;
-        }
-
-        .subtitle {
-            opacity: 0.6;
-            letter-spacing: 1px;
-            margin-top: 10px;
-        }
-
-        /* Category Section */
-        .category-section {
             margin-bottom: 50px;
         }
 
-        .category-title {
+        h1 {
+            font-weight: 800;
+            font-size: 2.2rem;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        .category-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #64748b;
+            margin: 30px 0 15px 10px;
             display: flex;
             align-items: center;
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            color: var(--accent-color);
         }
 
-        .category-title i { margin-right: 10px; }
+        .category-label::after {
+            content: "";
+            height: 1px;
+            background: #1e293b;
+            flex-grow: 1;
+            margin-left: 15px;
+        }
 
-        /* Responsive Grid */
-        .app-grid {
+        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: var(--grid-gap);
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
         }
 
-        /* App Card Style */
-        .app-card {
+        .app-item {
             text-decoration: none;
             color: inherit;
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            box-sizing: border-box;
-        }
-
-        .app-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-color);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.4), 0 0 15px rgba(56, 189, 248, 0.1);
-            background: rgba(30, 41, 59, 0.8);
-        }
-
-        .card-header {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
+            border: 1px solid #1e293b;
+            transition: all 0.2s ease;
         }
 
-        .icon-wrapper {
-            width: 54px;
-            height: 54px;
-            border-radius: 14px;
+        .app-item:hover {
+            border-color: var(--accent);
+            background: #1e293b;
+            transform: translateY(-2px);
+        }
+
+        .icon-box {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            margin-right: 15px;
-            flex-shrink: 0;
-        }
-
-        .link-text {
-            font-weight: 700;
+            margin-right: 12px;
             font-size: 1.1rem;
-            line-height: 1.2;
         }
 
-        .link-description {
-            font-size: 0.9rem;
-            opacity: 0.5;
-            line-height: 1.4;
-            font-weight: 300;
+        .app-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        /* Specific Icon Gradients */
-        .util { background: linear-gradient(135deg, #0ea5e9, #2563eb); }
-        .prod { background: linear-gradient(135deg, #8b5cf6, #d946ef); }
-        .game { background: linear-gradient(135deg, #f43f5e, #fb923c); }
-        .lux  { background: linear-gradient(135deg, #c8a96a, #8a6a3a); }
+        /* Colors */
+        .c-blue { background: rgba(56, 189, 248, 0.1); color: #38bdf8; }
+        .c-gold { background: rgba(200, 169, 106, 0.1); color: #c8a96a; }
+        .c-red { background: rgba(244, 63, 94, 0.1); color: #f43f5e; }
+        .c-green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .c-purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
 
-        /* Responsive Adjustments */
-        @media (max-width: 600px) {
-            .app-grid { grid-template-columns: 1fr; }
-            h2 { font-size: 1.8rem; }
-            body { padding: 20px 15px; }
+        @media (max-width: 480px) {
+            .grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -147,96 +123,56 @@
 
 <div class="container">
     <header>
-        <h2><i class="fas fa-rocket"></i> GI-FORGE</h2>
-        <p class="subtitle">Open Source Web-App Dashboard</p>        
+        <h1>GI-FORGE</h1>
     </header>
 
-    <section class="category-section">
-        <div class="category-title"><i class="fas fa-briefcase"></i> Productivity & Management</div>
-        <div class="app-grid">
-            <a href="LUXURY_AGENDA.html" class="app-card">
-                <div class="card-header">
-                    <div class="icon-wrapper lux"><i class="fas fa-calendar-alt"></i></div>
-                    <span class="link-text">AGENDA LUXURY</span>
-                </div>
-                <span class="link-description">Luxury Agenda 3D con supporto import/export file.</span>
-            </a>
+    <div class="category-label">Productivity</div>
+    <div class="grid">
+        <a href="LUXURY_AGENDA.html" class="app-item">
+            <div class="icon-box c-gold"><i class="fas fa-calendar-day"></i></div>
+            <span class="app-name">Agenda</span>
+        </a>
+        <a href="WORK_GANTT_PROJECT.html" class="app-item">
+            <div class="icon-box c-purple"><i class="fas fa-chart-bar"></i></div>
+            <span class="app-name">Gantt</span>
+        </a>
+        <a href="PASSWOR_MANAGER.html" class="app-item">
+            <div class="icon-box c-red"><i class="fas fa-shield-halved"></i></div>
+            <span class="app-name">Vault</span>
+        </a>
+    </div>
 
-            <a href="WORK_GANTT_PROJECT.html" class="app-card">
-                <div class="card-header">
-                    <div class="icon-wrapper prod"><i class="fas fa-chart-gantt"></i></div>
-                    <span class="link-text">WORK GANTT</span>
-                </div>
-                <span class="link-description">Timeline e gestione progetti professionale in HTML.</span>
-            </a>
+    <div class="category-label">Utilities</div>
+    <div class="grid">
+        <a href="CLOCK_NIGHT_DAY.html" class="app-item">
+            <div class="icon-box c-blue"><i class="fas fa-clock"></i></div>
+            <span class="app-name">Clock</span>
+        </a>
+        <a href="CAM_SCANNER.html" class="app-item">
+            <div class="icon-box c-blue"><i class="fas fa-camera"></i></div>
+            <span class="app-name">Scanner</span>
+        </a>
+        <a href="IMG_TO_TEXT.html" class="app-item">
+            <div class="icon-box c-blue"><i class="fas fa-file-lines"></i></div>
+            <span class="app-name">OCR</span>
+        </a>
+        <a href="STOCK_CARD.html" class="app-item">
+            <div class="icon-box c-green"><i class="fas fa-wallet"></i></div>
+            <span class="app-name">Cards</span>
+        </a>
+    </div>
 
-            <a href="PASSWOR_MANAGER.html" class="app-card">
-                <div class="card-header">
-                    <div class="icon-wrapper util" style="background: linear-gradient(135deg, #ef4444, #991b1b);"><i class="fas fa-key"></i></div>
-                    <span class="link-text">PASS MANAGER</span>
-                </div>
-                <span class="link-description">Vault sicuro per le tue credenziali (offline-first).</span>
-            </a>
-        </div>
-    </section>
-
-    <section class="category-section">
-        <div class="category-title"><i class="fas fa-tools"></i> Utility Tools</div>
-        <div class="app-grid">
-            <a href="CLOCK_NIGHT_DAY.html" class="app-card">
-                <div class="card-header">
-                    <div class="icon-wrapper util" style="background: linear-gradient(135deg, #f59e0b, #d97706);"><i class="fas fa-clock"></i></div>
-                    <span class="link-text">NIGHT/DAY CLOCK</span>
-                </div>
-                <span class="link-description">Orologio meteo avanzato con ciclo solare dinamico.</span>
-            </a>
-
-            <a href="CAM_SCANNER.html" class="app-card">
-                <div class="card-header">
-                    <div class="icon-wrapper util"><i class="fas fa-camera"></i></div>
-                    <span class="link-text">CAM SCANNER</span>
-                </div>
-                <span class="link-description">Trasforma la tua fotocamera in uno scanner documenti.</span>
-            </a>
-
-            <a href="IMG_TO_TEXT.html" class="app-card">
-                <div class="card-header">
-                    <div class="icon-wrapper util"><i class="fas fa-camera"></i></div>
-                    <span class="link-text">OCR Image to Text</span>
-                </div>
-                <span class="link-description">OCR Image to Text.</span>
-            </a>
-
-            <a href="STOCK_CARD.html" class="app-card">
-                <div class="card-header">
-                    <div class="icon-wrapper util" style="background: linear-gradient(135deg, #10b981, #047857);"><i class="fas fa-wallet"></i></div>
-                    <span class="link-text">STOCK CARD</span>
-                </div>
-                <span class="link-description">Archivio digitale per gift card e carte fedeltà.</span>
-            </a>
-        </div>
-    </section>
-
-    <section class="category-section">
-        <div class="category-title"><i class="fas fa-gamepad"></i> Entertainment</div>
-        <div class="app-grid">
-            <a href="GAME_TETRIS.html" class="app-card">
-                <div class="card-header">
-                    <div class="icon-wrapper game"><i class="fas fa-shapes"></i></div>
-                    <span class="link-text">TETRIS CLASSIC</span>
-                </div>
-                <span class="link-description">Il leggendario puzzle game a blocchi.</span>
-            </a>
-
-            <a href="GAME_SPACE_INVADERS.html" class="app-card">
-                <div class="card-header">
-                    <div class="icon-wrapper game" style="background: linear-gradient(135deg, #6366f1, #3730a3);"><i class="fas fa-rocket"></i></div>
-                    <span class="link-text">SPACE INVADERS</span>
-                </div>
-                <span class="link-description">Difendi la terra in questo classico arcade shooter.</span>
-            </a>
-        </div>
-    </section>
+    <div class="category-label">Games</div>
+    <div class="grid">
+        <a href="GAME_TETRIS.html" class="app-item">
+            <div class="icon-box c-red"><i class="fas fa-shapes"></i></div>
+            <span class="app-name">Tetris</span>
+        </a>
+        <a href="GAME_SPACE_INVADERS.html" class="app-item">
+            <div class="icon-box c-purple"><i class="fas fa-rocket"></i></div>
+            <span class="app-name">Space</span>
+        </a>
+    </div>
 </div>
 
 </body>
