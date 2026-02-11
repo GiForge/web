@@ -11,6 +11,20 @@
     <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
 
     <style>
+/* Aggiunge una transizione dolce quando il libro viene scalato o cambiato */
+#book-wrapper {
+    transition: transform 0.2s ease-out;
+}
+
+/* Effetto fade-in per le pagine quando vengono rigenerate */
+.page {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}    
         :root { --accent: #e67e22; --bg: #f5f5f5; --panel: #ffffff; --text: #333; --page-bg: #ffffff; --page-text: #333; }
         body.night-mode { --bg: #121212; --panel: #1e1e1e; --text: #e0e0e0; --page-bg: #2c2c2c; --page-text: #f0f0f0; }
         
@@ -139,13 +153,33 @@
         if(p >= 100) setTimeout(() => document.getElementById('loading-ui').style.display = 'none', 500);
     }
 
-    function changeSize(dir) {
-        if (!currentBook || currentBook.type !== 'epub') return;
-        currentFontSize = Math.max(12, currentFontSize + (dir * 2));
-        currentBook.pages = fastPaginate(rawHtmlBuffer);
-        renderBookContent();
+ // FIX PRINCIPALE: SIZE E ZOOM
+function changeSize(dir) {
+    if (!currentBook) return;
+    
+    if (currentBook.type === 'epub') {
+        // 1. Mostra caricamento e messaggio specifico
+        document.getElementById('loading-msg').innerText = "Ricalcolo pagine...";
+        updateProgress(50); // Mostra la barra a metà
+        
+        // Usiamo setTimeout per permettere al browser di mostrare l'UI di caricamento
+        setTimeout(() => {
+            currentFontSize = Math.max(12, Math.min(40, currentFontSize + (dir * 2)));
+            currentBook.pages = fastPaginate(rawHtmlBuffer);
+            renderBookContent(true); 
+            
+            // 2. Nascondi caricamento al termine
+            updateProgress(100);
+            document.getElementById('status-label').innerText = "Font aggiornato";
+        }, 50); 
+        
+    } else if (currentBook.type === 'pdf') {
+        pdfZoom = Math.max(0.5, Math.min(3.0, pdfZoom + (dir * 0.1)));
+        applyZoom();
+        document.getElementById('status-label').innerText = `Zoom: ${Math.round(pdfZoom * 100)}%`;
     }
-
+}
+    
     function fastPaginate(html) {
         const tester = document.getElementById('paginator-tester');
         tester.style.fontSize = currentFontSize + 'px';
