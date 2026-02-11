@@ -3,34 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEURAL SCAN // RAW RESOLUTION</title>
+    <title>NEURAL SCAN // ORIGINAL RESTORED</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script async src="https://docs.opencv.org/4.5.4/opencv.js" onload="onOpenCvReady()"></script>
     <style>
-        :root { --neon-blue: #00f3ff; --neon-amber: #ffaa00; --glass: rgba(10, 15, 25, 0.95); --font: 'JetBrains Mono', monospace; }
+        :root { --neon-blue: #00f3ff; --neon-amber: #ffaa00; --glass: rgba(10, 15, 25, 0.85); --font: 'JetBrains Mono', monospace; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: var(--font); color: #fff; }
         
         #video-bg, #display-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; }
         #display-canvas { z-index: 5; display: none; }
 
+        /* Pannello in overlay ma non invasivo */
         .control-panel {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 500px; z-index: 100;
-            background: var(--glass); backdrop-filter: blur(15px);
-            border: 1px solid var(--neon-blue); padding: 15px;
-            display: flex; flex-direction: column; gap: 10px;
-            clip-path: polygon(0 0, 95% 0, 100% 20%, 100% 100%, 5% 100%, 0 80%);
+            position: fixed; bottom: 0; left: 0; width: 100%; z-index: 100;
+            background: var(--glass); backdrop-filter: blur(10px);
+            border-top: 1px solid var(--neon-blue); padding: 15px 0;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
         }
+
+        .btn-group { display: flex; gap: 10px; width: 90%; max-width: 500px; }
 
         .btn-main {
             flex: 1; background: var(--neon-blue); color: #000; border: none;
             padding: 14px; font-weight: bold; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            font-family: var(--font); clip-path: polygon(0 0, 92% 0, 100% 50%, 92% 100%, 0 100%);
+            font-family: var(--font); clip-path: polygon(0 0, 95% 0, 100% 50%, 95% 100%, 0 100%);
         }
 
-        /* UI Overlays */
+        /* UI Overlays Ripristinati */
         #crop-overlay { position: fixed; inset: 0; z-index: 10; display: none; }
         .corner { 
             position: absolute; width: 44px; height: 44px; border: 2px solid var(--neon-blue); 
@@ -67,24 +68,24 @@
         <div id="c2" class="corner"></div><div id="c3" class="corner"></div>
     </div>
 
+    <div class="control-panel">
+        <div id="status" style="font-size: 0.6rem; color: var(--neon-blue); text-transform: uppercase;">Engine Ready</div>
+        <div id="ui-init" class="btn-group">
+            <label for="file-input" style="padding: 12px; border: 1px solid var(--neon-blue); cursor: pointer;"><i data-lucide="file-up"></i></label>
+            <input type="file" id="file-input" accept="image/*">
+            <button class="btn-main" onclick="captureHQ()">CAPTURE NATIVE RES</button>
+        </div>
+        <div id="ui-edit" style="display: none;" class="btn-group">
+            <button onclick="resetArea()" style="background:none; border:1px solid var(--neon-blue); color:var(--neon-blue); padding:10px;"><i data-lucide="refresh-cw"></i></button>
+            <button class="btn-main" style="background:var(--neon-amber)" onclick="processFinal()">PROCESS RAW DATA</button>
+        </div>
+    </div>
+
     <div id="drawer" class="results-drawer">
         <textarea id="output-text"></textarea>
         <div style="display:flex; gap:10px;">
             <button class="btn-main" onclick="navigator.clipboard.writeText(document.getElementById('output-text').value)">COPY</button>
-            <button class="btn-main" onclick="location.reload()">NEW_SCAN</button>
-        </div>
-    </div>
-
-    <div class="control-panel">
-        <div id="status" style="font-size: 0.7rem; color: var(--neon-blue)">HQ_IMAGE_ENGINE_ACTIVE</div>
-        <div id="ui-init" style="display: flex; gap: 10px;">
-            <label for="file-input" style="padding: 12px; border: 1px solid var(--neon-blue); cursor: pointer;"><i data-lucide="file-up"></i></label>
-            <input type="file" id="file-input" accept="image/*">
-            <button class="btn-main" onclick="captureHQ()">CAPTURE_NATIVE_RES</button>
-        </div>
-        <div id="ui-edit" style="display: none; gap: 10px; width:100%">
-            <button onclick="resetArea()" style="background:none; border:1px solid var(--neon-blue); color:var(--neon-blue); padding:10px;"><i data-lucide="refresh-cw"></i></button>
-            <button class="btn-main" style="background:var(--neon-amber)" onclick="processFinal()">PROCESS_RAW_DATA</button>
+            <button class="btn-main" onclick="location.reload()">NEW SCAN</button>
         </div>
     </div>
 
@@ -100,28 +101,16 @@
     function onOpenCvReady() { startCamera(); }
 
     async function startCamera() {
-        try {
-            // Chiediamo esplicitamente la massima risoluzione del sensore
-            stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    facingMode: "environment",
-                    width: { ideal: 4096 },
-                    height: { ideal: 2160 }
-                } 
-            });
-            video.srcObject = stream;
-            const settings = stream.getVideoTracks()[0].getSettings();
-            status.innerText = `HQ_MODE: ${settings.width}x${settings.height}`;
-        } catch (e) { status.innerText = "CAMERA_ERROR"; }
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } } 
+        });
+        video.srcObject = stream;
     }
 
     function captureHQ() {
-        // Impostiamo il canvas alla risoluzione REALE del video, non a quella del CSS
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
-        
-        // Conserviamo i dati ad alta risoluzione in un buffer separato
         rawImageBuffer = ctx.getImageData(0, 0, canvas.width, canvas.height);
         initEditMode();
     }
@@ -129,8 +118,7 @@
     document.getElementById('file-input').onchange = (e) => {
         const img = new Image();
         img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
+            canvas.width = img.width; canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
             rawImageBuffer = ctx.getImageData(0, 0, canvas.width, canvas.height);
             initEditMode();
@@ -149,29 +137,25 @@
 
     function resetArea() {
         const w = window.innerWidth, h = window.innerHeight;
-        const m = 30;
-        corners = [{x:m, y:m}, {x:w-m, y:m}, {x:w-m, y:h-160}, {x:m, y:h-160}];
+        const m = 40;
+        // Ripristino coordinate schermo 1:1
+        corners = [{x:m, y:m}, {x:w-m, y:m}, {x:w-m, y:h-120}, {x:m, y:h-120}];
         updateUI();
     }
 
-    // --- LOGICA DI TRASCINAMENTO (COERENTE E VETTORIALE) ---
     function updateUI() {
         ctx.putImageData(rawImageBuffer, 0, 0);
-        ctx.strokeStyle = '#00f3ff'; ctx.lineWidth = Math.max(2, canvas.width/400); // Linea proporzionale alla risoluzione
-        
-        // Ratio per mappare le coordinate dello schermo (CSS) sul Canvas (Nativo)
         const sX = canvas.width / window.innerWidth;
         const sY = canvas.height / window.innerHeight;
 
+        ctx.strokeStyle = '#00f3ff'; ctx.lineWidth = Math.max(3, canvas.width/500);
         ctx.beginPath();
         ctx.moveTo(corners[0].x * sX, corners[0].y * sY);
         corners.forEach((c, i) => {
             const next = corners[(i + 1) % 4];
             ctx.lineTo(next.x * sX, next.y * sY);
-            
-            const cEl = document.getElementById(`c${i}`);
-            cEl.style.left = c.x + 'px'; cEl.style.top = c.y + 'px';
-            
+            document.getElementById(`c${i}`).style.left = c.x + 'px';
+            document.getElementById(`c${i}`).style.top = c.y + 'px';
             const hEl = document.getElementById(`eh-${i}`);
             hEl.style.left = (c.x + next.x) / 2 + 'px';
             hEl.style.top = (c.y + next.y) / 2 + 'px';
@@ -179,8 +163,7 @@
         ctx.closePath(); ctx.stroke();
     }
 
-    // Gestione Drag & Drop (Vertici e Lati)
-    // [Stessa logica vettoriale del precedente...]
+    // Gestione Drag Originale
     document.querySelectorAll('.corner').forEach((el, i) => {
         const move = (e) => {
             e.preventDefault(); const t = e.touches ? e.touches[0] : e;
@@ -198,8 +181,9 @@
         let lx, ly;
         const move = (e) => {
             e.preventDefault(); const t = e.touches ? e.touches[0] : e;
-            corners[pair[0]].x += (t.clientX - lx); corners[pair[0]].y += (t.clientY - ly);
-            corners[pair[1]].x += (t.clientX - lx); corners[pair[1]].y += (t.clientY - ly);
+            const dx = t.clientX - lx; const dy = t.clientY - ly;
+            corners[pair[0]].x += dx; corners[pair[0]].y += dy;
+            corners[pair[1]].x += dx; corners[pair[1]].y += dy;
             lx = t.clientX; ly = t.clientY; updateUI();
         };
         el.ontouchstart = el.onmousedown = (e) => {
@@ -211,33 +195,36 @@
     });
 
     async function processFinal() {
-        status.innerText = "PROCESSING_RAW_PIXELS...";
+        status.innerText = "EXTRACTING RAW PIXELS...";
         const sX = canvas.width / window.innerWidth;
         const sY = canvas.height / window.innerHeight;
         
-        // Calcolo delle coordinate sorgente sulla risoluzione nativa
-        let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
-            corners[0].x*sX, corners[0].y*sY, corners[1].x*sX, corners[1].y*sY,
-            corners[2].x*sX, corners[2].y*sY, corners[3].x*sX, corners[3].y*sY
-        ]);
+        // Calcolo dinamico proporzioni per evitare distorsioni OCR
+        const p = corners.map(c => ({x: c.x * sX, y: c.y * sY}));
+        const w1 = Math.hypot(p[1].x - p[0].x, p[1].y - p[0].y);
+        const w2 = Math.hypot(p[2].x - p[3].x, p[2].y - p[3].y);
+        const h1 = Math.hypot(p[3].x - p[0].x, p[3].y - p[0].y);
+        const h2 = Math.hypot(p[2].x - p[1].x, p[2].y - p[1].y);
+        
+        const maxWidth = Math.max(w1, w2);
+        const maxHeight = Math.max(h1, h2);
 
-        // Output ad altissima densità per l'OCR (circa 300 DPI equivalenti)
-        const outW = 1600, outH = 2200; 
-        let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [0,0, outW,0, outW,outH, 0,outH]);
+        let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [p[0].x, p[0].y, p[1].x, p[1].y, p[2].x, p[2].y, p[3].x, p[3].y]);
+        let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, maxWidth, 0, maxWidth, maxHeight, 0, maxHeight]);
+        
         let M = cv.getPerspectiveTransform(srcPts, dstPts);
         let src = cv.matFromImageData(rawImageBuffer);
         let dst = new cv.Mat();
         
-        cv.warpPerspective(src, dst, M, new cv.Size(outW, outH));
+        cv.warpPerspective(src, dst, M, new cv.Size(maxWidth, maxHeight));
         cv.imshow(canvas, dst);
 
-        status.innerText = "NEURAL_OCR_RUNNING...";
-        // Passiamo l'immagine rettificata ad alta risoluzione a Tesseract
-        const { data: { text } } = await Tesseract.recognize(canvas.toDataURL('image/jpeg', 0.95));
+        status.innerText = "NEURAL OCR RUNNING...";
+        const { data: { text } } = await Tesseract.recognize(canvas.toDataURL('image/png'));
         
         document.getElementById('output-text').value = text;
         document.getElementById('drawer').style.display = 'flex';
-        status.innerText = "SCAN_COMPLETE";
+        status.innerText = "COMPLETE";
         
         src.delete(); dst.delete(); M.delete(); srcPts.delete(); dstPts.delete();
     }
