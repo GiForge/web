@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProGantt Advanced Dashboard v5</title>
+    <title>ProGantt Elite v7.1 - Full Restore</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --p-color: #6366f1;
-            --p-dark: #4f46e5;
-            --danger: #ef4444;
-            --warning: #f59e0b;
+            --p-hover: #818cf8;
+            --danger: #f87171;
+            --warning: #fbbf24;
             --success: #10b981;
-            --bg-app: #f8fafc;
-            --card-bg: #ffffff;
-            --border-color: #e2e8f0;
-            --text-primary: #1e293b;
+            --bg-app: #0f172a;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --row-height: 58px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -23,178 +26,134 @@
 
         .app-container { max-width: 1800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-        /* Dashboard Riepilogo */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-
+        /* Summary Stats */
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
         .summary-card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            background: var(--card-bg); padding: 15px 20px; border-radius: 16px; border: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 15px;
         }
-        .summary-card i { font-size: 24px; color: var(--p-color); background: #eef2ff; padding: 12px; border-radius: 12px; }
-        .summary-card div span { font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
-        .summary-card div p { font-size: 1.4rem; font-weight: 800; }
+        .summary-card i { color: var(--p-color); font-size: 20px; background: rgba(99,102,241,0.1); padding: 10px; border-radius: 10px; }
+        .summary-card.highlight i { color: var(--success); background: rgba(16,185,129,0.1); }
+        .summary-card span { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; }
+        .summary-card p { font-size: 1.2rem; font-weight: 700; }
 
-        /* Top Bar */
+        /* Toolbar */
         .top-bar {
-            background: var(--card-bg);
-            padding: 15px 25px;
-            border-radius: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid var(--border-color);
+            background: var(--card-bg); padding: 12px 20px; border-radius: 16px; border: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
         }
 
-        /* Legenda */
-        .legend {
-            display: flex;
-            gap: 20px;
-            padding: 10px 20px;
-            background: #fff;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            font-size: 12px;
-            font-weight: 500;
+        /* Gantt Layout */
+        .gantt-container {
+            display: grid; grid-template-columns: 280px 1fr; background: var(--card-bg);
+            border-radius: 16px; border: 1px solid var(--border-color); overflow: hidden;
         }
-        .legend-item { display: flex; align-items: center; gap: 8px; }
-        .box { width: 14px; height: 14px; border-radius: 3px; }
 
-        /* Layout */
-        .main-layout { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
-        .sidebar { background: var(--card-bg); border-radius: 16px; padding: 20px; border: 1px solid var(--border-color); height: fit-content; }
+        .gantt-sidebar { border-right: 1px solid var(--border-color); background: #1a2235; }
+        .sidebar-header { height: 60px; padding: 20px; border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+        .sidebar-row { 
+            height: var(--row-height); padding: 8px 15px; border-bottom: 1px solid var(--border-color); 
+            display: flex; flex-direction: column; justify-content: center; cursor: pointer;
+        }
+        .sidebar-row:hover { background: rgba(255,255,255,0.05); }
+        .sidebar-row .t-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+        .sidebar-row .t-res { font-size: 10px; color: var(--text-secondary); }
+
+        .gantt-viewport { overflow-x: auto; background: #1e293b; position: relative; }
+        .gantt-header { display: flex; height: 60px; border-bottom: 2px solid var(--border-color); background: #1a2235; }
+        .day-cell { flex-shrink: 0; border-right: 1px solid var(--border-color); text-align: center; font-size: 10px; padding-top: 10px; color: var(--text-secondary); }
         
-        /* Gantt */
-        .gantt-box { background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color); overflow: hidden; }
-        .gantt-viewport { overflow-x: auto; position: relative; }
-        .gantt-grid-header { display: flex; background: #f8fafc; border-bottom: 2px solid var(--border-color); }
-        .day-cell { flex-shrink: 0; text-align: center; font-size: 10px; padding: 8px 0; border-right: 1px solid #e2e8f0; }
-        .gantt-body { position: relative; min-height: 500px; background-size: 50px 100%; }
-        .gantt-row { height: 50px; border-bottom: 1px solid #f1f5f9; position: relative; display: flex; align-items: center; }
+        .gantt-body { position: relative; }
+        .gantt-row { height: var(--row-height); border-bottom: 1px solid var(--border-color); position: relative; display: flex; align-items: center; }
 
+        /* Task Bars & Progress */
         .task-bar {
-            position: absolute;
-            height: 30px;
-            background: linear-gradient(90deg, #6366f1, #818cf8);
-            border-radius: 6px;
-            color: white;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            padding: 0 10px;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            white-space: nowrap;
+            position: absolute; height: 32px; background: #475569; border-radius: 6px; 
+            color: white; font-size: 11px; font-weight: 600; display: flex; align-items: center; 
+            cursor: pointer; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 2;
         }
-        .task-bar.milestone { 
-            background: var(--warning) !important; 
-            width: 16px !important; 
-            height: 16px !important; 
-            transform: rotate(45deg);
-            border: 2px solid #fff;
+        .task-progress-fill {
+            height: 100%; background: linear-gradient(90deg, var(--p-color), var(--p-hover));
+            display: flex; align-items: center; padding-left: 10px; white-space: nowrap; transition: width 0.4s ease;
         }
-        .task-bar.conflict { background: var(--danger) !important; }
-
-        .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger); z-index: 100; pointer-events: none; }
-
-        /* Buttons & Forms */
-        .btn { padding: 10px 15px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; }
-        .btn-p { background: var(--p-color); color: white; }
-        .btn-outline { background: white; border: 1px solid var(--border-color); }
+        .task-bar.completed .task-progress-fill { background: linear-gradient(90deg, var(--success), #34d399); }
+        .task-bar.milestone { background: var(--warning) !important; width: 18px !important; height: 18px !important; transform: rotate(45deg); border: 2px solid var(--bg-app); overflow: visible; }
         
-        .modal { display: none; position: fixed; z-index: 1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
-        .modal-content { background: white; margin: 5% auto; padding: 25px; border-radius: 16px; width: 450px; }
-        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid var(--border-color); border-radius: 8px; }
-        label { font-size: 11px; font-weight: 700; color: #64748b; margin-top: 10px; display: block; }
+        .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger); z-index: 5; opacity: 0.5; pointer-events: none; }
+
+        /* Modal & Form */
+        .modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 2000;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-content { background: var(--card-bg); width: 100%; max-width: 500px; padding: 30px; border-radius: 20px; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; }
+        .btn { padding: 10px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; transition: 0.2s; }
+        .btn-p { background: var(--p-color); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); }
+        .btn-outline:hover { background: var(--border-color); }
+        input, select { width: 100%; padding: 12px; margin: 8px 0 16px; background: var(--bg-app); border: 1px solid var(--border-color); border-radius: 8px; color: white; }
+        
+        .slider-container { background: var(--bg-app); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+        input[type=range] { margin: 10px 0; accent-color: var(--p-color); }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <div class="summary-grid" id="project-summary">
-        <div class="summary-card">
-            <i class="fas fa-tasks"></i>
-            <div><span>Task Totali</span><p id="sum-tasks">0</p></div>
-        </div>
-        <div class="summary-card">
-            <i class="fas fa-calendar-alt"></i>
-            <div><span>Durata Progetto</span><p id="sum-duration">0 gg</p></div>
-        </div>
-        <div class="summary-card">
-            <i class="fas fa-euro-sign"></i>
-            <div><span>Budget Totale</span><p id="sum-cost">€ 0</p></div>
-        </div>
-        <div class="summary-card">
-            <i class="fas fa-flag"></i>
-            <div><span>Milestones</span><p id="sum-milestones">0</p></div>
-        </div>
+    <div class="summary-grid">
+        <div class="summary-card"><i class="fas fa-tasks"></i><div><span>Task</span><p id="sum-tasks">0</p></div></div>
+        <div class="summary-card highlight"><i class="fas fa-chart-line"></i><div><span>Avanzamento Totale</span><p id="sum-progress">0%</p></div></div>
+        <div class="summary-card"><i class="fas fa-calendar-check"></i><div><span>Durata</span><p id="sum-duration">0 gg</p></div></div>
+        <div class="summary-card"><i class="fas fa-euro-sign"></i><div><span>Budget</span><p id="sum-cost">€ 0</p></div></div>
     </div>
 
     <header class="top-bar">
-        <div style="display: flex; gap: 15px; align-items: center;">
-            <h2 style="font-size: 1.2rem;"><i class="fas fa-project-diagram" style="color:var(--p-color)"></i> ProGantt v5</h2>
-            <div class="legend">
-                <div class="legend-item"><div class="box" style="background: var(--p-color)"></div> Task</div>
-                <div class="legend-item"><div class="box" style="background: var(--warning)"></div> Milestone</div>
-                <div class="legend-item"><div class="box" style="background: var(--danger)"></div> Conflitto Ore</div>
-                <div class="legend-item"><div class="box" style="border-left: 2px solid var(--danger); background: transparent; width: 5px; height: 14px;"></div> Oggi</div>
-            </div>
-        </div>
-        <div style="display: flex; gap: 8px;">
-            <button class="btn btn-outline" onclick="changeZoom(-10)"><i class="fas fa-search-minus"></i></button>
-            <button class="btn btn-outline" onclick="changeZoom(10)"><i class="fas fa-search-plus"></i></button>
-            <button class="btn btn-p" onclick="openModal()"><i class="fas fa-plus"></i> Nuovo</button>
-            <button class="btn btn-outline" onclick="exportData()"><i class="fas fa-save"></i> Salva</button>
-            <button class="btn btn-outline" onclick="document.getElementById('fileIn').click()"><i class="fas fa-upload"></i></button>
-            <input type="file" id="fileIn" hidden onchange="importData(event)">
+        <h2 style="font-size: 1.1rem; color: var(--p-color);"><i class="fas fa-project-diagram"></i> PROGANTT <span style="color:white">V7.1</span></h2>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-outline" title="Zoom Out" onclick="changeZoom(-10)"><i class="fas fa-minus"></i></button>
+            <button class="btn btn-outline" title="Zoom In" onclick="changeZoom(10)"><i class="fas fa-plus"></i></button>
+            <button class="btn btn-p" onclick="openModal()"><i class="fas fa-plus"></i> Nuovo Task</button>
+            <div style="width: 1px; height: 30px; background: var(--border-color); margin: 0 5px;"></div>
+            <button class="btn btn-outline" title="Esporta JSON" onclick="exportData()"><i class="fas fa-download"></i></button>
+            <button class="btn btn-outline" title="Importa JSON" onclick="document.getElementById('fileIn').click()"><i class="fas fa-upload"></i></button>
+            <input type="file" id="fileIn" hidden accept=".json" onchange="importData(event)">
         </div>
     </header>
 
-    <div class="main-layout">
-        <aside class="sidebar">
-            <h3 style="font-size: 14px; margin-bottom: 15px; color:#64748b">ATTIVITÀ</h3>
-            <div id="sidebar-list"></div>
-        </aside>
-
-        <section class="gantt-box">
-            <div class="gantt-viewport">
-                <div class="gantt-grid-header" id="gantt-header"></div>
-                <div class="gantt-body" id="gantt-body"></div>
-            </div>
+    <div class="gantt-container">
+        <aside class="gantt-sidebar"><div class="sidebar-header">PIANO ATTIVITÀ</div><div id="sidebar-rows-container"></div></aside>
+        <section class="gantt-viewport">
+            <div class="gantt-header" id="gantt-header"></div>
+            <div class="gantt-body" id="gantt-body"></div>
         </section>
     </div>
 </div>
 
 <div id="taskModal" class="modal">
     <div class="modal-content">
-        <h3 id="m-title">Dettaglio Task</h3>
+        <h3 style="margin-bottom: 20px;">Gestione Attività</h3>
         <input type="hidden" id="t-id">
-        <label>NOME</label><input type="text" id="t-name">
-        <div style="display: flex; gap: 10px;">
-            <div style="flex:1"><label>INIZIO</label><input type="date" id="t-start"></div>
-            <div style="flex:1"><label>FINE</label><input type="date" id="t-end"></div>
+        <label>Nome Task</label><input type="text" id="t-name">
+        <div style="display: flex; gap: 15px;">
+            <div style="flex:1"><label>Inizio</label><input type="date" id="t-start"></div>
+            <div style="flex:1"><label>Fine</label><input type="date" id="t-end"></div>
+        </div>
+        <div class="slider-container">
+            <label style="display: flex; justify-content: space-between;">AVANZAMENTO <span id="progress-val" style="color:var(--p-color)">0%</span></label>
+            <input type="range" id="t-progress" min="0" max="100" value="0" oninput="document.getElementById('progress-val').innerText = this.value + '%'">
+        </div>
+        <div style="display: flex; gap: 15px;">
+            <div style="flex:1"><label>Risorsa</label><input type="text" id="t-resource"></div>
+            <div style="flex:1"><label>Costo (€)</label><input type="number" id="t-cost" value="0"></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <input type="checkbox" id="t-is-milestone" style="width:auto; margin:0;"> <label style="margin:0; text-transform: none;">Questa è una milestone</label>
         </div>
         <div style="display: flex; gap: 10px;">
-            <div style="flex:1"><label>RISORSA</label><input type="text" id="t-resource"></div>
-            <div style="flex:1"><label>ORE/GG</label><input type="number" id="t-hours" value="4"></div>
-        </div>
-        <label>COSTO (€)</label><input type="number" id="t-cost" value="0">
-        <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
-            <input type="checkbox" id="t-is-milestone" style="width: auto; margin:0;"> <label style="margin:0">Segna come Milestone</label>
-        </div>
-        <div style="display: flex; gap: 10px; margin-top: 25px;">
-            <button class="btn btn-p" style="flex:1" onclick="saveTask()">Conferma</button>
-            <button class="btn btn-outline" style="flex:1" onclick="closeModal()">Chiudi</button>
+            <button class="btn btn-p" style="flex:1; justify-content: center;" onclick="saveTask()">Salva</button>
             <button id="del-btn" class="btn" style="background:var(--danger); color:white; display:none" onclick="deleteTask()">Elimina</button>
+            <button class="btn btn-outline" onclick="closeModal()">Annulla</button>
         </div>
     </div>
 </div>
@@ -202,11 +161,10 @@
 <script>
     let tasks = [];
     let zoom = 50;
-    const projectBase = new Date();
-    projectBase.setDate(projectBase.getDate() - 5);
+    const projectBase = new Date(); projectBase.setDate(projectBase.getDate() - 5);
 
     function init() {
-        const data = localStorage.getItem('gantt_v5');
+        const data = localStorage.getItem('gantt_v7_1_data');
         if(data) {
             tasks = JSON.parse(data).map(t => ({...t, startDate: new Date(t.startDate), endDate: new Date(t.endDate)}));
         }
@@ -216,84 +174,69 @@
     function render() {
         const header = document.getElementById('gantt-header');
         const body = document.getElementById('gantt-body');
-        const sidebar = document.getElementById('sidebar-list');
-        const conflicts = calculateConflicts();
+        const sidebar = document.getElementById('sidebar-rows-container');
 
-        // 1. Riepilogo Statistiche
-        let totCost = 0, milestones = 0, first = new Date(), last = new Date();
-        if(tasks.length > 0) {
-            totCost = tasks.reduce((sum, t) => sum + (parseFloat(t.cost) || 0), 0);
-            milestones = tasks.filter(t => t.isMilestone).length;
-            first = new Date(Math.min(...tasks.map(t => t.startDate)));
-            last = new Date(Math.max(...tasks.map(t => t.endDate)));
-        }
-        const duration = Math.ceil((last - first) / 86400000) + 1;
+        let totCost = 0, totalWeight = 0, completedWeight = 0;
+        let lastDate = new Date();
         
+        tasks.forEach(t => {
+            const dur = Math.max(1, Math.ceil((t.endDate - t.startDate) / 86400000) + 1);
+            totalWeight += dur;
+            completedWeight += (dur * (parseInt(t.progress || 0) / 100));
+            totCost += parseFloat(t.cost || 0);
+            if(t.endDate > lastDate) lastDate = new Date(t.endDate);
+        });
+
+        const globalProgress = totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
         document.getElementById('sum-tasks').innerText = tasks.length;
         document.getElementById('sum-cost').innerText = `€ ${totCost.toLocaleString()}`;
-        document.getElementById('sum-milestones').innerText = milestones;
-        document.getElementById('sum-duration').innerText = `${duration} gg`;
+        document.getElementById('sum-progress').innerText = `${globalProgress}%`;
+        document.getElementById('sum-duration').innerText = `${totalWeight} gg`;
 
-        // 2. Griglia Temporale
-        let maxDate = new Date(last); maxDate.setDate(maxDate.getDate() + 20);
-        const days = Math.ceil((maxDate - projectBase) / 86400000);
-        header.style.width = body.style.width = (days * zoom) + "px";
+        let maxDate = new Date(lastDate); maxDate.setDate(maxDate.getDate() + 20);
+        const totalDays = Math.ceil((maxDate - projectBase) / 86400000);
+        header.style.width = body.style.width = (totalDays * zoom) + "px";
         header.innerHTML = "";
-        for(let i=0; i<days; i++) {
+        for(let i=0; i<totalDays; i++) {
             const d = new Date(projectBase); d.setDate(d.getDate()+i);
-            header.innerHTML += `<div class="day-cell" style="width:${zoom}px">${d.getDate()}<br><small>${d.toLocaleDateString('it',{weekday:'short'})}</small></div>`;
+            header.innerHTML += `<div class="day-cell" style="width:${zoom}px">${d.getDate()}<br>${d.toLocaleDateString('it',{weekday:'short'})}</div>`;
         }
 
-        // 3. Barre Task & Sidebar
         body.innerHTML = `<div class="today-line" style="left:${Math.floor((new Date()-projectBase)/86400000)*zoom}px"></div>`;
         sidebar.innerHTML = "";
-        
+
         tasks.sort((a,b) => a.startDate - b.startDate).forEach(t => {
-            const isC = conflicts.has(t.id);
-            // Sidebar
-            sidebar.innerHTML += `
-                <div style="padding:10px; background:white; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:8px; cursor:pointer; border-left:4px solid ${t.isMilestone ? 'var(--warning)' : (isC ? 'var(--danger)' : 'var(--p-color)')}" onclick="openModal(${t.id})">
-                    <div style="font-size:12px; font-weight:700">${t.name}</div>
-                    <div style="font-size:10px; color:#64748b">${t.resource} • €${t.cost}</div>
-                </div>`;
-            
-            // Gantt
-            const row = document.createElement('div');
-            row.className = 'gantt-row';
+            const prog = parseInt(t.progress || 0);
+            const sRow = document.createElement('div');
+            sRow.className = 'sidebar-row';
+            sRow.onclick = () => openModal(t.id);
+            sRow.innerHTML = `<div class="t-name">${prog === 100 ? '<i class="fas fa-check-circle" style="color:var(--success)"></i>' : ''}${t.name}</div><div class="t-res">${t.resource || 'Nessuna'} • ${prog}%</div>`;
+            sidebar.appendChild(sRow);
+
+            const gRow = document.createElement('div');
+            gRow.className = 'gantt-row';
             const left = Math.floor((t.startDate - projectBase) / 86400000) * zoom;
             const w = (Math.ceil((t.endDate - t.startDate) / 86400000) + 1) * zoom;
             
-            row.innerHTML = `<div class="task-bar ${t.isMilestone ? 'milestone' : ''} ${isC ? 'conflict' : ''}" 
-                             style="left:${left}px; width:${t.isMilestone ? '16px' : w+'px'}" 
-                             onclick="openModal(${t.id})">${t.isMilestone ? '' : t.name}</div>`;
-            body.appendChild(row);
-        });
-    }
-
-    function calculateConflicts() {
-        const map = {}; const cIds = new Set();
-        tasks.forEach(t => {
-            let cur = new Date(t.startDate);
-            while(cur <= t.endDate) {
-                const k = cur.toISOString().split('T')[0] + t.resource;
-                map[k] = (map[k] || 0) + parseFloat(t.hoursPerDay);
-                if(map[k] > 8) cIds.add(t.id);
-                cur.setDate(cur.getDate()+1);
+            if(t.isMilestone) {
+                gRow.innerHTML = `<div class="task-bar milestone" style="left:${left}px" onclick="openModal(${t.id})"></div>`;
+            } else {
+                gRow.innerHTML = `<div class="task-bar ${prog === 100 ? 'completed' : ''}" style="left:${left}px; width:${w}px" onclick="openModal(${t.id})"><div class="task-progress-fill" style="width:${prog}%">${w > 70 ? t.name : ''}</div></div>`;
             }
+            body.appendChild(gRow);
         });
-        return cIds;
     }
 
-    // Modal & Crud
     function openModal(id = null) {
-        document.getElementById('taskModal').style.display = 'block';
+        document.getElementById('taskModal').style.display = 'flex';
         const d = id ? tasks.find(t => t.id === id) : null;
         document.getElementById('t-id').value = id || "";
         document.getElementById('t-name').value = d ? d.name : "";
         document.getElementById('t-start').value = d ? d.startDate.toISOString().split('T')[0] : "";
         document.getElementById('t-end').value = d ? d.endDate.toISOString().split('T')[0] : "";
+        document.getElementById('t-progress').value = d ? (d.progress || 0) : 0;
+        document.getElementById('progress-val').innerText = (d ? (d.progress || 0) : 0) + "%";
         document.getElementById('t-resource').value = d ? d.resource : "";
-        document.getElementById('t-hours').value = d ? d.hoursPerDay : 4;
         document.getElementById('t-cost').value = d ? d.cost : 0;
         document.getElementById('t-is-milestone').checked = d ? d.isMilestone : false;
         document.getElementById('del-btn').style.display = id ? "block" : "none";
@@ -303,42 +246,57 @@
         const id = document.getElementById('t-id').value;
         const obj = {
             id: id ? parseInt(id) : Date.now(),
-            name: document.getElementById('t-name').value,
+            name: document.getElementById('t-name').value || "Nuova Attività",
             startDate: new Date(document.getElementById('t-start').value),
             endDate: new Date(document.getElementById('t-end').value),
+            progress: document.getElementById('t-progress').value,
             resource: document.getElementById('t-resource').value,
-            hoursPerDay: document.getElementById('t-hours').value,
             cost: document.getElementById('t-cost').value,
             isMilestone: document.getElementById('t-is-milestone').checked
         };
         if(id) tasks = tasks.map(t => t.id === parseInt(id) ? obj : t);
         else tasks.push(obj);
-        localStorage.setItem('gantt_v5', JSON.stringify(tasks));
+        localStorage.setItem('gantt_v7_1_data', JSON.stringify(tasks));
         closeModal(); render();
     }
 
     function deleteTask() {
         tasks = tasks.filter(t => t.id !== parseInt(document.getElementById('t-id').value));
-        localStorage.setItem('gantt_v5', JSON.stringify(tasks));
+        localStorage.setItem('gantt_v7_1_data', JSON.stringify(tasks));
         closeModal(); render();
     }
 
     function closeModal() { document.getElementById('taskModal').style.display = 'none'; }
     function changeZoom(v) { zoom = Math.max(20, zoom + v); render(); }
-    
+
     function exportData() {
-        const blob = new Blob([JSON.stringify(tasks)], {type: 'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = 'project.json'; a.click();
+        const dataStr = JSON.stringify(tasks);
+        const blob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'progantt_export.json'; a.click();
     }
 
-    function importData(e) {
+    // FUNZIONE DI IMPORTAZIONE RIPRISTINATA E MIGLIORATA
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
         const reader = new FileReader();
-        reader.onload = (ev) => {
-            tasks = JSON.parse(ev.target.result).map(t => ({...t, startDate: new Date(t.startDate), endDate: new Date(t.endDate)}));
-            render();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                tasks = imported.map(t => ({
+                    ...t, 
+                    startDate: new Date(t.startDate), 
+                    endDate: new Date(t.endDate)
+                }));
+                localStorage.setItem('gantt_v7_1_data', JSON.stringify(tasks));
+                render();
+                alert("Progetto importato correttamente!");
+            } catch (err) {
+                alert("Errore nel formato del file!");
+            }
         };
-        reader.readAsText(e.target.files[0]);
+        reader.readAsText(file);
     }
 
     init();
