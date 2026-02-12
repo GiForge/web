@@ -3,274 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TERMINAL - Fast ID</title>
+    <title>CYBER-ID PRO: NO DISTORTION</title>
     <style>
-        :root {
-            --amber: #ffb000;
-            --cyan: #00f3ff;
-            --glass: rgba(6, 10, 25, 0.95);
+        :root { --amber: #ffb000; --cyan: #00f3ff; --glass: rgba(10, 15, 30, 0.98); }
+        body { background: #020617; color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; }
+
+        .app-container { display: flex; flex-direction: column; height: 100vh; }
+        
+        /* VIEWPORT FISSA CON RAPPORTO 35:45 */
+        .viewport-container {
+            position: relative; width: 100%; max-width: 400px;
+            aspect-ratio: 35/45; margin: 0 auto; 
+            background: #000; overflow: hidden;
+            border-bottom: 2px solid var(--cyan);
         }
 
-        body {
-            background: #020617;
-            color: var(--amber);
-            font-family: sans-serif;
-            margin: 0; padding: 0;
-            display: flex; flex-direction: column;
-            height: 100vh; overflow-x: hidden;
+        #video, #editor-canvas { 
+            position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; 
+        }
+        #video { transform: scaleX(-1); z-index: 1; }
+        #editor-canvas { z-index: 2; display: none; cursor: move; }
+
+        /* GUI DI ALLINEAMENTO SEMPRE VISIBILE */
+        .biometric-overlay {
+            position: absolute; inset: 0; z-index: 100;
+            pointer-events: none; /* Permette di toccare il canvas sotto */
         }
 
-        /* Header fisso con Video e Scatto */
-        .sticky-header {
-            position: sticky; top: 0; z-index: 100;
-            background: #000;
-            width: 100%; border-bottom: 2px solid var(--cyan);
-            box-shadow: 0 5px 20px rgba(0, 243, 255, 0.2);
-        }
+        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 15px; background: var(--glass); }
+        .panel { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 15px; margin-bottom: 10px; border: 1px solid rgba(0,243,255,0.2); }
+        
+        .btn-main { background: var(--amber); color: #000; border: none; width: 100%; padding: 18px; font-size: 1rem; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-secondary { background: transparent; color: var(--cyan); border: 1px solid var(--cyan); padding: 10px; width: 100%; border-radius: 4px; margin-top: 10px; cursor: pointer;}
+        
+        input[type="range"] { width: 100%; accent-color: var(--amber); margin: 10px 0; }
+        label { font-size: 0.75rem; color: var(--cyan); text-transform: uppercase; }
 
-        .viewfinder-wrapper {
-            position: relative;
-            width: 100%; max-width: 400px;
-            aspect-ratio: 35/45; margin: 0 auto;
-            overflow: hidden;
+        /* PREVIEW STAMPA */
+        #print-preview {
+            display: none; position: fixed; inset: 0; background: #fff; z-index: 1000;
+            padding: 20px; overflow-y: auto; color: #000;
         }
-
-        video, canvas {
-            position: absolute; inset: 0;
-            width: 100%; height: 100%; object-fit: cover;
-        }
-        video { transform: scaleX(-1); }
-        canvas { display: none; cursor: move; }
-
-        .biometric-mask {
-            position: absolute; inset: 0; z-index: 10;
-            pointer-events: none; opacity: 0.8;
-        }
-
-        /* Pulsante Scatto Mobile-First */
-        .action-bar {
-            background: var(--glass);
-            padding: 15px; display: flex; justify-content: center;
-            border-top: 1px solid var(--border);
-        }
-
-        .snap-btn {
-            width: 80px; height: 80px; border-radius: 50%;
-            border: 4px solid var(--cyan); background: transparent;
-            position: relative; cursor: pointer;
-            box-shadow: 0 0 15px var(--cyan);
-        }
-        .snap-btn::after {
-            content: ''; position: absolute; inset: 5px;
-            background: var(--cyan); border-radius: 50%; opacity: 0.6;
-        }
-        .snap-btn:active { transform: scale(0.9); }
-
-        /* Area Impostazioni (Scorrevole) */
-        .settings-area {
-            padding: 20px; flex-grow: 1;
-            background: linear-gradient(to bottom, #0f172a, #020617);
-        }
-
-        .card {
-            background: rgba(255,255,255,0.05);
-            padding: 15px; border-radius: 10px; margin-bottom: 15px;
-            border-left: 3px solid var(--amber);
-        }
-
-        label { font-size: 0.8rem; text-transform: uppercase; color: var(--cyan); display: block; margin-bottom: 8px;}
-        select, input {
-            width: 100%; background: #000; border: 1px solid var(--cyan);
-            color: #fff; padding: 12px; border-radius: 5px; font-size: 1rem;
-        }
-
-        .btn-print {
-            background: var(--amber); color: #000; border: none;
-            padding: 15px; width: 100%; border-radius: 5px;
-            font-weight: bold; font-size: 1.1rem; cursor: pointer;
-        }
-
+        .a4-sheet { width: 210mm; min-height: 297mm; background: #fff; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 5mm; padding: 10mm; }
+        
         @media print {
-            .no-print { display: none !important; }
-            #print-area { display: block !important; }
+            body * { visibility: hidden; }
+            #print-preview, #print-preview * { visibility: visible; }
+            #print-preview { position: absolute; left:0; top:0; }
         }
-        #print-area { display: none; background: white; width: 210mm; }
-        .print-grid { display: flex; flex-wrap: wrap; gap: 5mm; padding: 10mm; }
     </style>
 </head>
 <body>
 
-<div class="no-print">
-    <div class="sticky-header">
-        <div class="viewfinder-wrapper" id="view-box">
-            <video id="webcam" autoplay playsinline></video>
-            <canvas id="editor-canvas"></canvas>
-            
-            <svg class="biometric-mask" viewBox="0 0 350 450">
-                <path d="M0 0h350v450H0z" fill="rgba(0,0,0,0.5)"/>
-                <ellipse cx="175" cy="210" rx="85" ry="120" fill="black" globalCompositeOperation="destination-out" style="fill:transparent; stroke:var(--cyan); stroke-width:3;"/>
-                <line x1="0" y1="190" x2="350" y2="190" stroke="var(--amber)" stroke-width="1" stroke-dasharray="5,5"/>
-                <text x="175" y="400" fill="var(--cyan)" font-size="16" text-anchor="middle" font-family="monospace" font-weight="bold">ALLINEA VOLTO</text>
-            </svg>
-        </div>
+<div class="app-container no-print">
+    <div class="viewport-container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="editor-canvas"></canvas>
         
-        <div class="action-bar">
-            <button class="snap-btn" id="snap" title="Scatta Foto"></button>
-            <button id="retake" style="display:none; background:none; border:1px solid var(--amber); color:var(--amber); padding:10px; margin-left:20px;">RIFAI</button>
-        </div>
+        <svg class="biometric-overlay" viewBox="0 0 350 450">
+            <path d="M0 0h350v450H0z" fill="rgba(0,0,0,0.4)"/>
+            <ellipse cx="175" cy="190" rx="85" ry="115" fill="black" globalCompositeOperation="destination-out" style="fill:transparent; stroke:var(--cyan); stroke-width:3; stroke-dasharray: 8;"/>
+            <line x1="0" y1="180" x2="350" y2="180" stroke="var(--amber)" stroke-width="1" stroke-dasharray="4"/>
+            <text x="175" y="380" fill="var(--cyan)" font-size="16" text-anchor="middle" font-family="monospace" font-weight="bold">LINEA OCCHI</text>
+        </svg>
     </div>
 
-    <div class="settings-area">
-        <div class="card">
-            <label>Tipo Documento</label>
-            <select id="format">
-                <option value="35x45">Passaporto / C.I. (35x45mm)</option>
-                <option value="40x40">USA Visa (2"x2")</option>
-                <option value="30x40">Patente (30x40mm)</option>
-            </select>
+    <div class="scroll-area">
+        <div id="capture-mode">
+            <button class="btn-main" id="shutter">SCATTA FOTO BIOMETRICA</button>
+            <div class="panel" style="margin-top:15px">
+                <label>Standard Documento</label>
+                <select id="doc-format" style="width:100%; padding:10px; background:#000; color:#fff; border:1px solid var(--cyan); margin-top:5px;">
+                    <option value="35x45">Passaporto / C.I. (35x45mm)</option>
+                    <option value="50x50">Visto USA (50x50mm)</option>
+                    <option value="30x40">Patente (30x40mm)</option>
+                </select>
+            </div>
         </div>
 
-        <div class="card">
-            <label>Quantità per Foglio A4</label>
-            <input type="number" id="copies" value="4" min="1" max="24">
-        </div>
+        <div id="edit-mode" style="display:none">
+            <div class="panel">
+                <h3>FINE TUNING RITAGLIO</h3>
+                <p style="font-size:0.7rem; color:#ccc">Trascina la foto per centrare il volto nella sagoma.</p>
+                <label>Luminosità</label>
+                <input type="range" id="br" min="50" max="150" value="100">
+                <label>Contrasto</label>
+                <input type="range" id="ct" min="50" max="150" value="100">
+            </div>
+            
+            <div class="panel">
+                <label>Copie su A4</label>
+                <input type="number" id="copies" value="4" min="1" max="24" style="width:100%; padding:10px; background:#000; color:#fff;">
+            </div>
 
-        <div class="card" style="border-left-color: #fff;">
-            <label>O carica file esistente</label>
-            <input type="file" id="file-input" accept="image/*">
+            <button class="btn-main" id="print-trigger">GENERA STAMPA</button>
+            <button class="btn-secondary" id="retake">ANNULLA E RIFAI</button>
         </div>
-
-        <button class="btn-print" id="print-btn">GENERA E STAMPA A4</button>
-        
-        <p style="font-size: 0.7rem; text-align: center; margin-top: 20px; opacity: 0.5;">
-            * Seleziona "Salva come PDF" o "100% Scala" nelle opzioni di stampa.
-        </p>
     </div>
 </div>
 
-<div id="print-area"></div>
+<div id="print-preview">
+    <div class="no-print" style="margin-bottom:20px; display:flex; gap:10px;">
+        <button class="btn-secondary" onclick="document.getElementById('print-preview').style.display='none'">TORNA AL RITAGLIO</button>
+        <button class="btn-main" onclick="window.print()">STAMPA ORA</button>
+    </div>
+    <div class="a4-sheet" id="print-grid"></div>
+</div>
 
 <script>
-    const video = document.getElementById('webcam');
+    const video = document.getElementById('video');
     const canvas = document.getElementById('editor-canvas');
     const ctx = canvas.getContext('2d');
-    const snapBtn = document.getElementById('snap');
-    const retakeBtn = document.getElementById('retake');
-    const formatSelect = document.getElementById('format');
-    const fileInput = document.getElementById('file-input');
-
-    let img = new Image();
+    const shutter = document.getElementById('shutter');
+    const editMode = document.getElementById('edit-mode');
+    const captureMode = document.getElementById('capture-mode');
+    
+    let rawImg = new Image();
     let zoom = 1.0, offX = 0, offY = 0;
     let isDragging = false, startX, startY;
 
-    // 1. Inizializzazione Automatica Camera
-    async function initCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
-            });
-            video.srcObject = stream;
-        } catch (err) {
-            console.error("Camera error:", err);
-            alert("Attiva i permessi fotocamera per usare l'app.");
-        }
-    }
-    window.onload = initCamera;
+    const formats = { "35x45": [35, 45], "50x50": [50, 50], "30x40": [30, 40] };
 
-    // 2. Scatto
-    snapBtn.addEventListener('click', () => {
-        const fmt = formats[formatSelect.value];
-        canvas.width = fmt.w * 10; canvas.height = fmt.h * 10;
+    // 1. Camera - No distortion
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: {ideal: 1280} } })
+        .then(stream => video.srcObject = stream);
+
+    // 2. Scatto con ritaglio proporzionale (Cover)
+    shutter.onclick = () => {
+        const [w, h] = formats[document.getElementById('doc-format').value];
+        canvas.width = w * 10; 
+        canvas.height = h * 10;
         
-        const scale = Math.max(canvas.width / video.videoWidth, canvas.height / video.videoHeight);
-        const x = (canvas.width - video.videoWidth * scale) / 2;
-        const y = (canvas.height - video.videoHeight * scale) / 2;
+        // Calcolo per evitare deformazioni: manteniamo il rapporto video e ritagliamo
+        const videoRatio = video.videoWidth / video.videoHeight;
+        const canvasRatio = canvas.width / canvas.height;
+        
+        let sw, sh, sx, sy;
+        if (videoRatio > canvasRatio) {
+            sh = video.videoHeight;
+            sw = sh * canvasRatio;
+            sx = (video.videoWidth - sw) / 2;
+            sy = 0;
+        } else {
+            sw = video.videoWidth;
+            sh = sw / canvasRatio;
+            sx = 0;
+            sy = (video.videoHeight - sh) / 2;
+        }
 
         ctx.save();
         ctx.scale(-1, 1);
-        ctx.drawImage(video, x, y, video.videoWidth * scale, video.videoHeight * scale);
+        ctx.drawImage(video, sx, sy, sw, sh, -canvas.width, 0, canvas.width, canvas.height);
         ctx.restore();
         
-        img.src = canvas.toDataURL('image/jpeg');
-        canvas.style.display = "block";
-        video.style.display = "none";
-        snapBtn.style.display = "none";
-        retakeBtn.style.display = "block";
-        initEditor();
-    });
-
-    retakeBtn.addEventListener('click', () => {
-        canvas.style.display = "none";
-        video.style.display = "block";
-        snapBtn.style.display = "block";
-        retakeBtn.style.display = "none";
-    });
-
-    const formats = { "35x45": {w:35, h:45}, "40x40": {w:40, h:40}, "30x40": {w:30, h:40} };
-
-    // 3. Logica Editor (Touch & Mouse)
-    function initEditor() {
-        const fmt = formats[formatSelect.value];
-        canvas.width = fmt.w * 10; canvas.height = fmt.h * 10;
-        zoom = 1.0; offX = 0; offY = 0;
-        render();
-    }
-
-    function render() {
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, offX, offY, img.width * zoom, img.height * zoom);
-    }
-
-    // Eventi Touch per muovere la foto dopo lo scatto o l'importazione
-    canvas.addEventListener('touchstart', e => {
-        isDragging = true;
-        startX = e.touches[0].clientX - offX;
-        startY = e.touches[0].clientY - offY;
-    });
-    canvas.addEventListener('touchmove', e => {
-        if (isDragging) {
-            e.preventDefault();
-            offX = e.touches[0].clientX - startX;
-            offY = e.touches[0].clientY - startY;
-            render();
-        }
-    });
-    canvas.addEventListener('touchend', () => isDragging = false);
-
-    fileInput.addEventListener('change', (e) => {
-        const reader = new FileReader();
-        reader.onload = (re) => {
-            img.onload = () => {
-                video.style.display = "none";
-                canvas.style.display = "block";
-                snapBtn.style.display = "none";
-                retakeBtn.style.display = "block";
-                initEditor();
-            };
-            img.src = re.target.result;
+        rawImg.src = canvas.toDataURL('image/jpeg');
+        rawImg.onload = () => {
+            captureMode.style.display = 'none';
+            editMode.style.display = 'block';
+            video.style.display = 'none';
+            canvas.style.display = 'block';
+            zoom = 1.0; offX = 0; offY = 0;
+            draw();
         };
-        reader.readAsDataURL(e.target.files[0]);
-    });
+    };
 
-    // 4. Stampa
-    document.getElementById('print-btn').addEventListener('click', () => {
-        if (!img.src) return alert("Scatta prima la foto!");
-        const fmt = formats[formatSelect.value];
-        const printArea = document.getElementById('print-area');
-        printArea.innerHTML = `<div class="print-grid"></div>`;
-        const grid = printArea.querySelector('.print-grid');
-        
-        for (let i = 0; i < document.getElementById('copies').value; i++) {
-            const pImg = new Image();
-            pImg.src = canvas.toDataURL('image/jpeg', 1.0);
-            pImg.style.width = `${fmt.w}mm`;
-            pImg.style.height = `${fmt.h}mm`;
-            pImg.style.border = "0.1mm solid #000";
-            grid.appendChild(pImg);
-        }
-        setTimeout(() => window.print(), 500);
+    function draw() {
+        const b = document.getElementById('br').value;
+        const c = document.getElementById('ct').value;
+        ctx.filter = `brightness(${b}%) contrast(${c}%)`;
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(rawImg, offX, offY, canvas.width * zoom, canvas.height * zoom);
+    }
+
+    // 3. Fine tuning con trascinamento
+    canvas.addEventListener('touchstart', e => { 
+        isDragging = true; 
+        startX = e.touches[0].clientX - offX; 
+        startY = e.touches[0].clientY - offY; 
     });
+    window.addEventListener('touchmove', e => {
+        if (!isDragging) return;
+        offX = e.touches[0].clientX - startX;
+        offY = e.touches[0].clientY - startY;
+        draw();
+    }, {passive: false});
+    window.addEventListener('touchend', () => isDragging = false);
+
+    document.getElementById('br').oninput = draw;
+    document.getElementById('ct').oninput = draw;
+
+    document.getElementById('retake').onclick = () => {
+        captureMode.style.display = 'block';
+        editMode.style.display = 'none';
+        video.style.display = 'block';
+        canvas.style.display = 'none';
+    };
+
+    // 4. Stampa con Preview
+    document.getElementById('print-trigger').onclick = () => {
+        const [w, h] = formats[document.getElementById('doc-format').value];
+        const copies = document.getElementById('copies').value;
+        const grid = document.getElementById('print-grid');
+        grid.innerHTML = '';
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+        
+        for (let i = 0; i < copies; i++) {
+            const el = new Image();
+            el.src = dataUrl;
+            el.style.width = w + 'mm';
+            el.style.height = h + 'mm';
+            el.style.border = "0.1mm solid #eee";
+            grid.appendChild(el);
+        }
+        document.getElementById('print-preview').style.display = 'block';
+    };
 </script>
 </body>
 </html>
