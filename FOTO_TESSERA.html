@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL - Biometric ID Maker</title>
+    <style>
+        :root {
+            --amber: #ffb000;
+            --cyan: #00f3ff;
+            --glass: rgba(6, 10, 25, 0.85);
+            --border: rgba(0, 243, 255, 0.3);
+            --neon-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: #020617;
+            background-image: 
+                radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%),
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            color: var(--amber);
+            font-family: 'Segoe UI', 'Courier New', monospace;
+            margin: 0; padding: 10px;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; overflow-x: hidden;
+        }
+
+        /* Glass HUD */
+        .hud-panel {
+            width: 100%; max-width: 1000px;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(0, 243, 255, 0.05);
+        }
+
+        h1 {
+            font-size: 1.2rem; letter-spacing: 5px; text-transform: uppercase;
+            margin-top: 0; border-left: 4px solid var(--cyan); padding-left: 15px;
+            text-shadow: 0 0 10px var(--cyan); color: var(--cyan);
+        }
+
+        .main-layout { display: flex; gap: 30px; flex-wrap: wrap; }
+
+        /* Area Editor/Camera */
+        .viewfinder-container {
+            flex: 1; min-width: 320px; position: relative;
+            background: #000; border: 1px solid var(--cyan);
+            aspect-ratio: 3/4; overflow: hidden;
+            box-shadow: var(--neon-shadow);
+        }
+
+        video, canvas {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; object-fit: cover;
+        }
+
+        canvas { z-index: 5; cursor: move; }
+        video { transform: scaleX(-1); z-index: 2; }
+
+        /* Guide Biometriche */
+        .biometric-overlay {
+            position: absolute; inset: 0; z-index: 10; pointer-events: none;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            background: 
+                radial-gradient(ellipse 55% 65% at 50% 45%, transparent 98%, rgba(0, 243, 255, 0.4) 100%);
+        }
+
+        .biometric-overlay::before {
+            content: ''; position: absolute; top: 45%; left: 10%; right: 10%;
+            border-top: 1px dashed rgba(255, 176, 0, 0.5);
+        }
+
+        .scan-line {
+            position: absolute; width: 100%; height: 2px;
+            background: var(--cyan); opacity: 0.5;
+            box-shadow: 0 0 15px var(--cyan);
+            animation: scan 3s linear infinite; z-index: 11;
+        }
+
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+
+        /* Controls */
+        .side-panel { flex: 0 0 300px; display: flex; flex-direction: column; gap: 20px; }
+
+        .control-block {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px; border-left: 2px solid var(--amber);
+        }
+
+        label { display: block; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 8px; color: var(--cyan); }
+
+        select, input {
+            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+            color: #fff; padding: 10px; margin-bottom: 10px; font-family: inherit;
+        }
+
+        .btn {
+            width: 100%; padding: 15px; border: 1px solid var(--cyan);
+            background: transparent; color: var(--cyan);
+            text-transform: uppercase; font-weight: bold; cursor: pointer;
+            transition: 0.3s; margin-top: 5px;
+        }
+
+        .btn:hover { background: var(--cyan); color: #000; box-shadow: 0 0 20px var(--cyan); }
+
+        .btn.primary { border-color: var(--amber); color: var(--amber); }
+        .btn.primary:hover { background: var(--amber); color: #000; box-shadow: 0 0 20px var(--amber); }
+
+        /* Stampa */
+        @media print {
+            .no-print { display: none !important; }
+            #print-area { display: block !important; padding: 0; margin: 0; }
+            body { background: white; }
+        }
+
+        #print-area {
+            display: none; position: absolute; top: 0; left: 0;
+            width: 210mm; height: 297mm; background: white;
+        }
+        
+        .print-grid { 
+            display: flex; flex-wrap: wrap; gap: 2mm; padding: 10mm;
+        }
+    </style>
+</head>
+<body>
+
+<div class="hud-panel no-print">
+    <h1>PHOT0-ID // BIOMETRIC_SCANNER</h1>
+    
+    <div class="main-layout">
+        <div class="viewfinder-container" id="viewfinder">
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="editor-canvas"></canvas>
+            <div class="biometric-overlay"></div>
+            <div class="scan-line"></div>
+        </div>
+
+        <div class="side-panel">
+            <div class="control-block">
+                <label>Input Module</label>
+                <button class="btn" id="init-cam">INITIALIZE WEBCAM</button>
+                <input type="file" id="file-input" accept="image/*" style="margin-top:10px">
+            </div>
+
+            <div class="control-block">
+                <label>Document Standard</label>
+                <select id="format">
+                    <option value="35x45">Schengen Visa (35x45mm)</option>
+                    <option value="40x40">USA Passport (2"x2")</option>
+                    <option value="30x40">Identity Card (30x40mm)</option>
+                </select>
+            </div>
+
+            <div class="control-block">
+                <label>Output Config</label>
+                <input type="number" id="copies" value="4" min="1" max="24">
+                <button class="btn primary" id="capture-btn" style="display:none">CAPTURE SUBJECT</button>
+                <button class="btn primary" id="print-btn">EXECUTE PRINT</button>
+            </div>
+
+            <div style="font-size: 0.7rem; opacity: 0.6; line-height: 1.4;">
+                [STATUS] System Ready...<br>
+                [INFO] Align eyes with yellow dashed line.<br>
+                [INFO] Scroll to zoom, Drag to pan after capture.
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="print-area"></div>
+
+<script>
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('editor-canvas');
+    const ctx = canvas.getContext('2d');
+    const fileInput = document.getElementById('file-input');
+    const formatSelect = document.getElementById('format');
+    const captureBtn = document.getElementById('capture-btn');
+    const printArea = document.getElementById('print-area');
+
+    let img = new Image();
+    let zoom = 1.0, offX = 0, offY = 0;
+    let isDragging = false, startX, startY;
+
+    const formats = {
+        "35x45": { w: 35, h: 45 },
+        "40x40": { w: 40, h: 40 },
+        "30x40": { w: 30, h: 40 }
+    };
+
+    // --- Gestione Fotocamera ---
+    document.getElementById('init-cam').addEventListener('click', async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            video.srcObject = stream;
+            video.style.display = "block";
+            canvas.style.display = "none";
+            captureBtn.style.display = "block";
+        } catch (err) {
+            alert("Errore accesso fotocamera: " + err);
+        }
+    });
+
+    captureBtn.addEventListener('click', () => {
+        const fmt = formats[formatSelect.value];
+        canvas.width = fmt.w * 10;
+        canvas.height = fmt.h * 10;
+        
+        // Disegna frame video su canvas (specchiato)
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, -canvas.width, canvas.height);
+        ctx.restore();
+        
+        img.src = canvas.toDataURL('image/jpeg');
+        stopCamera();
+    });
+
+    function stopCamera() {
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(t => t.stop());
+            video.style.display = "none";
+            canvas.style.display = "block";
+            captureBtn.style.display = "none";
+        }
+    }
+
+    // --- Gestione File ---
+    fileInput.addEventListener('change', (e) => {
+        const reader = new FileReader();
+        reader.onload = (re) => {
+            img.onload = () => {
+                stopCamera();
+                initEditor();
+            };
+            img.src = re.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    });
+
+    function initEditor() {
+        const fmt = formats[formatSelect.value];
+        canvas.width = fmt.w * 10;
+        canvas.height = fmt.h * 10;
+        zoom = Math.max(canvas.width / img.width, canvas.height / img.height);
+        offX = (canvas.width - img.width * zoom) / 2;
+        offY = (canvas.height - img.height * zoom) / 2;
+        render();
+    }
+
+    function render() {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, offX, offY, img.width * zoom, img.height * zoom);
+    }
+
+    // --- Interazione Mouse/Touch ---
+    canvas.addEventListener('mousedown', e => { isDragging = true; startX = e.offsetX - offX; startY = e.offsetY - offY; });
+    window.addEventListener('mouseup', () => isDragging = false);
+    canvas.addEventListener('mousemove', e => {
+        if (isDragging) { offX = e.offsetX - startX; offY = e.offsetY - startY; render(); }
+    });
+    canvas.addEventListener('wheel', e => {
+        e.preventDefault();
+        const s = e.deltaY > 0 ? 0.95 : 1.05;
+        zoom *= s; render();
+    });
+
+    // --- Sistema di Stampa ---
+    document.getElementById('print-btn').addEventListener('click', () => {
+        if (!img.src) return alert("Nessun dato immagine rilevato.");
+        
+        const fmt = formats[formatSelect.value];
+        const n = document.getElementById('copies').value;
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+        
+        printArea.innerHTML = `<div class="print-grid"></div>`;
+        const grid = printArea.querySelector('.print-grid');
+        
+        for (let i = 0; i < n; i++) {
+            const pImg = new Image();
+            pImg.src = dataUrl;
+            pImg.style.width = `${fmt.w}mm`;
+            pImg.style.height = `${fmt.h}mm`;
+            pImg.style.outline = "0.1mm solid #ccc";
+            grid.appendChild(pImg);
+        }
+        
+        setTimeout(() => window.print(), 500);
+    });
+
+    formatSelect.addEventListener('change', () => { if(img.src) initEditor(); });
+</script>
+
+</body>
+</html>
