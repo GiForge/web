@@ -3,282 +3,1010 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BIOMETRIC ID - AI POWERED</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
+    <title>ICAO Biometric ID - Professional Edition</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        :root { --amber: #ffb000; --cyan: #00f3ff; --bg: #0d1117; --panel: #161b22; }
-        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; }
-        body { background: var(--bg); color: #fff; font-family: system-ui, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-
-        /* VISORE */
-        .viewport { position: relative; width: 100%; height: 50vh; flex-shrink: 0; background: #000; display: flex; justify-content: center; border-bottom: 1px solid #30363d; }
-        .frame { position: relative; width: 280px; height: 360px; background: #222; overflow: hidden; margin-top: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        video, #editor { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-        video { transform: scaleX(-1); z-index: 1; }
-        #editor { z-index: 2; display: none; cursor: move; }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;500;700&display=swap');
         
-        /* Guide visive minimali (SOLO RIFERIMENTO) */
-        .guides { position: absolute; inset: 0; z-index: 10; pointer-events: none; opacity: 0.7; }
-        .guide-line { stroke: var(--cyan); stroke-width: 1; stroke-dasharray: 5,5; }
-        .guide-zone { stroke: var(--amber); stroke-width: 2; fill: none; stroke-dasharray: 10,5; }
+        :root { 
+            --amber: #ffb000; 
+            --cyan: #00f3ff; 
+            --bg: #010409; 
+            --panel: #0d1117;
+            --surface: #161b22;
+            --border: rgba(255, 255, 255, 0.1);
+            --cyan-glow: rgba(0, 243, 255, 0.3);
+            --amber-glow: rgba(255, 176, 0, 0.3);
+        }
+        
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body, html { 
+            width: 100%; 
+            height: 100%; 
+            background: var(--bg); 
+            color: #e6edf3; 
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden; 
+        }
 
-        /* Loader AI */
-        #ai-loader { position: absolute; inset: 0; background: rgba(0,0,0,0.8); z-index: 20; display: none; justify-content: center; align-items: center; flex-direction: column; color: var(--cyan); }
-        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid var(--cyan); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px;}
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* HEADER */
+        .app-header {
+            background: linear-gradient(180deg, var(--panel) 0%, transparent 100%);
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            position: relative;
+            z-index: 100;
+        }
+        
+        .app-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--cyan);
+            text-shadow: 0 0 20px var(--cyan-glow);
+        }
+        
+        .app-subtitle {
+            font-size: 0.7rem;
+            color: #7d8590;
+            margin-top: 0.25rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
 
-        /* CONTROLLI */
-        .controls { flex-grow: 1; overflow-y: auto; padding: 20px; background: var(--panel); touch-action: pan-y; }
-        .card { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
-        h3 { color: var(--cyan); font-size: 0.75rem; text-transform: uppercase; margin: 0 0 12px 0; }
-        .btn-main { background: var(--amber); color: #000; border: none; width: 100%; padding: 15px; font-size: 1rem; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-tool { background: transparent; color: var(--cyan); border: 1px solid var(--cyan); padding: 10px; border-radius: 6px; flex: 1; font-size: 0.75rem; cursor: pointer; }
-        .btn-tool.active { background: var(--cyan); color: #000; }
-        .slider-row { margin-bottom: 12px; }
-        input[type="range"] { width: 100%; accent-color: var(--cyan); }
-        label { font-size: 0.7rem; color: #8b949e; display: block; margin-bottom: 4px; }
+        /* 1. VIEWPORT FOTO (FISSA) */
+        .viewport {
+            height: 40vh;
+            width: 100%;
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            background: #000; 
+            border-bottom: 2px solid var(--cyan);
+            box-shadow: 0 4px 30px var(--cyan-glow);
+            position: relative; 
+            z-index: 10;
+        }
 
-        /* MODALE EXPORT */
-        #modal-export { display: none; position: fixed; inset: 0; background: #fff; z-index: 2000; padding: 20px; color: #000; overflow-y: auto; }
-        .a4-print { width: 210mm; display: flex; flex-wrap: wrap; gap: 5mm; margin: 0 auto; background: white; padding: 10mm; border: 1px solid #eee;}
-        @media print { .no-print { display: none; } #modal-export { position: absolute; display: block; } }
+        .canvas-frame {
+            position: relative; 
+            width: 280px; 
+            height: 360px; 
+            background: radial-gradient(circle at center, rgba(0, 243, 255, 0.05) 0%, transparent 70%);
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        video, #editor-cvs { 
+            position: absolute; 
+            inset: 0; 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        
+        video { 
+            transform: scaleX(-1); 
+            z-index: 1;
+        }
+        
+        #editor-cvs { 
+            display: none; 
+            z-index: 5; 
+            touch-action: none;
+            cursor: move;
+        }
+
+        /* Guide Biometriche ICAO - Proporzioni Corrette */
+        .icao-mask { 
+            position: absolute; 
+            inset: 0; 
+            z-index: 20; 
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        
+        .guide-zone {
+            fill: none;
+            stroke: var(--cyan);
+            stroke-width: 2;
+            stroke-dasharray: 10,5;
+            filter: drop-shadow(0 0 10px var(--cyan-glow));
+            animation: pulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        .guide-line {
+            stroke: var(--cyan);
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+            opacity: 0.7;
+        }
+        
+        .guide-amber {
+            stroke: var(--amber);
+            stroke-width: 2;
+            stroke-dasharray: 8,4;
+            opacity: 0.6;
+        }
+        
+        .guide-label {
+            fill: var(--cyan);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.8;
+        }
+
+        /* AI Loading */
+        #ai-loading { 
+            position: absolute; 
+            inset: 0; 
+            background: rgba(0,0,0,0.9); 
+            z-index: 200; 
+            display: none; 
+            justify-content: center; 
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 243, 255, 0.1);
+            border-top: 4px solid var(--cyan);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 15px;
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .ai-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--cyan);
+        }
+
+        /* 2. CONTROLLI SCROLLABILI */
+        .controls {
+            height: calc(60vh - 80px);
+            width: 100%;
+            background: var(--panel);
+            overflow-y: auto; 
+            padding: 1.5rem 1rem 2rem;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .card { 
+            background: var(--surface); 
+            border: 1px solid var(--border); 
+            border-radius: 12px; 
+            padding: 1rem; 
+            margin-bottom: 1rem;
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h3 { 
+            color: var(--cyan); 
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em;
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        h3::before {
+            content: '';
+            width: 4px;
+            height: 12px;
+            background: var(--cyan);
+            border-radius: 2px;
+        }
+
+        .btn { 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-main { 
+            background: linear-gradient(135deg, var(--amber) 0%, #ff8800 100%);
+            color: #000; 
+            width: 100%; 
+            padding: 1rem; 
+            font-size: 0.95rem; 
+            margin-bottom: 0.75rem;
+            box-shadow: 0 4px 15px var(--amber-glow);
+        }
+        
+        .btn-main:active {
+            transform: translateY(2px);
+        }
+        
+        .btn-main.cyan-variant {
+            background: linear-gradient(135deg, var(--cyan) 0%, #00a8ff 100%);
+            box-shadow: 0 4px 15px var(--cyan-glow);
+        }
+        
+        .btn-main.white-variant {
+            background: linear-gradient(135deg, #fff 0%, #e0e0e0 100%);
+        }
+        
+        .btn-tool { 
+            background: transparent; 
+            color: var(--cyan); 
+            border: 1px solid var(--cyan); 
+            padding: 0.75rem; 
+            font-size: 0.75rem; 
+            flex: 1;
+        }
+        
+        .btn-tool:hover {
+            background: rgba(0, 243, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .btn-tool.active { 
+            background: var(--cyan); 
+            color: #000;
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+        
+        .row { 
+            display: flex; 
+            gap: 0.75rem; 
+            margin-bottom: 0.75rem; 
+        }
+
+        label { 
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem; 
+            color: #7d8590; 
+            margin-bottom: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .slider-value {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+        
+        input[type="range"] { 
+            width: 100%; 
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg);
+            outline: none;
+            -webkit-appearance: none;
+            margin-bottom: 1rem;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--cyan-glow);
+            transition: all 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--cyan);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+        
+        select, input[type="number"] { 
+            width: 100%; 
+            padding: 0.875rem; 
+            background: var(--bg); 
+            color: #e6edf3; 
+            border: 1px solid var(--border); 
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.875rem;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        select:focus, input[type="number"]:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 2px var(--cyan-glow);
+        }
+        
+        .hint {
+            font-size: 0.65rem;
+            color: #7d8590;
+            margin-top: 0.25rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* STATUS BAR */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--panel);
+            padding: 0.5rem 1rem;
+            border-top: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: #7d8590;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--cyan);
+            animation: blink 2s ease-in-out infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* 3. MODALE PREVIEW A4 */
+        #a4-modal { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: #1a1a1a; 
+            z-index: 2000; 
+            flex-direction: column;
+        }
+
+        .a4-header { 
+            padding: 1rem; 
+            background: var(--bg); 
+            border-bottom: 1px solid var(--border); 
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.75rem;
+        }
+        
+        .a4-scroll-area { 
+            flex-grow: 1; 
+            overflow: auto; 
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            background: #2a2a2a;
+        }
+        
+        /* Foglio A4 Virtuale */
+        .a4-sheet { 
+            width: 210mm; 
+            min-height: 297mm;
+            background: white; 
+            padding: 20mm; 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, 35mm); 
+            grid-auto-rows: 45mm; 
+            gap: 5mm; 
+            justify-content: start;
+            align-content: start; 
+            box-shadow: 0 4px 50px rgba(0,0,0,0.5);
+        }
+        
+        .a4-photo { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            border: 0.1mm solid #ddd;
+        }
+        
+        @media print {
+            .no-print { display: none !important; }
+            #a4-modal { position: absolute; display: block; }
+            body { background: white; }
+            .a4-sheet { box-shadow: none; page-break-after: always; }
+        }
+        
+        @media (min-width: 768px) {
+            .canvas-frame {
+                width: 350px;
+                height: 450px;
+            }
+        }
     </style>
 </head>
 <body>
 
+<!-- HEADER -->
+<header class="app-header no-print">
+    <div class="app-title">⬢ ICAO Biometric ID Generator</div>
+    <div class="app-subtitle">Professional Edition • AI-Powered • ISO/IEC 19794-5</div>
+</header>
+
+<!-- 1. VIEWPORT -->
 <div class="viewport no-print">
-    <div class="frame">
-        <video id="webcam" autoplay playsinline></video>
-        <canvas id="editor"></canvas>
-        <svg class="guides" viewBox="0 0 280 360">
-            <ellipse cx="140" cy="160" rx="70" ry="95" class="guide-zone" />
-            <line x1="40" y1="150" x2="240" y2="150" class="guide-line" />
-             <line x1="100" y1="255" x2="180" y2="255" class="guide-line" stroke="var(--amber)"/>
+    <div id="ai-loading">
+        <div class="spinner"></div>
+        <div class="ai-text">AI Processing...</div>
+    </div>
+    
+    <div class="canvas-frame">
+        <video id="v" autoplay playsinline></video>
+        <canvas id="editor-cvs"></canvas>
+        
+        <!-- Guide Biometriche ICAO Corrette -->
+        <svg class="icao-mask" viewBox="0 0 280 360">
+            <!-- Ovale viso: 70-80% dell'altezza (252px su 360px) -->
+            <ellipse cx="140" cy="151" rx="82.5" ry="126" class="guide-zone" />
+            
+            <!-- Linea occhi: al 56% dall'alto -->
+            <line x1="30" y1="130" x2="250" y2="130" class="guide-line" />
+            <circle cx="90" cy="130" r="3" fill="var(--cyan)" opacity="0.8"/>
+            <circle cx="190" cy="130" r="3" fill="var(--cyan)" opacity="0.8"/>
+            
+            <!-- Guida collo -->
+            <line x1="105" y1="277" x2="105" y2="312" class="guide-line"/>
+            <line x1="175" y1="277" x2="175" y2="312" class="guide-line"/>
+            
+            <!-- Guida spalle -->
+            <path d="M 40,330 Q 140,345 240,330" class="guide-amber" fill="none"/>
+            
+            <!-- Labels -->
+            <text x="140" y="115" text-anchor="middle" class="guide-label">Eyes Line</text>
+            <text x="140" y="295" text-anchor="middle" class="guide-label">Neck</text>
+            <text x="140" y="350" text-anchor="middle" class="guide-label">Shoulders</text>
         </svg>
-        <div id="ai-loader"><div class="spinner"></div><div>Elaborazione AI...</div></div>
     </div>
 </div>
 
+<!-- 2. CONTROLLI -->
 <div class="controls no-print">
-    <div id="cap-grp">
-        <button class="btn-main" id="snap-btn">SCATTA FOTO</button>
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <button class="btn-tool" onclick="document.getElementById('f-in').click()">IMPORTA FILE</button>
-            <button class="btn-tool" id="flip-btn">GIRA CAMERA</button>
+    <div id="ui-init">
+        <button class="btn btn-main" id="btn-snap">📷 SCATTA FOTO</button>
+        <div class="row">
+            <button class="btn btn-tool" onclick="document.getElementById('file').click()">📁 Carica File</button>
+            <button class="btn btn-tool" id="btn-flip">🔄 Flip Camera</button>
         </div>
-        <input type="file" id="f-in" hidden accept="image/*">
+        <input type="file" id="file" hidden accept="image/*">
     </div>
 
-    <div id="edit-grp" style="display:none">
+    <div id="ui-edit" style="display:none">
         <div class="card">
-            <h3>AI & Ritocco</h3>
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button class="btn-tool" id="ai-bg-btn" style="flex:2; border-color: var(--amber); color:var(--amber)">✨ RIMUOVI SFONDO CON AI</button>
-                <button class="btn-tool" id="beauty-btn">BEAUTY</button>
+            <h3>AI Processing</h3>
+            <button class="btn btn-main white-variant" id="btn-ai">
+                ✨ AI BACKGROUND REMOVAL
+            </button>
+            <div class="row">
+                <button class="btn btn-tool" id="btn-beauty">💎 Beauty Mode</button>
+                <button class="btn btn-tool" id="btn-reset">↻ Reset Posizione</button>
             </div>
-            <div class="slider-row">
-                <label>Zoom & Sposta (Touch/Mouse)</label>
-                <input type="range" id="zoom" min="0.1" max="3" step="0.01" value="1">
-            </div>
-            <div class="slider-row">
-                <label>Luminosità</label>
-                <input type="range" id="bright" min="50" max="150" value="100">
+            <div class="hint">
+                Touch: Drag (1 dito) • Pinch (2 dita) | Mouse: Drag • Scroll
             </div>
         </div>
 
         <div class="card">
-            <h3>Output</h3>
-            <select id="fmt" style="width:100%; padding:10px; background:#0d1117; color:#fff; border:1px solid #30363d; border-radius:6px;">
-                <option value="35,45">Passaporto / CIE (35x45mm)</option>
-                <option value="30,40">Patente (30x40mm)</option>
-                <option value="50,50">Visto USA (50x50mm)</option>
+            <h3>Correzioni Immagine</h3>
+            
+            <label>
+                <span>Zoom</span>
+                <span class="slider-value" id="zoom-val">1.00x</span>
+            </label>
+            <input type="range" id="zoom-slider" min="0.5" max="3" step="0.01" value="1">
+            
+            <label>
+                <span>Luminosità</span>
+                <span class="slider-value" id="br-val">100%</span>
+            </label>
+            <input type="range" id="br" min="50" max="150" value="100">
+            
+            <label>
+                <span>Contrasto</span>
+                <span class="slider-value" id="ct-val">100%</span>
+            </label>
+            <input type="range" id="ct" min="50" max="150" value="100">
+        </div>
+
+        <div class="card">
+            <h3>Output Settings</h3>
+            
+            <label style="display: block; margin-bottom: 0.5rem;">Formato Documento</label>
+            <select id="doc-size" style="margin-bottom: 1rem;">
+                <option value="35,45">🛂 Passaporto / CIE (35×45mm)</option>
+                <option value="30,40">🚗 Patente (30×40mm)</option>
+                <option value="50,50">🇺🇸 Visto USA (50×50mm)</option>
             </select>
+            
+            <label>
+                <span>Copie per foglio A4</span>
+                <span class="slider-value" id="copies-preview">4</span>
+            </label>
+            <input type="range" id="copies-slider" min="1" max="20" value="4">
+            <div class="hint">Layout automatico ottimizzato</div>
         </div>
 
-        <button class="btn-main" id="export-view-btn">GENERA STAMPA / PDF</button>
-        <button class="btn-tool" onclick="location.reload()" style="width:100%; margin-top:10px; color:#ff5555; border-color:#ff5555;">ANNULLA</button>
+        <button class="btn btn-main cyan-variant" id="btn-pre-a4">
+            📄 ANTEPRIMA A4 & EXPORT
+        </button>
+        
+        <button class="btn btn-tool" onclick="location.reload()" style="width: 100%; color: #ff5555; border-color: #ff5555;">
+            ✕ Annulla e Ricomincia
+        </button>
     </div>
 </div>
 
-<div id="modal-export">
-    <div class="no-print" style="margin-bottom:20px; display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-        <button class="btn-main" onclick="window.print()" style="grid-column: span 2;">STAMPA</button>
-        <button class="btn-tool" id="dl-jpg" style="color:#000; border-color:#ccc">SCARICA JPG</button>
-        <button class="btn-tool" id="dl-pdf" style="color:#000; border-color:#ccc">SCARICA PDF</button>
-        <button class="btn-tool" onclick="document.getElementById('modal-export').style.display='none'" style="grid-column: span 2; color:#000; border-color:#ccc">INDIETRO</button>
+<!-- STATUS BAR -->
+<div class="status-bar no-print">
+    <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span id="status-text">System Ready</span>
     </div>
-    <div class="a4-print" id="pg"></div>
+    <span>v3.0 Professional</span>
+</div>
+
+<!-- 3. MODALE A4 -->
+<div id="a4-modal">
+    <div class="a4-header no-print">
+        <div>
+            <label style="display: block;">Numero Copie</label>
+            <input type="number" id="num-copies" value="4" min="1" max="40">
+        </div>
+        <button class="btn btn-main" onclick="window.print()">🖨️ STAMPA PDF</button>
+        <button class="btn btn-tool" id="btn-save-jpg">💾 Salva JPG</button>
+        <button class="btn btn-tool" id="btn-save-pdf">📄 Salva PDF</button>
+        <button class="btn btn-tool" onclick="document.getElementById('a4-modal').style.display='none'">← Indietro</button>
+    </div>
+    <div class="a4-scroll-area">
+        <div class="a4-sheet" id="a4-grid"></div>
+    </div>
 </div>
 
 <script>
-    const vid = document.getElementById('webcam');
-    const cvs = document.getElementById('editor');
-    const ctx = cvs.getContext('2d');
-    const loader = document.getElementById('ai-loader');
+    // === ELEMENTI DOM ===
+    const v = document.getElementById('v');
+    const cvs = document.getElementById('editor-cvs');
+    const ctx = cvs.getContext('2d', { willReadFrequently: true });
+    const statusText = document.getElementById('status-text');
     
-    let srcImg = new Image();
-    // Canvas offscreen per processare l'immagine originale con l'AI
-    let processCanvas = document.createElement('canvas'); 
-    let processCtx = processCanvas.getContext('2d');
-    let segmentedMask = null; // Conterrà la maschera generata dall'AI
+    // === STATE ===
+    let rawImg = new Image();
+    let aiMask = null;
+    let px = 0, py = 0, sc = 1.0;
+    let isDrag = false, lastX, lastY, lastDist = 0;
+    let beauty = false, aiOn = false, side = "user";
 
-    let px=0, py=0, sc=1.0, dragging=false, lx, ly, ld=0, beauty=false, useAI=false, side="user";
+    // === AI SEGMENTATION ===
+    const selfie = new SelfieSegmentation({
+        locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`
+    });
+    selfie.setOptions({ modelSelection: 1 });
+    selfie.onResults(res => { 
+        aiMask = res.segmentationMask; 
+        aiOn = true; 
+        document.getElementById('ai-loading').style.display = 'none';
+        document.getElementById('btn-ai').classList.add('active');
+        draw();
+        updateStatus('AI Background rimosso con successo');
+    });
 
-    // --- SETUP AI MEDIAPIPE ---
-    const selfieSegmentation = new SelfieSegmentation({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`});
-    selfieSegmentation.setOptions({ modelSelection: 1 }); // 1 = landscape model (più preciso ma più lento)
-    selfieSegmentation.onResults(onAIResults);
-
-    // --- FOTOCAMERA ---
-    async function startCam() {
+    // === CAMERA ===
+    async function init() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: side, width: 1280, height: 720 } });
-            vid.srcObject = stream;
-        } catch(e) { alert("Errore Fotocamera"); }
-    }
-    startCam();
-    document.getElementById('flip-btn').onclick = () => { side = (side==="user"?"environment":"user"); startCam(); };
-
-    // --- EDITOR ---
-    function loadEditor(src) {
-        document.getElementById('cap-grp').style.display = 'none';
-        document.getElementById('edit-grp').style.display = 'block';
-        vid.style.display = 'none'; cvs.style.display = 'block';
-        srcImg = new Image();
-        srcImg.onload = () => {
-            cvs.width = 700; cvs.height = 900; // Risoluzione di lavoro alta
-            sc = Math.max(cvs.width/srcImg.width, cvs.height/srcImg.height);
-            px = (cvs.width - srcImg.width * sc)/2;
-            py = (cvs.height - srcImg.height * sc)/2;
-            document.getElementById('zoom').value = sc;
-            drawFinal();
-        };
-        srcImg.src = src;
-    }
-
-    document.getElementById('snap-btn').onclick = () => {
-        const c = document.createElement('canvas'); c.width = vid.videoWidth; c.height = vid.videoHeight;
-        const x = c.getContext('2d');
-        if(side==="user") { x.translate(c.width, 0); x.scale(-1, 1); }
-        x.drawImage(vid, 0, 0);
-        loadEditor(c.toDataURL('image/jpeg'));
-    };
-    document.getElementById('f-in').onchange = (e) => {
-        const r = new FileReader(); r.onload = (f) => loadEditor(f.target.result); r.readAsDataURL(e.target.files[0]);
-    };
-
-    // --- LOGICA AI ---
-    document.getElementById('ai-bg-btn').onclick = async function() {
-        if(useAI) { // Disattiva AI
-             useAI = false; this.classList.remove('active'); segmentedMask = null; drawFinal(); return;
+            if (v.srcObject) {
+                v.srcObject.getTracks().forEach(track => track.stop());
+            }
+            
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: side, 
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                } 
+            });
+            v.srcObject = stream;
+            updateStatus('Camera attiva');
+        } catch (e) {
+            alert('Errore camera: ' + e.message);
+            updateStatus('Errore camera');
         }
-        // Attiva AI
-        this.classList.add('active');
-        loader.style.display = 'flex';
-        // Prepara l'immagine per l'AI (deve essere processata alla sua risoluzione nativa)
-        processCanvas.width = srcImg.width; processCanvas.height = srcImg.height;
-        processCtx.drawImage(srcImg, 0, 0);
-        // Invia all'AI
-        await selfieSegmentation.send({image: processCanvas});
+    }
+    
+    init();
+    
+    document.getElementById('btn-flip').onclick = () => { 
+        side = (side === "user" ? "environment" : "user"); 
+        init(); 
     };
 
-    function onAIResults(results) {
-        // L'AI ci restituisce una maschera di segmentazione
-        segmentedMask = results.segmentationMask;
-        useAI = true;
-        loader.style.display = 'none';
-        drawFinal();
+    // === EDITOR ===
+    function startEdit(src) {
+        document.getElementById('ui-init').style.display = 'none';
+        document.getElementById('ui-edit').style.display = 'block';
+        v.style.display = 'none';
+        cvs.style.display = 'block';
+        
+        rawImg = new Image();
+        rawImg.onload = () => {
+            // Risoluzione alta per qualità
+            cvs.width = 800;
+            cvs.height = 1028;
+            
+            sc = Math.max(cvs.width / rawImg.width, cvs.height / rawImg.height);
+            px = (cvs.width - rawImg.width * sc) / 2;
+            py = (cvs.height - rawImg.height * sc) / 2;
+            
+            document.getElementById('zoom-slider').value = sc;
+            document.getElementById('zoom-val').textContent = sc.toFixed(2) + 'x';
+            
+            draw();
+            updateStatus('Foto caricata - Posiziona il soggetto');
+        };
+        rawImg.src = src;
     }
 
-    // --- RENDERING FINALE ---
-    function drawFinal() {
+    document.getElementById('btn-snap').onclick = () => {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = v.videoWidth;
+        tempCanvas.height = v.videoHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        if (side === "user") {
+            tempCtx.translate(tempCanvas.width, 0);
+            tempCtx.scale(-1, 1);
+        }
+        
+        tempCtx.drawImage(v, 0, 0);
+        startEdit(tempCanvas.toDataURL('image/jpeg', 0.95));
+    };
+    
+    document.getElementById('file').onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (f) => startEdit(f.target.result);
+        reader.readAsDataURL(e.target.files[0]);
+    };
+
+    // === RENDERING ENGINE ===
+    function draw() {
         ctx.save();
         ctx.clearRect(0, 0, cvs.width, cvs.height);
         
-        const b = document.getElementById('bright').value;
-        
-        // 1. Disegna Sfondo (se AI attiva)
-        if(useAI && segmentedMask) {
-            ctx.fillStyle = "#F2F4F7"; // Grigio ICAO neutro chiarissimo
-            ctx.fillRect(0,0, cvs.width, cvs.height);
+        const brightness = document.getElementById('br').value;
+        const contrast = document.getElementById('ct').value;
+
+        // Se AI attiva, disegna sfondo neutro
+        if (aiOn && aiMask) {
+            ctx.fillStyle = "#F5F5F5";
+            ctx.fillRect(0, 0, cvs.width, cvs.height);
             
-            // PREPARIAMO LA MASCHERA SUL CANVAS PRINCIPALE
-            // Dobbiamo disegnare la maschera AI rispettando zoom e posizione attuali dell'utente
-            ctx.save();
-             // Applica le trasformazioni di zoom/pan dell'utente anche alla maschera
-            ctx.translate(px, py);
-            ctx.scale(sc, sc);
+            // Crea canvas per maschera con trasformazioni
+            const maskCanvas = document.createElement('canvas');
+            maskCanvas.width = cvs.width;
+            maskCanvas.height = cvs.height;
+            const maskCtx = maskCanvas.getContext('2d');
             
-            // Usiamo la composizione per "ritagliare"
+            maskCtx.save();
+            maskCtx.translate(px, py);
+            maskCtx.scale(sc, sc);
+            maskCtx.globalCompositeOperation = "destination-out";
+            maskCtx.drawImage(aiMask, 0, 0, rawImg.width, rawImg.height);
+            maskCtx.restore();
+            
             ctx.globalCompositeOperation = "destination-out";
-            // Disegniamo la maschera (che è nera dove c'è lo sfondo, trasparente dove c'è la persona)
-            // È necessario invertire la logica di default di mediapipe per destination-out
-            ctx.drawImage(segmentedMask, 0, 0, srcImg.width, srcImg.height);
-            
-            ctx.restore();
-            // Ora il canvas ha un buco a forma di persona sullo sfondo grigio.
-            // Il prossimo disegno andrà "sotto" questo buco.
+            ctx.drawImage(maskCanvas, 0, 0);
             ctx.globalCompositeOperation = "destination-over";
         }
 
-        // 2. Applica Filtri all'immagine sorgente
-        let filterString = `brightness(${b}%) contrast(105%)`;
-        if(beauty) filterString += ` saturate(115%) blur(1px)`;
-        ctx.filter = filterString;
-
-        // 3. Disegna l'immagine sorgente (persona)
-        ctx.drawImage(srcImg, px, py, srcImg.width * sc, srcImg.height * sc);
+        // Applica filtri
+        let filterString = `brightness(${brightness}%) contrast(${contrast}%)`;
         
-        // Se beauty è attivo, aggiungi un secondo passaggio di "glow" per la pelle
-        if(beauty) {
+        if (beauty) {
+            filterString += ` saturate(115%) blur(0.4px)`;
+            ctx.filter = filterString;
+            ctx.drawImage(rawImg, px, py, rawImg.width * sc, rawImg.height * sc);
+            
+            // Beauty glow effect
             ctx.globalAlpha = 0.4;
-            ctx.filter = `brightness(${b}%) blur(3px)`;
-            // Usiamo 'source-atop' per applicare il glow solo dove abbiamo appena disegnato la persona
-            if(useAI) ctx.globalCompositeOperation = "source-atop";
+            ctx.filter = `brightness(${brightness}%) blur(3px) contrast(110%)`;
             ctx.drawImage(cvs, 0, 0);
+            ctx.globalAlpha = 1.0;
+        } else {
+            ctx.filter = filterString;
+            ctx.drawImage(rawImg, px, py, rawImg.width * sc, rawImg.height * sc);
         }
-
+        
         ctx.restore();
     }
 
+    // === TOUCH GESTURES ===
+    const getPos = (e) => ({
+        x: e.touches ? e.touches[0].clientX : e.clientX,
+        y: e.touches ? e.touches[0].clientY : e.clientY
+    });
+    
+    cvs.ontouchstart = cvs.onmousedown = (e) => {
+        if (e.touches && e.touches.length === 2) {
+            lastDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        } else {
+            isDrag = true;
+            const p = getPos(e);
+            lastX = p.x;
+            lastY = p.y;
+        }
+    };
+    
+    window.ontouchmove = window.onmousemove = (e) => {
+        if (e.touches && e.touches.length === 2) {
+            e.preventDefault();
+            const currentDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            sc *= (currentDist / lastDist);
+            sc = Math.max(0.5, Math.min(3, sc));
+            lastDist = currentDist;
+            document.getElementById('zoom-slider').value = sc;
+            document.getElementById('zoom-val').textContent = sc.toFixed(2) + 'x';
+        } else if (isDrag) {
+            const p = getPos(e);
+            px += (p.x - lastX) * (cvs.width / cvs.offsetWidth);
+            py += (p.y - lastY) * (cvs.height / cvs.offsetHeight);
+            lastX = p.x;
+            lastY = p.y;
+        }
+        draw();
+    };
+    
+    window.ontouchend = window.onmouseup = () => {
+        isDrag = false;
+        lastDist = 0;
+    };
+    
+    cvs.onwheel = (e) => {
+        e.preventDefault();
+        sc *= (e.deltaY < 0 ? 1.1 : 0.9);
+        sc = Math.max(0.5, Math.min(3, sc));
+        document.getElementById('zoom-slider').value = sc;
+        document.getElementById('zoom-val').textContent = sc.toFixed(2) + 'x';
+        draw();
+    };
 
-    // --- INTERAZIONE (Drag & Zoom) ---
-    const getP = (e) => ({ x: e.touches?e.touches[0].clientX:e.clientX, y: e.touches?e.touches[0].clientY:e.clientY });
-    cvs.onmousedown = cvs.ontouchstart = (e) => {
-        if(e.touches && e.touches.length===2) ld = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-        else { dragging=true; const p=getP(e); lx=p.x; ly=p.y; }
+    // === AZIONI AI & BEAUTY ===
+    document.getElementById('btn-ai').onclick = () => {
+        if (aiOn) {
+            // Disattiva AI
+            aiOn = false;
+            aiMask = null;
+            document.getElementById('btn-ai').classList.remove('active');
+            draw();
+            updateStatus('AI Background disattivato');
+            return;
+        }
+        
+        // Attiva AI
+        document.getElementById('ai-loading').style.display = 'flex';
+        updateStatus('Elaborazione AI in corso...');
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = rawImg.width;
+        tempCanvas.height = rawImg.height;
+        tempCanvas.getContext('2d').drawImage(rawImg, 0, 0);
+        
+        selfie.send({ image: tempCanvas });
     };
-    window.onmousemove = window.ontouchmove = (e) => {
-        if(e.touches && e.touches.length===2) { e.preventDefault(); const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); sc*=(d/ld); ld=d; document.getElementById('zoom').value=sc; }
-        else if(dragging) { const p=getP(e); px+=(p.x-lx)*(cvs.width/cvs.offsetWidth); py+=(p.y-ly)*(cvs.height/cvs.offsetHeight); lx=p.x; ly=p.y; }
-        drawFinal();
+    
+    document.getElementById('btn-beauty').onclick = function() {
+        beauty = !beauty;
+        this.classList.toggle('active');
+        draw();
+        updateStatus('Beauty Mode ' + (beauty ? 'ON' : 'OFF'));
     };
-    window.onmouseup = window.ontouchend = () => { dragging=false; ld=0; };
-    cvs.onwheel = (e) => { e.preventDefault(); sc*=(e.deltaY<0?1.1:0.9); document.getElementById('zoom').value=sc; drawFinal(); };
+    
+    document.getElementById('btn-reset').onclick = () => {
+        sc = Math.max(cvs.width / rawImg.width, cvs.height / rawImg.height);
+        px = (cvs.width - rawImg.width * sc) / 2;
+        py = (cvs.height - rawImg.height * sc) / 2;
+        document.getElementById('zoom-slider').value = sc;
+        document.getElementById('zoom-val').textContent = sc.toFixed(2) + 'x';
+        draw();
+        updateStatus('Posizione resettata');
+    };
+    
+    // Sliders
+    document.getElementById('zoom-slider').oninput = (e) => {
+        sc = parseFloat(e.target.value);
+        document.getElementById('zoom-val').textContent = sc.toFixed(2) + 'x';
+        draw();
+    };
+    
+    document.getElementById('br').oninput = (e) => {
+        document.getElementById('br-val').textContent = e.target.value + '%';
+        draw();
+    };
+    
+    document.getElementById('ct').oninput = (e) => {
+        document.getElementById('ct-val').textContent = e.target.value + '%';
+        draw();
+    };
+    
+    document.getElementById('copies-slider').oninput = (e) => {
+        document.getElementById('copies-preview').textContent = e.target.value;
+    };
 
-    // --- UI & EXPORT ---
-    document.getElementById('beauty-btn').onclick = function() { beauty=!beauty; this.classList.toggle('active'); drawFinal(); };
-    document.getElementById('zoom').oninput = (e) => { sc=e.target.value; drawFinal(); };
-    document.getElementById('bright').oninput = drawFinal;
+    // === A4 PREVIEW & EXPORT ===
+    const modal = document.getElementById('a4-modal');
+    const grid = document.getElementById('a4-grid');
+    
+    document.getElementById('btn-pre-a4').onclick = () => {
+        const numCopies = parseInt(document.getElementById('copies-slider').value);
+        document.getElementById('num-copies').value = numCopies;
+        updateA4();
+        modal.style.display = 'flex';
+        updateStatus(`Preview A4 generata: ${numCopies} copie`);
+    };
 
-    document.getElementById('export-view-btn').onclick = () => {
-        const g = document.getElementById('pg'); g.innerHTML = '';
-        const d = cvs.toDataURL('image/jpeg', 0.98);
-        const [w, h] = document.getElementById('fmt').value.split(',');
-        for(let i=0; i<4; i++) { const m=new Image(); m.src=d; m.style.width=w+"mm"; m.style.height=h+"mm"; m.style.border="1px solid #eee"; g.appendChild(m); }
-        document.getElementById('modal-export').style.display = 'block';
+    function updateA4() {
+        grid.innerHTML = '';
+        const imgData = cvs.toDataURL('image/jpeg', 0.95);
+        const [w, h] = document.getElementById('doc-size').value.split(',');
+        const numCopies = parseInt(document.getElementById('num-copies').value);
+        
+        grid.style.gridTemplateColumns = `repeat(auto-fit, ${w}mm)`;
+        grid.style.gridAutoRows = `${h}mm`;
+
+        for (let i = 0; i < numCopies; i++) {
+            const img = new Image();
+            img.className = 'a4-photo';
+            img.src = imgData;
+            img.style.width = w + 'mm';
+            img.style.height = h + 'mm';
+            grid.appendChild(img);
+        }
+    }
+
+    document.getElementById('num-copies').oninput = updateA4;
+
+    document.getElementById('btn-save-jpg').onclick = () => {
+        html2canvas(grid, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `foglio_fototessera_${Date.now()}.jpg`;
+            link.href = canvas.toDataURL('image/jpeg', 0.95);
+            link.click();
+            updateStatus('JPG salvato');
+        });
     };
-    document.getElementById('dl-jpg').onclick = () => { const a=document.createElement('a'); a.download='foto_biometrica.jpg'; a.href=cvs.toDataURL('image/jpeg', 1.0); a.click(); };
-    document.getElementById('dl-pdf').onclick = () => {
-        const pdf = new jspdf.jsPDF(); const d = cvs.toDataURL('image/jpeg', 1.0); const [w, h] = document.getElementById('fmt').value.split(',').map(Number);
-        pdf.addImage(d,'JPEG',10,10,w,h); pdf.addImage(d,'JPEG',10+w+5,10,w,h); pdf.addImage(d,'JPEG',10,10+h+5,w,h); pdf.addImage(d,'JPEG',10+w+5,10+h+5,w,h);
-        pdf.save("documento.pdf");
+    
+    document.getElementById('btn-save-pdf').onclick = () => {
+        const pdf = new jspdf.jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const imgData = cvs.toDataURL('image/jpeg', 0.95);
+        const [w, h] = document.getElementById('doc-size').value.split(',').map(Number);
+        const numCopies = parseInt(document.getElementById('num-copies').value);
+        
+        const pageWidth = 210;
+        const pageHeight = 297;
+        const margin = 20;
+        const spacing = 5;
+        
+        const maxCols = Math.floor((pageWidth - 2 * margin + spacing) / (w + spacing));
+        const maxRows = Math.floor((pageHeight - 2 * margin + spacing) / (h + spacing));
+        const maxPerPage = maxCols * maxRows;
+        
+        let currentPage = 0;
+        let copiesOnPage = 0;
+        
+        for (let i = 0; i < numCopies; i++) {
+            if (copiesOnPage >= maxPerPage) {
+                pdf.addPage();
+                currentPage++;
+                copiesOnPage = 0;
+            }
+            
+            const col = copiesOnPage % maxCols;
+            const row = Math.floor(copiesOnPage / maxCols);
+            
+            const x = margin + col * (w + spacing);
+            const y = margin + row * (h + spacing);
+            
+            pdf.addImage(imgData, 'JPEG', x, y, w, h);
+            copiesOnPage++;
+        }
+        
+        const totalPages = currentPage + 1;
+        pdf.save(`documento_biometrico_${numCopies}_copie.pdf`);
+        updateStatus(`PDF salvato: ${numCopies} copie su ${totalPages} pagine`);
     };
+
+    // === UTILITY ===
+    function updateStatus(text) {
+        statusText.textContent = text;
+    }
 </script>
 </body>
 </html>
