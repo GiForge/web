@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Word - Completo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f0f0;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .menu-bar {
+            background: #2b579a;
+            color: white;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .menu-bar .title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .menu-bar button {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .menu-bar button:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .toolbar {
+            background: white;
+            border-bottom: 1px solid #d1d1d1;
+            padding: 8px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            padding-right: 12px;
+            border-right: 1px solid #d1d1d1;
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .toolbar button {
+            background: white;
+            border: 1px solid #d1d1d1;
+            padding: 6px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .toolbar button:hover {
+            background: #f5f5f5;
+            border-color: #b0b0b0;
+        }
+
+        .toolbar button.active {
+            background: #e1e1e1;
+            border-color: #a0a0a0;
+        }
+
+        .toolbar select {
+            padding: 5px 8px;
+            border: 1px solid #d1d1d1;
+            border-radius: 3px;
+            font-size: 13px;
+            background: white;
+        }
+
+        .toolbar input[type="color"] {
+            width: 40px;
+            height: 30px;
+            border: 1px solid #d1d1d1;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .toolbar input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #d1d1d1;
+            border-radius: 3px;
+        }
+
+        .editor-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            background: #e0e0e0;
+            padding: 20px;
+        }
+
+        .page {
+            background: white;
+            width: 816px;
+            height: 1056px;
+            margin: 0 auto 20px;
+            padding: 96px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: relative;
+            page-break-after: always;
+            overflow: hidden;
+        }
+
+        .page:last-child {
+            margin-bottom: 40px;
+        }
+
+        .page-content {
+            outline: none;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #000;
+            height: 864px;
+            overflow: visible;
+        }
+
+        .page-number {
+            position: absolute;
+            font-size: 10pt;
+            color: #666;
+            user-select: none;
+        }
+
+        .page-number.bottom-center {
+            bottom: 48px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .page-number.bottom-right {
+            bottom: 48px;
+            right: 96px;
+        }
+
+        .page-number.bottom-left {
+            bottom: 48px;
+            left: 96px;
+        }
+
+        .page-number.top-center {
+            top: 48px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .page-number.top-right {
+            top: 48px;
+            right: 96px;
+        }
+
+        .page-number.top-left {
+            top: 48px;
+            left: 96px;
+        }
+
+        #pageNumBtn.active {
+            background: #e1e1e1;
+            border-color: #a0a0a0;
+        }
+
+        .status-bar {
+            background: white;
+            border-top: 1px solid #d1d1d1;
+            padding: 6px 16px;
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 16px;
+            color: #2b579a;
+        }
+
+        .modal-content input,
+        .modal-content textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #d1d1d1;
+            border-radius: 4px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+
+        .modal-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .modal-buttons .btn-primary {
+            background: #2b579a;
+            color: white;
+        }
+
+        .modal-buttons .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        table td, table th {
+            border: 1px solid #000;
+            padding: 8px;
+        }
+
+        ul, ol {
+            margin-left: 40px;
+            margin-bottom: 10px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .icon {
+            display: inline-block;
+            width: 16px;
+            text-align: center;
+        }
+
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 3000;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Voice recognition styles */
+        #voiceBtn.recording {
+            background: #ff4444;
+            color: white;
+            border-color: #cc0000;
+            animation: pulse 1.5s infinite;
+        }
+
+        #voiceBtn.recording:hover {
+            background: #ff6666;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
+            }
+        }
+
+        .voice-status {
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            background: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            z-index: 3000;
+            display: none;
+            border-left: 4px solid #2b579a;
+        }
+
+        .voice-status.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .voice-status.recording {
+            border-left-color: #ff4444;
+        }
+
+        .voice-status .status-text {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .voice-status .transcript-preview {
+            color: #666;
+            font-size: 12px;
+            font-style: italic;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="menu-bar">
+            <div class="title">📄 Editor Word Completo</div>
+            <button onclick="newDocument()">Nuovo</button>
+            <button onclick="openDocument()">Apri .docx</button>
+            <button onclick="saveAsDocx()">Salva .docx</button>
+            <button onclick="exportHTML()">Esporta HTML</button>
+            <button onclick="showPrintPreview()">Stampa</button>
+        </div>
+
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <select id="fontFamily" onchange="applyFormat('fontName', this.value)">
+                    <option value="Arial">Arial</option>
+                    <option value="Calibri" selected>Calibri</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Courier New">Courier New</option>
+                </select>
+                <input type="number" id="fontSize" value="11" min="8" max="72" onchange="applyFormat('fontSize', this.value)">
+            </div>
+
+            <div class="toolbar-group">
+                <button onclick="applyFormat('bold')" title="Grassetto (Ctrl+B)" id="btn-bold"><b>G</b></button>
+                <button onclick="applyFormat('italic')" title="Corsivo (Ctrl+I)" id="btn-italic"><i>C</i></button>
+                <button onclick="applyFormat('underline')" title="Sottolineato (Ctrl+U)" id="btn-underline"><u>S</u></button>
+                <button onclick="applyFormat('strikeThrough')" title="Barrato" id="btn-strike"><s>B</s></button>
+            </div>
+
+            <div class="toolbar-group">
+                <label title="Colore testo">A
+                    <input type="color" id="textColor" value="#000000" onchange="applyFormat('foreColor', this.value)">
+                </label>
+                <label title="Colore sfondo">
+                    <span class="icon">🎨</span>
+                    <input type="color" id="bgColor" value="#ffff00" onchange="applyFormat('backColor', this.value)">
+                </label>
+            </div>
+
+            <div class="toolbar-group">
+                <button onclick="applyFormat('justifyLeft')" title="Allinea a sinistra">≡</button>
+                <button onclick="applyFormat('justifyCenter')" title="Centra">≣</button>
+                <button onclick="applyFormat('justifyRight')" title="Allinea a destra">≡</button>
+                <button onclick="applyFormat('justifyFull')" title="Giustifica">▭</button>
+            </div>
+
+            <div class="toolbar-group">
+                <button onclick="applyFormat('insertUnorderedList')" title="Elenco puntato">• Lista</button>
+                <button onclick="applyFormat('insertOrderedList')" title="Elenco numerato">1. Lista</button>
+                <button onclick="applyFormat('indent')" title="Aumenta rientro">→</button>
+                <button onclick="applyFormat('outdent')" title="Riduci rientro">←</button>
+            </div>
+
+            <div class="toolbar-group">
+                <button onclick="insertTable()" title="Inserisci tabella">⊞ Tabella</button>
+                <button onclick="insertImage()" title="Inserisci immagine">🖼️ Immagine</button>
+                <button onclick="insertLink()" title="Inserisci link">🔗 Link</button>
+            </div>
+
+            <div class="toolbar-group">
+                <button onclick="applyFormat('undo')" title="Annulla">↶</button>
+                <button onclick="applyFormat('redo')" title="Ripeti">↷</button>
+            </div>
+
+            <div class="toolbar-group">
+                <select id="heading" onchange="applyHeading(this.value)">
+                    <option value="">Normale</option>
+                    <option value="h1">Titolo 1</option>
+                    <option value="h2">Titolo 2</option>
+                    <option value="h3">Titolo 3</option>
+                </select>
+            </div>
+
+            <div class="toolbar-group">
+                <button id="voiceBtn" onclick="toggleVoiceRecognition()" title="Dettatura vocale (premi per parlare)">
+                    🎤 Dettatura
+                </button>
+                <select id="voiceLang" title="Lingua dettatura">
+                    <option value="it-IT" selected>Italiano</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="es-ES">Español</option>
+                    <option value="fr-FR">Français</option>
+                    <option value="de-DE">Deutsch</option>
+                </select>
+            </div>
+
+            <div class="toolbar-group">
+                <button onclick="togglePageNumbers()" title="Attiva/Disattiva numeri di pagina" id="pageNumBtn">
+                    📄 Numeri pagina
+                </button>
+                <select id="pageNumPosition" onchange="updatePageNumbers()" title="Posizione numeri">
+                    <option value="bottom-center">Piè di pagina - Centro</option>
+                    <option value="bottom-right">Piè di pagina - Destra</option>
+                    <option value="bottom-left">Piè di pagina - Sinistra</option>
+                    <option value="top-center">Intestazione - Centro</option>
+                    <option value="top-right">Intestazione - Destra</option>
+                    <option value="top-left">Intestazione - Sinistra</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="editor-wrapper" id="editorWrapper">
+            <div class="page" data-page="1">
+                <div class="page-content" contenteditable="true" spellcheck="true">
+                    <p>Inizia a scrivere il tuo documento...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div>
+                <span id="pageInfo">Pagina: 1 di 1</span> | 
+                <span id="wordCount">Parole: 0</span> | 
+                <span id="charCount">Caratteri: 0</span>
+            </div>
+            <div id="documentName">Nuovo documento.docx</div>
+        </div>
+    </div>
+
+    <div class="alert" id="alert"></div>
+
+    <div class="voice-status" id="voiceStatus">
+        <div class="status-text">In ascolto...</div>
+        <div class="transcript-preview" id="transcriptPreview"></div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".docx" onchange="loadDocument(event)">
+
+    <div id="tableModal" class="modal">
+        <div class="modal-content">
+            <h3>Inserisci Tabella</h3>
+            <label>Righe: <input type="number" id="tableRows" value="3" min="1" max="20"></label>
+            <label>Colonne: <input type="number" id="tableCols" value="3" min="1" max="10"></label>
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="closeModal('tableModal')">Annulla</button>
+                <button class="btn-primary" onclick="createTable()">Inserisci</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="linkModal" class="modal">
+        <div class="modal-content">
+            <h3>Inserisci Link</h3>
+            <label>Testo: <input type="text" id="linkText" placeholder="Testo del link"></label>
+            <label>URL: <input type="url" id="linkUrl" placeholder="https://esempio.com"></label>
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="closeModal('linkModal')">Annulla</button>
+                <button class="btn-primary" onclick="createLink()">Inserisci</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <h3>Inserisci Immagine</h3>
+            <label>URL Immagine: <input type="url" id="imageUrl" placeholder="https://esempio.com/immagine.jpg"></label>
+            <p style="text-align: center; margin: 16px 0;">oppure</p>
+            <input type="file" id="imageFile" accept="image/*">
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="closeModal('imageModal')">Annulla</button>
+                <button class="btn-primary" onclick="createImage()">Inserisci</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <script>
+        let currentFileName = 'Nuovo documento.docx';
+        let pageNumbersEnabled = false;
+        let pages = [];
+        let editor = null; // Will be initialized to first page content
+
+        // Initialize pages
+        function initPages() {
+            const editorWrapper = document.getElementById('editorWrapper');
+            pages = Array.from(editorWrapper.querySelectorAll('.page'));
+            
+            if (pages.length > 0) {
+                editor = pages[0].querySelector('.page-content');
+                setupPageListeners();
+            }
+        }
+
+        function setupPageListeners() {
+            pages.forEach(page => {
+                const content = page.querySelector('.page-content');
+                
+                content.addEventListener('input', function() {
+                    updateCounts();
+                    checkPagination();
+                });
+                
+                content.addEventListener('keyup', updateToolbar);
+                content.addEventListener('mouseup', updateToolbar);
+                content.addEventListener('paste', function() {
+                    setTimeout(() => {
+                        checkPagination();
+                        updateCounts();
+                    }, 100);
+                });
+            });
+        }
+
+        // Check if content exceeds page height and create new pages
+        function checkPagination() {
+            const editorWrapper = document.getElementById('editorWrapper');
+            pages = Array.from(editorWrapper.querySelectorAll('.page'));
+            
+            pages.forEach((page, index) => {
+                const content = page.querySelector('.page-content');
+                const maxHeight = 864; // Height in pixels for content area
+                
+                if (content.scrollHeight > maxHeight + 50) {
+                    // Content overflows, need to move to next page
+                    moveOverflowToNextPage(page, index);
+                }
+            });
+            
+            // Update page numbers
+            updatePageInfo();
+            if (pageNumbersEnabled) {
+                updatePageNumbers();
+            }
+        }
+
+        function moveOverflowToNextPage(currentPageEl, pageIndex) {
+            const content = currentPageEl.querySelector('.page-content');
+            const editorWrapper = document.getElementById('editorWrapper');
+            
+            // Create next page if it doesn't exist
+            let nextPage = pages[pageIndex + 1];
+            if (!nextPage) {
+                nextPage = createNewPage(pageIndex + 1);
+                editorWrapper.appendChild(nextPage);
+                pages = Array.from(editorWrapper.querySelectorAll('.page'));
+                setupPageListeners();
+            }
+            
+            const nextContent = nextPage.querySelector('.page-content');
+            
+            // Find the split point
+            const elements = Array.from(content.children);
+            let totalHeight = 0;
+            let splitIndex = -1;
+            
+            for (let i = 0; i < elements.length; i++) {
+                totalHeight += elements[i].offsetHeight;
+                if (totalHeight > 864) {
+                    splitIndex = i;
+                    break;
+                }
+            }
+            
+            if (splitIndex > 0 && splitIndex < elements.length) {
+                // Move elements from splitIndex onwards to next page
+                const elementsToMove = elements.slice(splitIndex);
+                
+                // Prepend to next page content
+                const fragment = document.createDocumentFragment();
+                elementsToMove.forEach(el => {
+                    fragment.appendChild(el);
+                });
+                
+                // Clear next page if empty and add moved content
+                if (nextContent.children.length > 0 && !nextContent.textContent.trim()) {
+                    nextContent.innerHTML = '';
+                }
+                nextContent.insertBefore(fragment, nextContent.firstChild);
+            }
+        }
+
+        function createNewPage(pageNum) {
+            const page = document.createElement('div');
+            page.className = 'page';
+            page.setAttribute('data-page', pageNum + 1);
+            
+            const content = document.createElement('div');
+            content.className = 'page-content';
+            content.contentEditable = 'true';
+            content.spellcheck = 'true';
+            
+            page.appendChild(content);
+            
+            return page;
+        }
+
+        function updatePageInfo() {
+            const editorWrapper = document.getElementById('editorWrapper');
+            const pageCount = editorWrapper.querySelectorAll('.page').length;
+            
+            // Find current page based on cursor position
+            let currentPageNum = 1;
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                const container = range.commonAncestorContainer;
+                const pageContent = container.nodeType === Node.ELEMENT_NODE ? 
+                    container.closest('.page-content') : 
+                    container.parentElement?.closest('.page-content');
+                
+                if (pageContent) {
+                    const page = pageContent.parentElement;
+                    currentPageNum = parseInt(page.getAttribute('data-page')) || 1;
+                }
+            }
+            
+            document.getElementById('pageInfo').textContent = `Pagina: ${currentPageNum} di ${pageCount}`;
+        }
+
+        // Page numbers functionality
+        function togglePageNumbers() {
+            pageNumbersEnabled = !pageNumbersEnabled;
+            const btn = document.getElementById('pageNumBtn');
+            
+            if (pageNumbersEnabled) {
+                btn.classList.add('active');
+                updatePageNumbers();
+                showAlert('Numeri di pagina attivati');
+            } else {
+                btn.classList.remove('active');
+                removePageNumbers();
+                showAlert('Numeri di pagina disattivati');
+            }
+        }
+
+        function updatePageNumbers() {
+            if (!pageNumbersEnabled) return;
+            
+            const position = document.getElementById('pageNumPosition').value;
+            const editorWrapper = document.getElementById('editorWrapper');
+            const allPages = editorWrapper.querySelectorAll('.page');
+            
+            allPages.forEach((page, index) => {
+                // Remove existing page number
+                const existingNum = page.querySelector('.page-number');
+                if (existingNum) {
+                    existingNum.remove();
+                }
+                
+                // Add new page number
+                const pageNum = document.createElement('div');
+                pageNum.className = `page-number ${position}`;
+                pageNum.textContent = index + 1;
+                page.appendChild(pageNum);
+            });
+        }
+
+        function removePageNumbers() {
+            const editorWrapper = document.getElementById('editorWrapper');
+            const allPageNumbers = editorWrapper.querySelectorAll('.page-number');
+            allPageNumbers.forEach(num => num.remove());
+        }
+
+        // Get all content from all pages
+        function getAllContent() {
+            const editorWrapper = document.getElementById('editorWrapper');
+            const allPages = editorWrapper.querySelectorAll('.page-content');
+            let html = '';
+            
+            allPages.forEach(content => {
+                html += content.innerHTML;
+            });
+            
+            return html;
+        }
+
+        // Set content across pages
+        function setAllContent(html) {
+            const editorWrapper = document.getElementById('editorWrapper');
+            
+            // Clear existing pages
+            editorWrapper.innerHTML = '';
+            
+            // Create first page
+            const firstPage = createNewPage(0);
+            const firstContent = firstPage.querySelector('.page-content');
+            firstContent.innerHTML = html;
+            editorWrapper.appendChild(firstPage);
+            
+            pages = [firstPage];
+            editor = firstContent;
+            
+            setupPageListeners();
+            
+            // Check pagination after content is set
+            setTimeout(() => {
+                checkPagination();
+                updatePageInfo();
+                if (pageNumbersEnabled) {
+                    updatePageNumbers();
+                }
+            }, 100);
+        }
+
+        // Auto-save
+        setInterval(() => {
+            localStorage.setItem('autosave', getAllContent());
+            localStorage.setItem('pageNumbersEnabled', pageNumbersEnabled);
+        }, 30000);
+
+        // Load autosave
+        window.addEventListener('load', () => {
+            initPages();
+            
+            const autosave = localStorage.getItem('autosave');
+            const savedPageNumbers = localStorage.getItem('pageNumbersEnabled');
+            
+            if (autosave) {
+                if (confirm('Trovato un documento salvato automaticamente. Vuoi caricarlo?')) {
+                    setAllContent(autosave);
+                    
+                    if (savedPageNumbers === 'true') {
+                        pageNumbersEnabled = true;
+                        document.getElementById('pageNumBtn').classList.add('active');
+                        updatePageNumbers();
+                    }
+                }
+            }
+            updateCounts();
+            updatePageInfo();
+        });
+
+        function showAlert(message, type = 'success') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.style.background = type === 'success' ? '#4CAF50' : '#f44336';
+            alert.classList.add('show');
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 3000);
+        }
+
+        function applyFormat(command, value = null) {
+            document.execCommand(command, false, value);
+            editor.focus();
+            updateToolbar();
+        }
+
+        function applyHeading(tag) {
+            if (tag === '') {
+                applyFormat('formatBlock', 'p');
+            } else {
+                applyFormat('formatBlock', tag);
+            }
+        }
+
+        function updateToolbar() {
+            document.getElementById('btn-bold').classList.toggle('active', document.queryCommandState('bold'));
+            document.getElementById('btn-italic').classList.toggle('active', document.queryCommandState('italic'));
+            document.getElementById('btn-underline').classList.toggle('active', document.queryCommandState('underline'));
+            document.getElementById('btn-strike').classList.toggle('active', document.queryCommandState('strikeThrough'));
+        }
+
+        editor.addEventListener('keyup', updateToolbar);
+        editor.addEventListener('mouseup', updateToolbar);
+
+        function updateCounts() {
+            const text = getAllContent().replace(/<[^>]*>/g, '').trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            const chars = text.length;
+            
+            document.getElementById('wordCount').textContent = `Parole: ${words}`;
+            document.getElementById('charCount').textContent = `Caratteri: ${chars}`;
+            
+            updatePageInfo();
+        }
+
+        function newDocument() {
+            if (confirm('Creare un nuovo documento? Le modifiche non salvate andranno perse.')) {
+                setAllContent('<p>Inizia a scrivere il tuo documento...</p>');
+                currentFileName = 'Nuovo documento.docx';
+                document.getElementById('documentName').textContent = currentFileName;
+                updateCounts();
+                updatePageInfo();
+            }
+        }
+
+        function openDocument() {
+            document.getElementById('fileInput').click();
+        }
+
+        async function loadDocument(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            currentFileName = file.name;
+            document.getElementById('documentName').textContent = currentFileName;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const arrayBuffer = e.target.result;
+                
+                try {
+                    const result = await mammoth.convertToHtml({arrayBuffer: arrayBuffer});
+                    setAllContent(result.value);
+                    showAlert('Documento caricato con successo!');
+                } catch (error) {
+                    showAlert('Errore nel caricamento: ' + error.message, 'error');
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportHTML() {
+            const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${currentFileName.replace('.docx', '')}</title>
+    <style>
+        body { 
+            font-family: Calibri, Arial, sans-serif; 
+            max-width: 816px; 
+            margin: 40px auto; 
+            padding: 20px;
+            line-height: 1.5;
+        }
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin: 10px 0; 
+        }
+        table td, table th { 
+            border: 1px solid #000; 
+            padding: 8px; 
+        }
+        h1, h2, h3 { margin-top: 20px; margin-bottom: 10px; }
+        p { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+${getAllContent()}
+</body>
+</html>`;
+            
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            saveAs(blob, currentFileName.replace('.docx', '.html'));
+            showAlert('File HTML esportato con successo!');
+        }
+
+        // Save as DOCX using manual XML generation
+        async function saveAsDocx() {
+            try {
+                const content = htmlToDocxXml(getAllContent());
+                const zip = new JSZip();
+                
+                // Add [Content_Types].xml
+                zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+    <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+    <Default Extension="xml" ContentType="application/xml"/>
+    <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>`);
+
+                // Add _rels/.rels
+                zip.folder('_rels').file('.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`);
+
+                // Add word/_rels/document.xml.rels
+                zip.folder('word').folder('_rels').file('document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+</Relationships>`);
+
+                // Add word/document.xml
+                zip.folder('word').file('document.xml', content);
+
+                // Generate blob and save
+                const blob = await zip.generateAsync({type: 'blob'});
+                saveAs(blob, currentFileName);
+                showAlert('Documento salvato con successo!');
+                
+            } catch (error) {
+                showAlert('Errore nel salvataggio: ' + error.message, 'error');
+                console.error('Errore dettagliato:', error);
+            }
+        }
+
+        function htmlToDocxXml(html) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            
+            let paragraphs = '';
+            
+            for (let node of tempDiv.childNodes) {
+                paragraphs += convertNodeToXml(node);
+            }
+            
+            return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" 
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+    <w:body>
+        ${paragraphs}
+        <w:sectPr>
+            <w:pgSz w:w="12240" w:h="15840"/>
+            <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/>
+        </w:sectPr>
+    </w:body>
+</w:document>`;
+        }
+
+        function convertNodeToXml(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                const text = node.textContent.trim();
+                if (text) {
+                    return createParagraphXml(text);
+                }
+                return '';
+            }
+            
+            if (node.nodeType !== Node.ELEMENT_NODE) return '';
+            
+            const tag = node.tagName.toLowerCase();
+            const text = node.textContent.trim();
+            
+            if (!text && tag !== 'table' && tag !== 'br') return '';
+            
+            switch(tag) {
+                case 'p':
+                    return createParagraphXml(node);
+                case 'h1':
+                    return createHeadingXml(node, 1);
+                case 'h2':
+                    return createHeadingXml(node, 2);
+                case 'h3':
+                    return createHeadingXml(node, 3);
+                case 'ul':
+                case 'ol':
+                    return convertListToXml(node);
+                case 'table':
+                    return convertTableToXml(node);
+                case 'br':
+                    return '<w:p/>';
+                case 'div':
+                    let xml = '';
+                    for (let child of node.childNodes) {
+                        xml += convertNodeToXml(child);
+                    }
+                    return xml;
+                default:
+                    return createParagraphXml(node);
+            }
+        }
+
+        function createParagraphXml(node) {
+            const runs = [];
+            
+            if (typeof node === 'string') {
+                runs.push(createRunXml(node));
+            } else {
+                extractRuns(node, runs);
+            }
+            
+            let alignment = '';
+            if (node.style && node.style.textAlign) {
+                const align = node.style.textAlign;
+                if (align === 'center') alignment = '<w:jc w:val="center"/>';
+                else if (align === 'right') alignment = '<w:jc w:val="right"/>';
+                else if (align === 'justify') alignment = '<w:jc w:val="both"/>';
+            }
+            
+            return `<w:p>
+                <w:pPr>${alignment}</w:pPr>
+                ${runs.join('')}
+            </w:p>`;
+        }
+
+        function createHeadingXml(node, level) {
+            const text = node.textContent;
+            const size = level === 1 ? 32 : level === 2 ? 26 : 24;
+            
+            return `<w:p>
+                <w:pPr>
+                    <w:pStyle w:val="Heading${level}"/>
+                </w:pPr>
+                <w:r>
+                    <w:rPr>
+                        <w:b/>
+                        <w:sz w:val="${size}"/>
+                    </w:rPr>
+                    <w:t>${escapeXml(text)}</w:t>
+                </w:r>
+            </w:p>`;
+        }
+
+        function extractRuns(node, runs) {
+            for (let child of node.childNodes) {
+                if (child.nodeType === Node.TEXT_NODE) {
+                    const text = child.textContent;
+                    if (text) {
+                        const formatting = getFormatting(child);
+                        runs.push(createRunXml(text, formatting));
+                    }
+                } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    if (child.tagName.toLowerCase() === 'br') {
+                        runs.push('<w:r><w:br/></w:r>');
+                    } else {
+                        extractRuns(child, runs);
+                    }
+                }
+            }
+        }
+
+        function getFormatting(node) {
+            let parent = node.parentElement;
+            const formatting = {
+                bold: false,
+                italic: false,
+                underline: false
+            };
+            
+            while (parent && parent !== editor) {
+                const tag = parent.tagName.toLowerCase();
+                if (tag === 'b' || tag === 'strong') formatting.bold = true;
+                if (tag === 'i' || tag === 'em') formatting.italic = true;
+                if (tag === 'u') formatting.underline = true;
+                parent = parent.parentElement;
+            }
+            
+            return formatting;
+        }
+
+        function createRunXml(text, formatting = {}) {
+            let props = '';
+            if (formatting.bold) props += '<w:b/>';
+            if (formatting.italic) props += '<w:i/>';
+            if (formatting.underline) props += '<w:u w:val="single"/>';
+            
+            const propsTag = props ? `<w:rPr>${props}</w:rPr>` : '';
+            
+            return `<w:r>${propsTag}<w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r>`;
+        }
+
+        function convertListToXml(listNode) {
+            let xml = '';
+            const items = listNode.querySelectorAll('li');
+            
+            for (let li of items) {
+                xml += `<w:p>
+                    <w:pPr>
+                        <w:numPr>
+                            <w:ilvl w:val="0"/>
+                            <w:numId w:val="1"/>
+                        </w:numPr>
+                    </w:pPr>
+                    <w:r><w:t>${escapeXml(li.textContent)}</w:t></w:r>
+                </w:p>`;
+            }
+            
+            return xml;
+        }
+
+        function convertTableToXml(tableNode) {
+            let xml = '<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/></w:tblPr>';
+            const rows = tableNode.querySelectorAll('tr');
+            
+            for (let tr of rows) {
+                xml += '<w:tr>';
+                const cells = tr.querySelectorAll('td, th');
+                
+                for (let td of cells) {
+                    xml += `<w:tc>
+                        <w:tcPr>
+                            <w:tcBorders>
+                                <w:top w:val="single" w:sz="4"/>
+                                <w:left w:val="single" w:sz="4"/>
+                                <w:bottom w:val="single" w:sz="4"/>
+                                <w:right w:val="single" w:sz="4"/>
+                            </w:tcBorders>
+                        </w:tcPr>
+                        <w:p><w:r><w:t>${escapeXml(td.textContent)}</w:t></w:r></w:p>
+                    </w:tc>`;
+                }
+                
+                xml += '</w:tr>';
+            }
+            
+            xml += '</w:tbl>';
+            return xml;
+        }
+
+        function escapeXml(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
+
+        function insertTable() {
+            document.getElementById('tableModal').classList.add('active');
+        }
+
+        function createTable() {
+            const rows = parseInt(document.getElementById('tableRows').value);
+            const cols = parseInt(document.getElementById('tableCols').value);
+            
+            let tableHTML = '<table><tbody>';
+            for (let i = 0; i < rows; i++) {
+                tableHTML += '<tr>';
+                for (let j = 0; j < cols; j++) {
+                    tableHTML += '<td>&nbsp;</td>';
+                }
+                tableHTML += '</tr>';
+            }
+            tableHTML += '</tbody></table><p><br></p>';
+            
+            document.execCommand('insertHTML', false, tableHTML);
+            closeModal('tableModal');
+        }
+
+        function insertLink() {
+            const selection = window.getSelection().toString();
+            document.getElementById('linkText').value = selection;
+            document.getElementById('linkModal').classList.add('active');
+        }
+
+        function createLink() {
+            const text = document.getElementById('linkText').value;
+            const url = document.getElementById('linkUrl').value;
+            
+            if (text && url) {
+                const link = `<a href="${url}" target="_blank">${text}</a>`;
+                document.execCommand('insertHTML', false, link);
+            }
+            closeModal('linkModal');
+        }
+
+        function insertImage() {
+            document.getElementById('imageModal').classList.add('active');
+        }
+
+        function createImage() {
+            const url = document.getElementById('imageUrl').value;
+            const file = document.getElementById('imageFile').files[0];
+            
+            if (url) {
+                const img = `<img src="${url}" style="max-width: 100%; height: auto;"><p><br></p>`;
+                document.execCommand('insertHTML', false, img);
+                closeModal('imageModal');
+            } else if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = `<img src="${e.target.result}" style="max-width: 100%; height: auto;"><p><br></p>`;
+                    document.execCommand('insertHTML', false, img);
+                    closeModal('imageModal');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function showPrintPreview() {
+            window.print();
+        }
+
+        const printStyles = `
+            @media print {
+                body * { visibility: hidden; }
+                .page, .page * { visibility: visible; }
+                .page {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    box-shadow: none;
+                }
+            }
+        `;
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = printStyles;
+        document.head.appendChild(styleSheet);
+
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key.toLowerCase()) {
+                    case 's':
+                        e.preventDefault();
+                        saveAsDocx();
+                        break;
+                    case 'b':
+                        e.preventDefault();
+                        applyFormat('bold');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        applyFormat('italic');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        applyFormat('underline');
+                        break;
+                }
+            }
+        });
+
+        // ============================================
+        // VOICE RECOGNITION / SPEECH-TO-TEXT
+        // ============================================
+        
+        let recognition = null;
+        let isRecording = false;
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        // Initialize Speech Recognition
+        function initSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                showAlert('Il tuo browser non supporta la dettatura vocale. Usa Chrome, Edge o Safari.', 'error');
+                document.getElementById('voiceBtn').disabled = true;
+                return false;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+            
+            recognition.onstart = function() {
+                isRecording = true;
+                document.getElementById('voiceBtn').classList.add('recording');
+                document.getElementById('voiceBtn').innerHTML = '⏹️ Stop';
+                document.getElementById('voiceStatus').classList.add('show', 'recording');
+                document.getElementById('voiceStatus').querySelector('.status-text').textContent = '🎤 In ascolto...';
+                finalTranscript = '';
+                interimTranscript = '';
+            };
+
+            recognition.onresult = function(event) {
+                interimTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                        insertTextAtCursor(transcript + ' ');
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                // Update preview
+                const preview = document.getElementById('transcriptPreview');
+                if (interimTranscript) {
+                    preview.textContent = interimTranscript;
+                } else if (finalTranscript) {
+                    preview.textContent = 'Ultimo: ' + finalTranscript.substring(Math.max(0, finalTranscript.length - 50));
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                let errorMsg = 'Errore di riconoscimento vocale';
+                
+                switch(event.error) {
+                    case 'no-speech':
+                        errorMsg = 'Nessun audio rilevato. Parla più forte o avvicina il microfono.';
+                        break;
+                    case 'audio-capture':
+                        errorMsg = 'Microfono non trovato o non accessibile.';
+                        break;
+                    case 'not-allowed':
+                        errorMsg = 'Permesso microfono negato. Abilita il microfono nelle impostazioni del browser.';
+                        break;
+                    case 'network':
+                        errorMsg = 'Errore di rete. Verifica la connessione internet.';
+                        break;
+                }
+                
+                showAlert(errorMsg, 'error');
+                stopRecording();
+            };
+
+            recognition.onend = function() {
+                if (isRecording) {
+                    // Riavvia automaticamente se dovrebbe essere ancora in registrazione
+                    recognition.start();
+                } else {
+                    stopRecording();
+                }
+            };
+
+            return true;
+        }
+
+        function toggleVoiceRecognition() {
+            if (!recognition && !initSpeechRecognition()) {
+                return;
+            }
+
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        function startRecording() {
+            const lang = document.getElementById('voiceLang').value;
+            recognition.lang = lang;
+            
+            try {
+                recognition.start();
+            } catch (error) {
+                if (error.name === 'InvalidStateError') {
+                    // Already running, just update UI
+                    isRecording = true;
+                    document.getElementById('voiceBtn').classList.add('recording');
+                } else {
+                    showAlert('Errore nell\'avvio della registrazione: ' + error.message, 'error');
+                }
+            }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            
+            if (recognition) {
+                recognition.stop();
+            }
+            
+            document.getElementById('voiceBtn').classList.remove('recording');
+            document.getElementById('voiceBtn').innerHTML = '🎤 Dettatura';
+            document.getElementById('voiceStatus').classList.remove('show', 'recording');
+            
+            if (finalTranscript) {
+                showAlert('Dettatura completata!');
+            }
+        }
+
+        function insertTextAtCursor(text) {
+            // Focus on the active content editable area
+            const selection = window.getSelection();
+            let targetEditor = editor;
+            
+            // Find which page-content has focus
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                const container = range.commonAncestorContainer;
+                const pageContent = container.nodeType === Node.ELEMENT_NODE ? 
+                    container.closest('.page-content') : 
+                    container.parentElement?.closest('.page-content');
+                
+                if (pageContent) {
+                    targetEditor = pageContent;
+                }
+            }
+            
+            targetEditor.focus();
+            
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                range.deleteContents();
+                
+                const textNode = document.createTextNode(text);
+                range.insertNode(textNode);
+                
+                // Move cursor to end of inserted text
+                range.setStartAfter(textNode);
+                range.setEndAfter(textNode);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            } else {
+                // Fallback: insert at end
+                const textNode = document.createTextNode(text);
+                targetEditor.appendChild(textNode);
+            }
+            
+            updateCounts();
+            checkPagination();
+        }
+
+        // Voice commands support (optional enhancement)
+        function processVoiceCommand(transcript) {
+            const command = transcript.toLowerCase().trim();
+            
+            // Commands for formatting
+            if (command.includes('grassetto')) {
+                applyFormat('bold');
+                return true;
+            }
+            if (command.includes('corsivo')) {
+                applyFormat('italic');
+                return true;
+            }
+            if (command.includes('sottolineato')) {
+                applyFormat('underline');
+                return true;
+            }
+            if (command.includes('nuova riga') || command === 'a capo') {
+                document.execCommand('insertHTML', false, '<br>');
+                return true;
+            }
+            if (command.includes('nuovo paragrafo')) {
+                document.execCommand('insertParagraph');
+                return true;
+            }
+            
+            return false;
+        }
+
+        // Initialize on load
+        window.addEventListener('load', function() {
+            // Check if speech recognition is supported
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                console.log('Speech recognition supported');
+            } else {
+                document.getElementById('voiceBtn').disabled = true;
+                document.getElementById('voiceBtn').title = 'Dettatura vocale non supportata dal browser';
+            }
+        });
+
+        // Stop recording when window loses focus (optional)
+        window.addEventListener('blur', function() {
+            if (isRecording) {
+                // Optionally stop recording when window loses focus
+                // stopRecording();
+            }
+        });
+    </script>
+</body>
+</html>
