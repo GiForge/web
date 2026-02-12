@@ -6,646 +6,291 @@
     <title>Scanner Documenti - Rettificazione Prospettica</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-#resultContainer {
-    min-height: 300px;
-    position: relative;
-    z-index: 10;
-    opacity: 1 !important;
-    visibility: visible !important;
+    
+
+/* =========================
+   RESET
+========================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
-#resultCanvas {
-    max-width: 100%; /* Impedisce al canvas di uscire dallo schermo */
-    height: auto !important;
-    border: 2px solid #3b82f6;
-    display: none; /* Verrà mostrato via JS */
-}    
-/* Applica questo a Canvas e punti per bloccare ogni movimento della pagina */
-#sourceCanvas {
-    /* Disabilita TUTTI i gesti del browser (scroll, zoom, menu contestuale) */
-    touch-action: none !important; 
-    user-select: none !important;
-    -webkit-user-select: none;
-    /* Evita che il tocco venga intercettato da elementi sovrapposti */
-    pointer-events: auto !important;
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: radial-gradient(circle at 20% 10%, #0f172a, #05070d 70%);
+    color: #e2faff;
+    min-height: 100vh;
+    overflow-x: hidden;
 }
 
-.point {
-    /* Rende i punti "trasparenti" ai Pointer Events così il canvas legge sempre il tocco */
-    pointer-events: none !important; 
+/* =========================
+   CONTAINER GLASS
+========================= */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(12px);
 }
-  
-#zoomHelper {
-    position: fixed; /* FONDAMENTALE: resta agganciato allo schermo, non alla pagina */
-    z-index: 10000;  /* Sopra a tutto */
-    pointer-events: none; /* Il tocco deve passare "attraverso" lo zoom */
+
+/* =========================
+   HEADER CYBER
+========================= */
+.header {
+    padding: 24px;
+    text-align: center;
+    background: linear-gradient(135deg, rgba(0,255,255,0.1), rgba(255,170,0,0.08));
+    border-bottom: 1px solid rgba(0,255,255,0.3);
+    box-shadow: 0 0 25px rgba(0,255,255,0.15);
+}
+
+.header h1 {
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+    color: #00f5ff;
+    text-shadow: 0 0 12px #00f5ff;
+}
+
+.subtitle {
+    font-size: 0.85rem;
+    color: #ffb300;
+    opacity: 0.9;
+}
+
+/* =========================
+   CONTROLS BAR
+========================= */
+.controls {
+    padding: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    background: rgba(15,23,42,0.7);
+    border-bottom: 1px solid rgba(0,255,255,0.15);
+}
+
+/* =========================
+   BUTTONS CYBER
+========================= */
+.btn {
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,255,255,0.4);
+    background: rgba(0,255,255,0.05);
+    color: #00f5ff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(8px);
+}
+
+.btn:hover {
+    box-shadow: 0 0 15px rgba(0,255,255,0.6);
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    border-color: rgba(255,170,0,0.5);
+    color: #ffb300;
+    background: rgba(255,170,0,0.05);
+}
+
+.btn-success:hover {
+    box-shadow: 0 0 15px rgba(255,170,0,0.6);
+}
+
+.btn-secondary {
+    border-color: rgba(148,163,184,0.4);
+    color: #94a3b8;
+}
+
+.btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* =========================
+   FILTER PANEL
+========================= */
+.filter-controls {
+    width: 100%;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(0,255,255,0.15);
     border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    display: none;
-}    
-    /* Impedisce al browser di gestire il tocco (niente scroll o zoom nativo) */
-/* Evita che il tocco sul canvas di origine causi lo scroll della pagina (fondamentale per il drag) */
-#sourceCanvas {
-    touch-action: none; 
-    user-select: none;
-    -webkit-user-drag: none;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    backdrop-filter: blur(10px);
 }
-/* Assicurati che il contenitore non tagli gli elementi */
+
+.filter-group label {
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    color: #00f5ff;
+}
+
+.filter-group select,
+.filter-group input[type="range"] {
+    width: 100%;
+}
+
+select {
+    background: #0f172a;
+    border: 1px solid rgba(0,255,255,0.4);
+    border-radius: 6px;
+    padding: 6px;
+    color: #e2faff;
+}
+
+input[type="range"] {
+    accent-color: #ffb300;
+}
+
+/* =========================
+   WORKSPACE
+========================= */
 .workspace {
-    overflow: visible !important;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 12px;
+}
+
+/* =========================
+   CANVAS CONTAINER
+========================= */
+.canvas-container {
     position: relative;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,255,255,0.25);
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #0a0e17;
-            min-height: 100vh;
-            overflow-x: hidden;
-            color: #e2e8f0;
-        }
+.canvas-container h3 {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    font-size: 12px;
+    background: rgba(0,255,255,0.1);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,255,255,0.4);
+    color: #00f5ff;
+}
 
-        .container {
-            max-width: 100%;
-            min-height: 100vh;
-            background: linear-gradient(180deg, #0f1419 0%, #1a1f2e 100%);
-            display: flex;
-            flex-direction: column;
-        }
+/* =========================
+   CANVAS
+========================= */
+canvas {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 12px;
+}
 
-        .header {
-            background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
-            color: white;
-            padding: 16px;
-            text-align: center;
-            flex-shrink: 0;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%);
-            pointer-events: none;
-        }
-
-        h1 {
-            font-size: 1.25em;
-            margin-bottom: 4px;
-            position: relative;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .subtitle {
-            opacity: 0.9;
-            font-size: 0.75em;
-            position: relative;
-        }
-
-        .controls {
-            padding: 12px;
-            background: #1a1f2e;
-            border-bottom: 1px solid #2d3748;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .btn {
-            padding: 12px 16px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            white-space: nowrap;
-            flex: 1 1 auto;
-            min-width: 140px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            transform: translate(-50%, -50%);
-            transition: width 0.3s, height 0.3s;
-        }
-
-        .btn:active::before {
-            width: 300px;
-            height: 300px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-        }
-
-        .btn-primary:active {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            transform: scale(0.98);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-
-        .btn-success:active {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-            transform: scale(0.98);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-            color: white;
-        }
-
-        .btn-secondary:active {
-            background: linear-gradient(135deg, #475569 0%, #334155 100%);
-            transform: scale(0.98);
-        }
-
-        .btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .filter-controls {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            background: #0f1419;
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid #2d3748;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .filter-group label {
-            font-weight: 600;
-            font-size: 13px;
-            color: #cbd5e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .filter-group select {
-            width: 100%;
-            padding: 8px 12px;
-            background: #0a0e17;
-            border: 1px solid #3b82f6;
-            border-radius: 6px;
-            color: #cbd5e0;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .filter-group select:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
-
-        .filter-group select option {
-            background: #1a1f2e;
-            color: #cbd5e0;
-            padding: 8px;
-        }
-
-        .filter-group input[type="range"] {
-            width: 100%;
-            height: 6px;
-            cursor: pointer;
-            -webkit-appearance: none;
-            appearance: none;
-            background: linear-gradient(to right, #2d3748 0%, #4a5568 100%);
-            border-radius: 5px;
-            outline: none;
-        }
-
-        .filter-group input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
-            transition: transform 0.2s;
-        }
-
-        .filter-group input[type="range"]::-webkit-slider-thumb:active {
-            transform: scale(1.2);
-        }
-
-        .filter-group input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
-        }
-
-        .filter-group .value {
-            font-size: 13px;
-            color: #3b82f6;
-            font-weight: 700;
-            min-width: 50px;
-            text-align: right;
-        }
-
-        .workspace {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .canvas-container {
-            position: relative;
-            background: #0a0e17;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            min-height: 40vh;
-        }
-
-        .canvas-container h3 {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(26, 31, 46, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #cbd5e0;
-            z-index: 10;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            border: 1px solid #2d3748;
-        }
-
-        canvas {
-            display: block;
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            border-radius: 4px;
-        }
-
-        .placeholder {
-            color: #64748b;
-            text-align: center;
-            padding: 40px 20px;
-            font-size: 15px;
-        }
-
-        .point {
-            position: absolute;
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            border: 4px solid #0f172a;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            cursor: move;
-            box-shadow: 0 0 0 2px #3b82f6, 0 4px 16px rgba(59, 130, 246, 0.6);
-            z-index: 1000;
-            touch-action: none;
-            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .point:active {
-            transform: translate(-50%, -50%) scale(1.15);
-            box-shadow: 0 0 0 2px #2563eb, 0 6px 20px rgba(37, 99, 235, 0.8);
-        }
-
-        .point-label {
-            position: absolute;
-            top: -32px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            white-space: nowrap;
-            pointer-events: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-            transition: background 0.15s;
-        }
-
-        .zoom-helper {
-            position: absolute;
-            width: 150px;
-            height: 150px;
-            border: 3px solid #3b82f6;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 0 2px #0f172a;
-            pointer-events: none;
-            z-index: 2000;
-            background: #0a0e17;
-            overflow: hidden;
-            display: none;
-        }
-
-        .zoom-helper canvas {
-            width: 100%;
-            height: 100%;
-            image-rendering: pixelated;
-        }
-
-        .zoom-helper::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #3b82f6;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
-        }
-
-        .zoom-helper::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: #3b82f6;
-            z-index: 9;
-        }
-
-        .zoom-helper .crosshair-v {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 50%;
-            width: 1px;
-            background: #3b82f6;
-            z-index: 9;
-        }
-
-        .instructions {
-            background: #1a1f2e;
-            padding: 12px 16px;
-            border-top: 2px solid #3b82f6;
-            flex-shrink: 0;
-        }
-
-        .instructions h4 {
-            color: #cbd5e0;
-            margin-bottom: 8px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .instructions ul {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        .instructions li {
-            padding: 3px 0;
-            color: #94a3b8;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-
-        .instructions li:before {
-            content: "✓ ";
-            color: #10b981;
-            font-weight: bold;
-            margin-right: 6px;
-        }
-
-        .status {
-            position: fixed;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 1px solid #3b82f6;
-            color: #cbd5e0;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 13px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 10000;
-            max-width: calc(100% - 32px);
-            text-align: center;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-        }
-
-        .status.show {
-            opacity: 1;
-        }
-
-        .view-toggle {
-            display: flex;
-            gap: 4px;
-            background: #0f1419;
-            padding: 4px;
-            border-radius: 8px;
-            width: 100%;
-            border: 1px solid #2d3748;
-        }
-
-        .view-toggle button {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            background: transparent;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .view-toggle button.active {
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-            color: #e0e7ff;
-            box-shadow: 0 2px 8px rgba(30, 58, 138, 0.4);
-        }
-
-        .canvas-wrapper {
-            display: none;
-            width: 100%;
-            height: 100%;
-        }
-
-        .canvas-wrapper.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Desktop */
-/* --- AGGIUNTA PER MOBILE --- */
-@media (max-width: 1023px) {
-    .controls {
-        padding: 8px;
-        gap: 6px;
-    }
-    .btn {
-        padding: 10px 4px;
-        font-size: 11px; /* Font leggermente più piccolo per far stare tutto */
-        min-width: 0;
-        flex: 1 1 30%; /* Forza 3 bottoni per riga */
-    }
-/* Stile per i punti di controllo più grandi su mobile */
+/* =========================
+   POINTS CYBER
+========================= */
 .point {
-    width: 24px !important;
-    height: 24px !important;
-    margin-left: -12px;
-    margin-top: -12px;
-    border: 3px solid white;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-    z-index: 1000;
+    background: #00f5ff;
+    box-shadow:
+        0 0 8px #00f5ff,
+        0 0 18px #00f5ff;
+    border: 2px solid #000;
 }
-    .filter-group {
-        padding: 8px;
+
+/* =========================
+   VIEW TOGGLE
+========================= */
+.view-toggle {
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    margin: 10px;
+}
+
+.view-toggle button {
+    flex: 1;
+    background: transparent;
+    border: 1px solid rgba(0,255,255,0.3);
+    border-radius: 8px;
+    padding: 8px;
+    color: #00f5ff;
+}
+
+.view-toggle button.active {
+    background: rgba(0,255,255,0.2);
+    box-shadow: 0 0 12px #00f5ff;
+}
+
+/* =========================
+   INSTRUCTIONS
+========================= */
+.instructions {
+    padding: 14px;
+    background: rgba(255,170,0,0.05);
+    border-top: 1px solid rgba(255,170,0,0.3);
+    font-size: 13px;
+}
+
+.instructions li {
+    color: #ffcc66;
+}
+
+/* =========================
+   STATUS HUD
+========================= */
+.status {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    border: 1px solid rgba(0,255,255,0.4);
+    color: #00f5ff;
+    padding: 12px 20px;
+    border-radius: 30px;
+    box-shadow: 0 0 20px rgba(0,255,255,0.4);
+    backdrop-filter: blur(10px);
+}
+
+/* =========================
+   DESKTOP LAYOUT
+========================= */
+@media (min-width: 1024px) {
+
+    .workspace {
+        flex-direction: row;
     }
+
+    .canvas-wrapper {
+        flex: 1;
+    }
+
+    .view-toggle {
+        display: none;
+    }
+
 }
-        
-        @media (min-width: 1024px) {
-            body {
-                padding: 20px;
-            }
 
-            .container {
-                border-radius: 20px;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-                max-width: 1400px;
-                margin: 0 auto;
-                border: 1px solid #2d3748;
-            }
-
-            h1 {
-                font-size: 2em;
-            }
-
-            .subtitle {
-                font-size: 0.95em;
-            }
-
-            .header {
-                padding: 30px;
-                border-radius: 20px 20px 0 0;
-            }
-
-            .controls {
-                padding: 20px;
-                gap: 12px;
-            }
-
-            .btn {
-                min-width: auto;
-                flex: 0 0 auto;
-            }
-
-            .filter-controls {
-                width: auto;
-                flex-direction: row;
-                gap: 15px;
-                padding: 0;
-                background: transparent;
-                border: none;
-            }
-
-            .filter-group {
-                min-width: 200px;
-                background: #0f1419;
-                padding: 12px 16px;
-                border-radius: 8px;
-                border: 1px solid #2d3748;
-            }
-
-            .workspace {
-                flex-direction: row;
-                min-height: 600px;
-            }
-
-            .canvas-container {
-                flex: 1;
-                min-height: 500px;
-            }
-
-            .canvas-wrapper {
-                display: flex !important;
-            }
-
-            .view-toggle {
-                display: none;
-            }
-
-            .point {
-                width: 20px;
-                height: 20px;
-            }
-
-            .point:hover {
-                transform: translate(-50%, -50%) scale(1.2);
-            }
-        }
     </style>
 </head>
 <body>
@@ -1177,33 +822,35 @@ function autoRectify() {
 
     // --- FIX APERTURA TAB E VISIBILITÀ MOBILE ---
     
-    // 1. Rimuovi placeholder e forza display
+    rectifiedImageData = dstData;
+    applyFilters();
+
+    // Mostra canvas risultato
     const resPlaceholder = document.getElementById('resultPlaceholder');
     if (resPlaceholder) resPlaceholder.style.display = 'none';
+
     resultCanvas.style.display = 'block';
 
-    // 2. Forza l'attivazione del Tab specifico
-    // Cerchiamo l'elemento tab (es. 'nav-result-tab' o simile)
-    const resultTabBtn = document.querySelector('[data-bs-target="#nav-result"]') || 
-                         document.querySelector('button[aria-controls="nav-result"]') ||
-                         document.getElementById('result-tab');
+    // Attiva vista risultato (mobile + desktop)
+    document.getElementById('sourceWrapper').classList.remove('active');
+    document.getElementById('resultWrapper').classList.add('active');
 
-    if (resultTabBtn) {
-        // Usiamo l'API di Bootstrap se presente, altrimenti il click manuale
-        if (window.bootstrap && bootstrap.Tab) {
-            const tab = new bootstrap.Tab(resultTabBtn);
-            tab.show();
-        } else {
-            resultTabBtn.click();
+    // Aggiorna stato bottoni tab
+    document.querySelectorAll('.view-toggle button').forEach(b => {
+        b.classList.remove('active');
+        if (b.getAttribute('data-view') === 'result') {
+            b.classList.add('active');
         }
-    }
+    });
 
-    // 3. Scroll morbido verso l'immagine prodotta
+    // Scroll morbido
     setTimeout(() => {
-        resultCanvas.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 200);
+        resultCanvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 150);
 
-    saveJpgBtn.disabled = savePdfBtn.disabled = false;
+    saveJpgBtn.disabled = false;
+    savePdfBtn.disabled = false;
+
     showStatus('Documento rettificato con successo');
 }
 
