@@ -3,509 +3,338 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>LEVEL — Suite di Misurazione</title>
+<title>LEVEL PRO — Suite di Misurazione</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Bebas+Neue&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Bebas+Neue&display=swap');
 
-  :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #1a1a24;
-    --border: #2a2a3a;
-    --accent: #00ff88;
-    --accent2: #ff3366;
-    --accent3: #3388ff;
-    --text: #e8e8f0;
-    --muted: #6060a0;
-    --danger: #ff3366;
-    --safe: #00ff88;
-  }
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --surface2: #1a1a24;
+  --border: #2a2a3a;
+  --accent: #00ff88;
+  --accent2: #ff3366;
+  --accent3: #3388ff;
+  --accent4: #ffcc00;
+  --text: #e8e8f0;
+  --muted: #6060a0;
+  --danger: #ff3366;
+  --safe: #00ff88;
+}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+/* HEADER */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  background: var(--surface); position: sticky; top: 0; z-index: 100;
+}
+header h1 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem;
+  letter-spacing: 4px; color: var(--accent);
+  text-shadow: 0 0 20px rgba(0,255,136,0.4);
+}
+.header-sub { font-size: 0.6rem; color: var(--muted); letter-spacing: 3px; }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--muted);
+  display: inline-block; margin-right: 6px; transition: all 0.3s;
+}
+.status-dot.active {
+  background: var(--accent); box-shadow: 0 0 10px var(--accent);
+  animation: blink 1.5s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-  /* HEADER */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  header h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2rem;
-    letter-spacing: 4px;
-    color: var(--accent);
-    text-shadow: 0 0 20px rgba(0,255,136,0.4);
-  }
-  .header-subtitle {
-    font-size: 0.65rem;
-    color: var(--muted);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-  }
-  .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-    display: inline-block;
-    margin-right: 8px;
-    transition: background 0.3s, box-shadow 0.3s;
-  }
-  .status-dot.active {
-    background: var(--accent);
-    box-shadow: 0 0 10px var(--accent);
-    animation: pulse 1.5s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
+/* TABS - scrollable */
+.tabs {
+  display: flex; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab-btn {
+  flex: 0 0 auto; min-width: 80px;
+  padding: 12px 10px; border: none; background: transparent;
+  color: var(--muted); font-family: 'DM Mono', monospace;
+  font-size: 0.55rem; letter-spacing: 1.5px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s; border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-icon { display: block; font-size: 1.1rem; margin-bottom: 3px; }
 
-  /* TABS */
-  .tabs {
-    display: flex;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-  }
-  .tab-btn {
-    flex: 1;
-    padding: 14px 8px;
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-    border-bottom: 2px solid transparent;
-    position: relative;
-  }
-  .tab-btn:hover { color: var(--text); }
-  .tab-btn.active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-  }
-  .tab-icon {
-    display: block;
-    font-size: 1.2rem;
-    margin-bottom: 4px;
-  }
+/* PANELS */
+.panel { display: none; padding: 20px; animation: fadeUp 0.3s ease; }
+.panel.active { display: block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
 
-  /* PANELS */
-  .panel { display: none; padding: 24px; animation: fadeIn 0.3s ease; }
-  .panel.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity:1; transform: none; } }
+/* ────────────── SHARED COMPONENTS ────────────── */
+.reading-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; text-align: center;
+}
+.reading-label { font-size: 0.58rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+.reading-value {
+  font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem;
+  line-height: 1; color: var(--accent); transition: color 0.3s;
+}
+.reading-value.warning { color: #ffaa00; }
+.reading-value.danger  { color: var(--danger); }
+.reading-unit { font-size: 0.65rem; color: var(--muted); margin-top: 4px; }
+.reading-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 380px; }
 
-  /* ========== BUBBLE LEVEL ========== */
-  .level-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-  }
-  .bubble-wrapper {
-    position: relative;
-    width: min(320px, 90vw);
-    height: min(320px, 90vw);
-  }
-  .bubble-plate {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #1e2a1e, #0a0f0a);
-    border: 2px solid var(--border);
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 0 40px rgba(0,255,136,0.05), inset 0 0 60px rgba(0,0,0,0.5);
-  }
-  /* Grid lines */
-  .bubble-plate::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,255,136,0.06) 39px, rgba(0,255,136,0.06) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,255,136,0.06) 39px, rgba(0,255,136,0.06) 40px);
-    border-radius: 50%;
-  }
-  /* Center rings */
-  .bubble-plate::after {
-    content: '';
-    position: absolute;
-    inset: 50%;
-    transform: translate(-50%,-50%);
-    width: 80%; height: 80%;
-    border-radius: 50%;
-    border: 1px solid rgba(0,255,136,0.15);
-    box-shadow:
-      0 0 0 calc(80%*0.25) rgba(0,255,136,0.07),
-      0 0 0 calc(80%*0.5) rgba(0,255,136,0.05);
-    pointer-events: none;
-  }
-  .center-mark {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%,-50%);
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    border: 2px solid rgba(0,255,136,0.5);
-    z-index: 2;
-  }
-  .center-mark::before, .center-mark::after {
-    content: '';
-    position: absolute;
-    background: rgba(0,255,136,0.3);
-  }
-  .center-mark::before { width: 1px; height: 30px; top: -24px; left: 5px; }
-  .center-mark::after  { width: 30px; height: 1px; left: -24px; top: 5px; }
+.btn {
+  padding: 11px 20px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 0.68rem;
+  letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; border-radius: 6px; transition: all 0.2s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { border-color: var(--accent); color: var(--accent); background: rgba(0,255,136,0.07); }
+.btn.primary:hover { background: rgba(0,255,136,0.18); }
+.btn.danger  { border-color: var(--danger); color: var(--danger); background: rgba(255,51,102,0.07); }
+.btn.danger:hover  { background: rgba(255,51,102,0.18); }
+.btn.gold    { border-color: var(--accent4); color: var(--accent4); background: rgba(255,204,0,0.07); }
+.btn.gold:hover    { background: rgba(255,204,0,0.18); }
 
-  .bubble {
-    position: absolute;
-    width: 52px; height: 52px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, rgba(180,255,220,0.9), rgba(0,200,100,0.7));
-    box-shadow: 0 0 20px rgba(0,255,136,0.6), inset 0 4px 10px rgba(255,255,255,0.4);
-    transform: translate(-50%,-50%);
-    top: 50%; left: 50%;
-    transition: top 0.1s ease, left 0.1s ease;
-    z-index: 5;
-  }
-  .bubble.centered {
-    background: radial-gradient(circle at 35% 35%, #fff, rgba(0,255,136,1));
-    box-shadow: 0 0 30px rgba(0,255,136,1), 0 0 60px rgba(0,255,136,0.4);
-  }
+.hint-text {
+  font-size: 0.62rem; color: var(--muted); text-align: center;
+  letter-spacing: 0.5px; line-height: 1.7; padding: 0 12px;
+}
+.col-center { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.row-wrap    { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
-  .level-readings {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    width: 100%;
-    max-width: 360px;
-  }
-  .reading-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
-    text-align: center;
-  }
-  .reading-label {
-    font-size: 0.6rem;
-    letter-spacing: 3px;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .reading-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.4rem;
-    line-height: 1;
-    color: var(--accent);
-    transition: color 0.3s;
-  }
-  .reading-value.warning { color: #ffaa00; }
-  .reading-value.danger { color: var(--danger); }
-  .reading-unit {
-    font-size: 0.7rem;
-    color: var(--muted);
-    margin-top: 4px;
-  }
+/* ────────────── BUBBLE LEVEL ────────────── */
+.bubble-plate {
+  width: min(300px, 88vw); height: min(300px, 88vw);
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #1e2a1e, #0a0f0a);
+  border: 2px solid var(--border); position: relative; overflow: hidden;
+  box-shadow: 0 0 40px rgba(0,255,136,0.05), inset 0 0 60px rgba(0,0,0,0.5);
+}
+.bubble-plate::before {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,255,136,0.05) 40px),
+              repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,255,136,0.05) 40px);
+  border-radius: 50%;
+}
+.center-mark {
+  position: absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:12px; height:12px; border-radius:50%; border:2px solid rgba(0,255,136,0.5); z-index:2;
+}
+.center-mark::before,.center-mark::after { content:''; position:absolute; background:rgba(0,255,136,0.25); }
+.center-mark::before { width:1px; height:30px; top:-24px; left:5px; }
+.center-mark::after  { width:30px; height:1px; left:-24px; top:5px; }
+.bubble {
+  position: absolute; width:50px; height:50px; border-radius:50%;
+  background: radial-gradient(circle at 35% 35%, rgba(180,255,220,0.9), rgba(0,200,100,0.7));
+  box-shadow: 0 0 20px rgba(0,255,136,0.6), inset 0 4px 10px rgba(255,255,255,0.4);
+  transform:translate(-50%,-50%); top:50%; left:50%;
+  transition: top 0.09s ease, left 0.09s ease; z-index:5;
+}
+.bubble.centered {
+  background: radial-gradient(circle at 35% 35%, #fff, rgba(0,255,136,1));
+  box-shadow: 0 0 30px rgba(0,255,136,1), 0 0 60px rgba(0,255,136,0.4);
+}
+.level-status {
+  text-align:center; padding:10px 28px; border-radius:4px;
+  font-size:0.72rem; letter-spacing:4px; text-transform:uppercase;
+  border:1px solid; transition:all 0.3s; width:100%; max-width:340px;
+}
+.level-status.level   { border-color:var(--safe);   color:var(--safe);   background:rgba(0,255,136,0.08); }
+.level-status.unlevel { border-color:var(--danger);  color:var(--danger); background:rgba(255,51,102,0.08); }
+.level-status.warning { border-color:#ffaa00; color:#ffaa00; background:rgba(255,170,0,0.08); }
 
-  .level-status {
-    text-align: center;
-    padding: 12px 32px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    border: 1px solid;
-    transition: all 0.3s;
-  }
-  .level-status.level   { border-color: var(--safe); color: var(--safe); background: rgba(0,255,136,0.08); }
-  .level-status.unlevel { border-color: var(--danger); color: var(--danger); background: rgba(255,51,102,0.08); }
-  .level-status.warning { border-color: #ffaa00; color: #ffaa00; background: rgba(255,170,0,0.08); }
+/* ────────────── INCLINOMETER ────────────── */
+.inclinometer-visual {
+  position: relative; width: min(340px, 92vw); height:170px;
+  background: var(--surface2); border:1px solid var(--border);
+  border-radius:12px; overflow:hidden;
+}
+.incl-horizon { position:absolute; top:50%; left:0; right:0; height:2px; background:rgba(51,136,255,0.25); }
+.incl-plane {
+  position:absolute; top:50%; left:8%; right:8%; height:4px;
+  background:linear-gradient(90deg,transparent,var(--accent3),var(--accent3),transparent);
+  transform-origin:center; transition:transform 0.12s ease;
+  border-radius:2px; box-shadow:0 0 12px var(--accent3);
+}
+.incl-plane::before,.incl-plane::after {
+  content:''; position:absolute; top:-16px; width:2px; height:36px;
+  background:rgba(51,136,255,0.5); border-radius:1px;
+}
+.incl-plane::before{left:0;} .incl-plane::after{right:0;}
+.incl-center {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:12px; height:12px; border-radius:50%;
+  border:2px solid var(--accent3); box-shadow:0 0 10px var(--accent3);
+}
+.incl-big {
+  font-family:'Bebas Neue',sans-serif; font-size:5rem;
+  color:var(--accent); text-align:center; line-height:1;
+  text-shadow:0 0 30px rgba(0,255,136,0.4);
+}
+.axis-toggle { display:flex; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+.axis-btn {
+  padding:9px 24px; border:none; background:transparent;
+  color:var(--muted); font-family:'DM Mono',monospace;
+  font-size:0.7rem; letter-spacing:2px; cursor:pointer; transition:all 0.2s;
+}
+.axis-btn.active { background:var(--accent3); color:#fff; }
 
-  /* ========== INCLINOMETRO ========== */
-  .incl-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-  }
-  .inclinometer-visual {
-    position: relative;
-    width: min(340px, 92vw);
-    height: 180px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  .incl-horizon {
-    position: absolute;
-    top: 50%; left: 0; right: 0;
-    height: 2px;
-    background: rgba(51,136,255,0.3);
-    transform-origin: center;
-  }
-  .incl-plane {
-    position: absolute;
-    top: 50%; left: 10%; right: 10%;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, var(--accent3), var(--accent3), transparent);
-    transform-origin: center;
-    transition: transform 0.15s ease;
-    border-radius: 2px;
-    box-shadow: 0 0 12px var(--accent3);
-  }
-  .incl-plane::before, .incl-plane::after {
-    content: '';
-    position: absolute;
-    top: -16px;
-    width: 2px; height: 36px;
-    background: rgba(51,136,255,0.6);
-    border-radius: 1px;
-  }
-  .incl-plane::before { left: 0; }
-  .incl-plane::after  { right: 0; }
-  .incl-center {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%,-50%);
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    border: 2px solid var(--accent3);
-    box-shadow: 0 0 10px var(--accent3);
-  }
-  .incl-degree-val {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 5rem;
-    color: var(--accent);
-    text-align: center;
-    line-height: 1;
-    text-shadow: 0 0 30px rgba(0,255,136,0.4);
-    letter-spacing: 2px;
-  }
-  .incl-axis-label {
-    font-size: 0.6rem; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; text-align: center;
-  }
-  .axis-toggle {
-    display: flex;
-    gap: 0;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-  .axis-btn {
-    padding: 10px 28px;
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    letter-spacing: 2px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .axis-btn.active { background: var(--accent3); color: #fff; }
+/* ────────────── CAMERA ANGLE ────────────── */
+.video-wrapper {
+  position:relative; width:100%; max-width:640px;
+  border-radius:10px; overflow:hidden; border:1px solid var(--border); background:#000;
+}
+#cameraVideo, #rulerVideo {
+  width:100%; display:block; max-height:52vh; object-fit:cover;
+}
+canvas.overlay {
+  position:absolute; top:0; left:0; width:100%; height:100%; cursor:crosshair;
+}
+.cam-overlay-badge {
+  position:absolute; top:10px; left:10px;
+  background:rgba(0,0,0,0.65); border:1px solid var(--border);
+  padding:5px 10px; border-radius:4px; font-size:0.58rem;
+  letter-spacing:2px; color:var(--accent); pointer-events:none;
+}
+.big-angle {
+  font-family:'Bebas Neue',sans-serif; font-size:5.5rem;
+  color:var(--accent2); line-height:1; text-align:center;
+  text-shadow:0 0 30px rgba(255,51,102,0.5);
+}
+.big-angle span { font-size:2rem; color:var(--muted); vertical-align:bottom; }
 
-  /* ========== CAMERA ANGLE ========== */
-  .camera-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-  }
-  .video-wrapper {
-    position: relative;
-    width: 100%;
-    max-width: 600px;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    background: #000;
-  }
-  #cameraVideo {
-    width: 100%;
-    display: block;
-    max-height: 55vh;
-    object-fit: cover;
-  }
-  #angleCanvas {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    cursor: crosshair;
-  }
-  .camera-overlay-info {
-    position: absolute;
-    top: 10px; left: 10px;
-    background: rgba(0,0,0,0.6);
-    border: 1px solid var(--border);
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 0.6rem;
-    letter-spacing: 2px;
-    color: var(--accent);
-    pointer-events: none;
-  }
-  .angle-display-big {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 6rem;
-    color: var(--accent2);
-    line-height: 1;
-    text-align: center;
-    text-shadow: 0 0 30px rgba(255,51,102,0.5);
-    letter-spacing: 3px;
-  }
-  .angle-display-big span { font-size: 2rem; color: var(--muted); vertical-align: bottom; }
-  .cam-controls {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .btn {
-    padding: 12px 24px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s;
-  }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn.primary { border-color: var(--accent); color: var(--accent); background: rgba(0,255,136,0.08); }
-  .btn.primary:hover { background: rgba(0,255,136,0.2); }
-  .btn.danger { border-color: var(--danger); color: var(--danger); background: rgba(255,51,102,0.08); }
-  .btn.danger:hover { background: rgba(255,51,102,0.2); }
+/* ────────────── GONIOMETRO + FILO A PIOMBO ────────────── */
+.gonio-container { max-width:500px; margin:0 auto; }
 
-  .hint-text {
-    font-size: 0.65rem;
-    color: var(--muted);
-    text-align: center;
-    letter-spacing: 1px;
-    padding: 0 16px;
-    line-height: 1.6;
-  }
+/* Goniometer canvas */
+#gonioCanvas {
+  display:block; width:100%; max-width:360px;
+  border:1px solid var(--border); border-radius:50%;
+  background:radial-gradient(circle at 50% 110%, #0d1a0d, #0a0a0f);
+  cursor:crosshair;
+}
+.gonio-big {
+  font-family:'Bebas Neue',sans-serif; font-size:6rem;
+  color:var(--accent4); line-height:1; text-align:center;
+  text-shadow:0 0 40px rgba(255,204,0,0.5);
+}
+.gonio-big small { font-size:2rem; color:var(--muted); }
 
-  /* ========== CALIBRAZIONE ========== */
-  .calib-container {
-    max-width: 480px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  .calib-section {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
-  }
-  .calib-section h3 {
-    font-family: 'Bebas Neue', sans-serif;
-    letter-spacing: 3px;
-    color: var(--accent3);
-    margin-bottom: 12px;
-    font-size: 1.1rem;
-  }
-  .calib-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    font-size: 0.75rem;
-  }
-  .calib-row label { color: var(--muted); letter-spacing: 1px; }
-  .calib-row .val { color: var(--accent); font-size: 0.9rem; }
-  .perm-status {
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-size: 0.7rem;
-    letter-spacing: 1px;
-    margin-top: 8px;
-  }
-  .perm-status.granted { background: rgba(0,255,136,0.1); color: var(--safe); border: 1px solid rgba(0,255,136,0.3); }
-  .perm-status.denied { background: rgba(255,51,102,0.1); color: var(--danger); border: 1px solid rgba(255,51,102,0.3); }
-  .perm-status.pending { background: rgba(255,170,0,0.1); color: #ffaa00; border: 1px solid rgba(255,170,0,0.3); }
+/* Plumb bob */
+.plumb-wrapper {
+  position:relative; width:min(300px,88vw); height:min(300px,88vw);
+  background:var(--surface2); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+}
+#plumbCanvas { display:block; width:100%; height:100%; }
 
-  /* Scanline effect */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.03) 3px, rgba(0,0,0,0.03) 4px);
-    pointer-events: none;
-    z-index: 9999;
-  }
+/* ────────────── RULER (cm measurement) ────────────── */
+.ruler-setup {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; padding:16px; width:100%; max-width:500px;
+}
+.ruler-setup h4 {
+  font-family:'Bebas Neue',sans-serif; letter-spacing:3px;
+  color:var(--accent3); margin-bottom:12px; font-size:1rem;
+}
+.input-row { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+.input-row label { font-size:0.65rem; color:var(--muted); letter-spacing:1px; white-space:nowrap; flex:0 0 auto; }
+.input-row input {
+  flex:1; background:var(--bg); border:1px solid var(--border); border-radius:4px;
+  padding:8px 10px; color:var(--text); font-family:'DM Mono',monospace; font-size:0.75rem;
+  outline:none; transition:border-color 0.2s;
+}
+.input-row input:focus { border-color:var(--accent3); }
+.ruler-results {
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;
+  width:100%; max-width:500px;
+}
+.ruler-result-card {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; padding:12px; text-align:center;
+}
+.ruler-result-card .lbl { font-size:0.55rem; letter-spacing:2px; color:var(--muted); text-transform:uppercase; margin-bottom:6px; }
+.ruler-result-card .val {
+  font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:var(--accent4);
+  text-shadow:0 0 15px rgba(255,204,0,0.3);
+}
+.ruler-result-card .unt { font-size:0.6rem; color:var(--muted); }
 
-  /* Responsive */
-  @media (max-width: 480px) {
-    .panel { padding: 16px; }
-    header h1 { font-size: 1.5rem; }
-    .reading-value { font-size: 1.8rem; }
-    .angle-display-big { font-size: 4rem; }
-    .incl-degree-val { font-size: 3.5rem; }
-  }
+/* CALIBRAZIONE */
+.calib-section {
+  background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:18px;
+}
+.calib-section h3 {
+  font-family:'Bebas Neue',sans-serif; letter-spacing:3px;
+  color:var(--accent3); margin-bottom:12px; font-size:1rem;
+}
+.calib-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; font-size:0.72rem; }
+.calib-row label { color:var(--muted); }
+.calib-row .val { color:var(--accent); }
+.perm-status { padding:8px 14px; border-radius:6px; font-size:0.68rem; margin-top:8px; }
+.perm-status.granted { background:rgba(0,255,136,0.1); color:var(--safe); border:1px solid rgba(0,255,136,0.3); }
+.perm-status.denied  { background:rgba(255,51,102,0.1); color:var(--danger); border:1px solid rgba(255,51,102,0.3); }
+.perm-status.pending { background:rgba(255,170,0,0.1); color:#ffaa00; border:1px solid rgba(255,170,0,0.3); }
+
+/* Scanlines */
+body::after {
+  content:''; position:fixed; inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.025) 3px,rgba(0,0,0,0.025) 4px);
+  pointer-events:none; z-index:9999;
+}
+
+@media(max-width:440px){
+  .panel{padding:14px;}
+  header h1{font-size:1.4rem;}
+  .big-angle{font-size:3.8rem;}
+  .gonio-big{font-size:4rem;}
+  .incl-big{font-size:3.5rem;}
+  .ruler-results{grid-template-columns:1fr 1fr;}
+}
 </style>
 </head>
 <body>
 
 <header>
   <div>
-    <h1>LEVEL</h1>
-    <div class="header-subtitle">Suite di Misurazione</div>
+    <h1>LEVEL PRO</h1>
+    <div class="header-sub">Suite di Misurazione v2</div>
   </div>
-  <div style="text-align:right;font-size:0.65rem;">
-    <span class="status-dot" id="sensorDot"></span><span id="sensorStatus" style="color:var(--muted);letter-spacing:2px;">SENSORI OFFLINE</span>
+  <div style="text-align:right;font-size:0.62rem;">
+    <span class="status-dot" id="sensorDot"></span>
+    <span id="sensorStatus" style="color:var(--muted);letter-spacing:2px;">OFFLINE</span>
   </div>
 </header>
 
 <nav class="tabs">
-  <button class="tab-btn active" onclick="switchTab('bubble')" id="tab-bubble">
-    <span class="tab-icon">⊙</span>LIVELLA
-  </button>
-  <button class="tab-btn" onclick="switchTab('incl')" id="tab-incl">
-    <span class="tab-icon">∠</span>INCLINAZIONE
-  </button>
-  <button class="tab-btn" onclick="switchTab('camera')" id="tab-camera">
-    <span class="tab-icon">◎</span>TELECAMERA
-  </button>
-  <button class="tab-btn" onclick="switchTab('calib')" id="tab-calib">
-    <span class="tab-icon">⚙</span>SETUP
-  </button>
+  <button class="tab-btn active" onclick="switchTab('bubble')"   id="tab-bubble"><span class="tab-icon">⊙</span>LIVELLA</button>
+  <button class="tab-btn"        onclick="switchTab('incl')"     id="tab-incl"><span class="tab-icon">∠</span>INCLINO</button>
+  <button class="tab-btn"        onclick="switchTab('gonio')"    id="tab-gonio"><span class="tab-icon">🔵</span>GONIO</button>
+  <button class="tab-btn"        onclick="switchTab('camera')"   id="tab-camera"><span class="tab-icon">◎</span>ANGOLO</button>
+  <button class="tab-btn"        onclick="switchTab('ruler')"    id="tab-ruler"><span class="tab-icon">📏</span>MISURA</button>
+  <button class="tab-btn"        onclick="switchTab('calib')"    id="tab-calib"><span class="tab-icon">⚙</span>SETUP</button>
 </nav>
 
-<!-- ===== BUBBLE LEVEL PANEL ===== -->
+<!-- ═══════════════════════════════════════════════════════════
+     1. BUBBLE LEVEL
+═══════════════════════════════════════════════════════════ -->
 <div class="panel active" id="panel-bubble">
-  <div class="level-container">
-    <div class="bubble-wrapper">
-      <div class="bubble-plate">
-        <div class="center-mark"></div>
-        <div class="bubble" id="bubble"></div>
-      </div>
+  <div class="col-center">
+    <div class="bubble-plate" id="bubblePlate">
+      <div class="center-mark"></div>
+      <div class="bubble" id="bubble"></div>
     </div>
-    <div class="level-readings">
+    <div class="reading-grid">
       <div class="reading-card">
         <div class="reading-label">Pitch (X)</div>
         <div class="reading-value" id="pitchVal">0.0</div>
@@ -522,21 +351,23 @@
   </div>
 </div>
 
-<!-- ===== INCLINOMETER PANEL ===== -->
+<!-- ═══════════════════════════════════════════════════════════
+     2. INCLINOMETER
+═══════════════════════════════════════════════════════════ -->
 <div class="panel" id="panel-incl">
-  <div class="incl-container">
+  <div class="col-center">
     <div class="inclinometer-visual">
       <div class="incl-horizon"></div>
       <div class="incl-plane" id="inclPlane"></div>
       <div class="incl-center"></div>
     </div>
-    <div class="incl-degree-val" id="inclDeg">0.0°</div>
-    <div class="incl-axis-label" id="inclAxisLabel">ASSE X — PITCH</div>
+    <div class="incl-big" id="inclDeg">0.0°</div>
+    <div style="font-size:0.6rem;color:var(--muted);letter-spacing:3px;" id="inclAxisLabel">ASSE X — PITCH</div>
     <div class="axis-toggle">
       <button class="axis-btn active" id="axisX" onclick="setAxis('x')">ASSE X</button>
-      <button class="axis-btn" id="axisY" onclick="setAxis('y')">ASSE Y</button>
+      <button class="axis-btn"        id="axisY" onclick="setAxis('y')">ASSE Y</button>
     </div>
-    <div class="level-readings">
+    <div class="reading-grid">
       <div class="reading-card">
         <div class="reading-label">Pitch</div>
         <div class="reading-value" id="pitchVal2">0.0</div>
@@ -551,126 +382,244 @@
   </div>
 </div>
 
-<!-- ===== CAMERA ANGLE PANEL ===== -->
+<!-- ═══════════════════════════════════════════════════════════
+     3. GONIOMETRO + FILO A PIOMBO
+═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-gonio">
+  <div class="col-center gonio-container">
+
+    <!-- ~~~ Goniometro interattivo ~~~ -->
+    <div style="width:100%;max-width:400px;">
+      <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:3px;color:var(--accent4);font-size:1rem;margin-bottom:10px;">GONIOMETRO</div>
+      <canvas id="gonioCanvas" width="360" height="360"></canvas>
+    </div>
+    <div class="gonio-big" id="gonioAngle">0.0<small>°</small></div>
+    <div style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;" id="gonioMode">MODALITÀ: 1 RAGGIO — SENSORE</div>
+    <div class="reading-grid">
+      <div class="reading-card">
+        <div class="reading-label">Angolo A</div>
+        <div class="reading-value" style="color:var(--accent4);" id="gonioA">0.0</div>
+        <div class="reading-unit">gradi</div>
+      </div>
+      <div class="reading-card">
+        <div class="reading-label">Angolo B</div>
+        <div class="reading-value" style="color:var(--accent2);" id="gonioB">—</div>
+        <div class="reading-unit">gradi</div>
+      </div>
+    </div>
+    <div class="row-wrap">
+      <button class="btn gold"    onclick="gonioSetMode('sensor')">📡 SENSORE</button>
+      <button class="btn"         onclick="gonioSetMode('manual')">✋ MANUALE</button>
+      <button class="btn danger"  onclick="gonioReset()">↺ RESET</button>
+    </div>
+    <p class="hint-text">
+      <b style="color:var(--accent4)">Sensore:</b> il raggio giallo segue l'orientamento del dispositivo.<br>
+      <b style="color:var(--accent4)">Manuale:</b> tocca/trascina per posizionare i raggi e misurare l'angolo tra essi.
+    </p>
+
+    <!-- ~~~ Filo a piombo ~~~ -->
+    <div style="width:100%;max-width:400px;margin-top:8px;">
+      <div style="font-family:'Bebas Neue',sans-serif;letter-spacing:3px;color:var(--accent3);font-size:1rem;margin-bottom:10px;">FILO A PIOMBO</div>
+    </div>
+    <div class="plumb-wrapper">
+      <canvas id="plumbCanvas"></canvas>
+    </div>
+    <div class="reading-grid">
+      <div class="reading-card">
+        <div class="reading-label">Deviazione H</div>
+        <div class="reading-value" style="color:var(--accent3);" id="plumbH">0.0</div>
+        <div class="reading-unit">gradi</div>
+      </div>
+      <div class="reading-card">
+        <div class="reading-label">Stato</div>
+        <div class="reading-value" style="font-size:1rem;padding-top:8px;" id="plumbStatus">—</div>
+        <div class="reading-unit">verticale</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     4. CAMERA ANGLE
+═══════════════════════════════════════════════════════════ -->
 <div class="panel" id="panel-camera">
-  <div class="camera-container">
-    <div class="video-wrapper" id="videoWrapper">
+  <div class="col-center">
+    <div class="video-wrapper">
       <video id="cameraVideo" autoplay playsinline muted></video>
-      <canvas id="angleCanvas"></canvas>
-      <div class="camera-overlay-info" id="camOverlayInfo">TOCCA DUE PUNTI PER MISURARE</div>
+      <canvas id="angleCanvas" class="overlay"></canvas>
+      <div class="cam-overlay-badge" id="camBadge">TOCCA DUE PUNTI</div>
     </div>
-    <div class="angle-display-big" id="angleDisplay">—<span>°</span></div>
-    <div class="hint-text">
-      Tocca o clicca per impostare il <strong style="color:var(--accent)">punto 1</strong>, poi il <strong style="color:var(--accent2)">punto 2</strong>.<br>
-      L'angolo viene calcolato rispetto all'orizzontale.<br>
-      Doppio click/tap per resettare.
-    </div>
-    <div class="cam-controls">
-      <button class="btn primary" onclick="startCamera()">▶ AVVIA CAMERA</button>
-      <button class="btn" onclick="stopCamera()">■ STOP</button>
-      <button class="btn danger" onclick="resetAngle()">↺ RESET</button>
+    <div class="big-angle" id="angleDisplay">—<span>°</span></div>
+    <p class="hint-text">
+      Tocca → <b style="color:var(--accent)">punto 1</b> poi <b style="color:var(--accent2)">punto 2</b>.
+      L'angolo è rispetto all'orizzontale. Doppio tap = reset.
+    </p>
+    <div class="row-wrap">
+      <button class="btn primary" onclick="startCamera('angle')">▶ AVVIA</button>
+      <button class="btn"         onclick="stopCamera('angle')">■ STOP</button>
+      <button class="btn danger"  onclick="resetAngle()">↺ RESET</button>
     </div>
   </div>
 </div>
 
-<!-- ===== CALIBRAZIONE PANEL ===== -->
-<div class="panel" id="panel-calib">
-  <div class="calib-container">
-    <div class="calib-section">
-      <h3>Permessi Sensori</h3>
-      <div class="calib-row">
-        <label>DeviceOrientation</label>
-        <span class="val" id="permOrient">—</span>
-      </div>
-      <div class="calib-row">
-        <label>DeviceMotion</label>
-        <span class="val" id="permMotion">—</span>
-      </div>
-      <button class="btn primary" style="width:100%;margin-top:8px" onclick="requestPermission()">RICHIEDI PERMESSI</button>
-      <div class="perm-status pending" id="permStatusBox">In attesa di permesso...</div>
-    </div>
+<!-- ═══════════════════════════════════════════════════════════
+     5. CAMERA RULER (misura in cm)
+═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-ruler">
+  <div class="col-center">
 
-    <div class="calib-section">
-      <h3>Calibrazione Offset</h3>
-      <div class="calib-row">
-        <label>Offset Pitch</label>
-        <span class="val" id="calPitch">0.0°</span>
+    <div class="ruler-setup">
+      <h4>⚙ PARAMETRI DI MISURA</h4>
+      <div class="input-row">
+        <label>Distanza oggetto (cm)</label>
+        <input type="number" id="objDist" value="50" min="1" max="5000" step="1">
       </div>
-      <div class="calib-row">
-        <label>Offset Roll</label>
-        <span class="val" id="calRoll">0.0°</span>
+      <div class="input-row">
+        <label>Rif. noto larghezza (cm)</label>
+        <input type="number" id="refWidth" value="0" min="0" step="0.1"
+               placeholder="0 = usa solo FOV">
       </div>
-      <p style="font-size:0.65rem;color:var(--muted);margin-bottom:12px;line-height:1.6">
-        Posiziona il dispositivo su una superficie piana nota, poi premi CALIBRA per azzerare gli offset correnti.
+      <div class="input-row">
+        <label>FOV orizzontale (°)</label>
+        <input type="number" id="fovH" value="63" min="20" max="120" step="1">
+      </div>
+      <p style="font-size:0.6rem;color:var(--muted);margin-top:6px;line-height:1.6">
+        📌 <b>Metodo A</b> — imposta la distanza e il FOV del tuo smartphone (tipico: 60–70°).
+        Traccia due punti e ottieni la misura in cm.<br>
+        📌 <b>Metodo B</b> — poni un riferimento noto (es. 10 cm) nell'inquadratura, traccia la sua larghezza pixel,
+        poi il metodo applica la proporzione per calibrare automaticamente il px/cm.
       </p>
-      <div style="display:flex;gap:10px">
-        <button class="btn primary" style="flex:1" onclick="calibrate()">CALIBRA</button>
-        <button class="btn danger" style="flex:1" onclick="resetCalib()">RESET</button>
+    </div>
+
+    <div class="video-wrapper">
+      <video id="rulerVideo" autoplay playsinline muted></video>
+      <canvas id="rulerCanvas" class="overlay"></canvas>
+      <div class="cam-overlay-badge" id="rulerBadge">TOCCA DUE PUNTI</div>
+    </div>
+
+    <div class="ruler-results">
+      <div class="ruler-result-card">
+        <div class="lbl">Distanza px</div>
+        <div class="val" id="resPx">—</div>
+        <div class="unt">pixel</div>
+      </div>
+      <div class="ruler-result-card">
+        <div class="lbl">Misura reale</div>
+        <div class="val" id="resCm">—</div>
+        <div class="unt">cm</div>
+      </div>
+      <div class="ruler-result-card">
+        <div class="lbl">In mm</div>
+        <div class="val" id="resMm">—</div>
+        <div class="unt">mm</div>
+      </div>
+      <div class="ruler-result-card">
+        <div class="lbl">Angolo linea</div>
+        <div class="val" id="resAng">—</div>
+        <div class="unt">gradi</div>
+      </div>
+      <div class="ruler-result-card">
+        <div class="lbl">Scala px/cm</div>
+        <div class="val" id="resScale">—</div>
+        <div class="unt">px per cm</div>
+      </div>
+      <div class="ruler-result-card">
+        <div class="lbl">Metodo</div>
+        <div class="val" id="resMethod" style="font-size:0.9rem;color:var(--accent3);">—</div>
+        <div class="unt">&nbsp;</div>
       </div>
     </div>
 
-    <div class="calib-section">
+    <p class="hint-text">
+      Doppio tap sul canvas = reset misura.<br>
+      Per misure più precise usa un riferimento noto e stai perpendicolare all'oggetto.
+    </p>
+
+    <div class="row-wrap">
+      <button class="btn primary" onclick="startCamera('ruler')">▶ AVVIA</button>
+      <button class="btn"         onclick="stopCamera('ruler')">■ STOP</button>
+      <button class="btn gold"    onclick="calibrateRuler()">📐 CALIBRA px/cm</button>
+      <button class="btn danger"  onclick="resetRuler()">↺ RESET</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     6. SETUP / CALIBRATION
+═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="panel-calib">
+  <div class="col-center" style="max-width:480px;margin:0 auto;gap:16px;">
+    <div class="calib-section" style="width:100%">
+      <h3>Permessi Sensori</h3>
+      <div class="calib-row"><label>DeviceOrientation</label><span class="val" id="permOrient">—</span></div>
+      <div class="calib-row"><label>DeviceMotion</label><span class="val" id="permMotion">—</span></div>
+      <button class="btn primary" style="width:100%;margin-top:8px" onclick="requestPermission()">RICHIEDI PERMESSI</button>
+      <div class="perm-status pending" id="permStatusBox">In attesa...</div>
+    </div>
+    <div class="calib-section" style="width:100%">
+      <h3>Calibrazione Offset</h3>
+      <div class="calib-row"><label>Offset Pitch</label><span class="val" id="calPitch">0.0°</span></div>
+      <div class="calib-row"><label>Offset Roll</label><span class="val" id="calRoll">0.0°</span></div>
+      <p style="font-size:0.63rem;color:var(--muted);margin:8px 0;line-height:1.6">Posiziona su superficie piana nota → CALIBRA per azzerare gli offset.</p>
+      <div style="display:flex;gap:8px">
+        <button class="btn primary" style="flex:1" onclick="calibrate()">CALIBRA</button>
+        <button class="btn danger"  style="flex:1" onclick="resetCalib()">RESET</button>
+      </div>
+    </div>
+    <div class="calib-section" style="width:100%">
       <h3>Dati Raw</h3>
       <div class="calib-row"><label>Alpha (Z)</label><span class="val" id="rawAlpha">—</span></div>
       <div class="calib-row"><label>Beta (X)</label><span class="val" id="rawBeta">—</span></div>
       <div class="calib-row"><label>Gamma (Y)</label><span class="val" id="rawGamma">—</span></div>
       <div class="calib-row"><label>Frequenza</label><span class="val" id="rawFreq">—</span></div>
     </div>
-
-    <div class="calib-section">
+    <div class="calib-section" style="width:100%">
       <h3>API Disponibili</h3>
-      <div class="calib-row"><label>DeviceOrientationEvent</label><span class="val" id="apiDO" style="color:var(--muted)">checking...</span></div>
-      <div class="calib-row"><label>Generic Sensor API</label><span class="val" id="apiGS" style="color:var(--muted)">checking...</span></div>
-      <div class="calib-row"><label>MediaDevices Camera</label><span class="val" id="apiCam" style="color:var(--muted)">checking...</span></div>
+      <div class="calib-row"><label>DeviceOrientationEvent</label><span class="val" id="apiDO">—</span></div>
+      <div class="calib-row"><label>Generic Sensor API</label><span class="val" id="apiGS">—</span></div>
+      <div class="calib-row"><label>MediaDevices Camera</label><span class="val" id="apiCam">—</span></div>
     </div>
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════ -->
 <script>
-// ============================================================
-// STATE
-// ============================================================
-let pitch = 0, roll = 0;
+'use strict';
+
+// ── GLOBAL STATE ─────────────────────────────────────────────
+let pitch = 0, roll = 0, alpha = 0;
 let smoothPitch = 0, smoothRoll = 0;
 let calPitchOffset = 0, calRollOffset = 0;
 let sensorActive = false;
 let currentAxis = 'x';
-let lastTime = 0, frameCount = 0, fps = 0;
+let lastTimeFPS = 0, frameCount = 0;
+const SMOOTH = 0.15;
+const LEVEL_THR = 0.8, WARN_THR = 5.0;
 
-// Smoothing factor (0–1): lower = smoother
-const ALPHA = 0.15;
-const LEVEL_THRESHOLD = 0.8; // degrees
-const WARN_THRESHOLD = 5.0;
-
-// ============================================================
-// TABS
-// ============================================================
+// ── TABS ─────────────────────────────────────────────────────
 function switchTab(name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'gonio') drawGoniometer();
+  if (name === 'ruler') resizeRulerCanvas();
 }
 
-// ============================================================
-// PERMISSION & SENSORS
-// ============================================================
+// ── SENSORS ──────────────────────────────────────────────────
 function requestPermission() {
   if (typeof DeviceOrientationEvent !== 'undefined' &&
       typeof DeviceOrientationEvent.requestPermission === 'function') {
-    // iOS 13+
     DeviceOrientationEvent.requestPermission().then(state => {
       updatePermUI('permOrient', state);
-      if (state === 'granted') {
-        startOrientation();
-      } else {
-        setPermBox('denied', 'Permesso negato — sensori non disponibili.');
-      }
-    }).catch(err => {
-      setPermBox('denied', 'Errore: ' + err.message);
-    });
+      if (state === 'granted') startOrientation();
+      else setPermBox('denied', 'Permesso negato.');
+    }).catch(e => setPermBox('denied', e.message));
   } else if (typeof DeviceOrientationEvent !== 'undefined') {
-    // Android / desktop
     startOrientation();
     updatePermUI('permOrient', 'granted (auto)');
   } else {
@@ -681,389 +630,767 @@ function requestPermission() {
 function startOrientation() {
   window.addEventListener('deviceorientation', handleOrientation, true);
   sensorActive = true;
-  setPermBox('granted', 'Sensori attivi — orientamento rilevato.');
+  setPermBox('granted', 'Sensori attivi.');
   document.getElementById('sensorDot').classList.add('active');
-  document.getElementById('sensorStatus').textContent = 'SENSORI ATTIVI';
+  document.getElementById('sensorStatus').textContent = 'ATTIVO';
   document.getElementById('sensorStatus').style.color = 'var(--accent)';
 }
 
 function handleOrientation(e) {
-  if (e.beta === null && e.gamma === null) return;
+  if (e.beta === null) return;
+  const rp = (e.beta  || 0) - calPitchOffset;
+  const rr = (e.gamma || 0) - calRollOffset;
+  alpha = e.alpha || 0;
+  smoothPitch = SMOOTH * rp + (1 - SMOOTH) * smoothPitch;
+  smoothRoll  = SMOOTH * rr + (1 - SMOOTH) * smoothRoll;
+  pitch = smoothPitch; roll = smoothRoll;
 
-  // Raw values
-  const rawPitch = e.beta  || 0;  // -180 to 180
-  const rawRoll  = e.gamma || 0;  // -90 to 90
-  const rawAlpha = e.alpha || 0;
-
-  // Apply calibration offset
-  const cp = rawPitch - calPitchOffset;
-  const cr = rawRoll  - calRollOffset;
-
-  // Smoothing (EMA)
-  smoothPitch = ALPHA * cp + (1 - ALPHA) * smoothPitch;
-  smoothRoll  = ALPHA * cr + (1 - ALPHA) * smoothRoll;
-
-  pitch = smoothPitch;
-  roll  = smoothRoll;
-
-  // Update raw UI
-  document.getElementById('rawAlpha').textContent = rawAlpha.toFixed(2) + '°';
-  document.getElementById('rawBeta').textContent  = rawPitch.toFixed(2) + '°';
-  document.getElementById('rawGamma').textContent = rawRoll.toFixed(2) + '°';
-
-  // FPS
+  // raw
+  document.getElementById('rawAlpha').textContent = (e.alpha||0).toFixed(2)+'°';
+  document.getElementById('rawBeta').textContent  = (e.beta ||0).toFixed(2)+'°';
+  document.getElementById('rawGamma').textContent = (e.gamma||0).toFixed(2)+'°';
   frameCount++;
   const now = performance.now();
-  if (now - lastTime > 1000) {
-    fps = frameCount;
-    frameCount = 0;
-    lastTime = now;
-    document.getElementById('rawFreq').textContent = fps + ' Hz';
+  if (now - lastTimeFPS > 1000) {
+    document.getElementById('rawFreq').textContent = frameCount + ' Hz';
+    frameCount = 0; lastTimeFPS = now;
   }
-
-  updateBubble();
-  updateInclinometer();
-  updateReadings();
+  updateBubble(); updateInclinometer(); updateReadings();
+  updateGonioSensor(); updatePlumb();
 }
 
 function tryGenericSensor() {
-  if ('Accelerometer' in window) {
-    try {
-      const sensor = new Accelerometer({ frequency: 30 });
-      sensor.addEventListener('reading', () => {
-        const g  = 9.80665;
-        const ax = sensor.x / g;
-        const ay = sensor.y / g;
-        const az = sensor.z / g;
-        const rawPitch = Math.atan2(-ax, Math.sqrt(ay*ay + az*az)) * 180 / Math.PI;
-        const rawRoll  = Math.atan2(ay, az) * 180 / Math.PI;
-
-        smoothPitch = ALPHA * (rawPitch - calPitchOffset) + (1 - ALPHA) * smoothPitch;
-        smoothRoll  = ALPHA * (rawRoll  - calRollOffset)  + (1 - ALPHA) * smoothRoll;
-        pitch = smoothPitch; roll = smoothRoll;
-
-        updateBubble(); updateInclinometer(); updateReadings();
-      });
-      sensor.start();
-      sensorActive = true;
-      setPermBox('granted', 'Generic Sensor API — accelerometro attivo.');
-      updatePermUI('permMotion', 'granted');
-    } catch(e) {
-      setPermBox('denied', 'Sensori non accessibili: ' + e.message);
-    }
-  } else {
-    setPermBox('denied', 'Nessun API sensore disponibile su questo dispositivo.');
+  if (!('Accelerometer' in window)) {
+    setPermBox('denied','Nessuna API sensore disponibile.'); return;
   }
+  try {
+    const sensor = new Accelerometer({ frequency: 30 });
+    sensor.addEventListener('reading', () => {
+      const g=9.80665, ax=sensor.x/g, ay=sensor.y/g, az=sensor.z/g;
+      const rp = Math.atan2(-ax, Math.sqrt(ay*ay+az*az))*180/Math.PI - calPitchOffset;
+      const rr = Math.atan2(ay, az)*180/Math.PI - calRollOffset;
+      smoothPitch = SMOOTH*rp+(1-SMOOTH)*smoothPitch;
+      smoothRoll  = SMOOTH*rr+(1-SMOOTH)*smoothRoll;
+      pitch=smoothPitch; roll=smoothRoll;
+      updateBubble(); updateInclinometer(); updateReadings(); updatePlumb();
+    });
+    sensor.start(); sensorActive=true;
+    setPermBox('granted','Generic Sensor API attivo.');
+  } catch(e){ setPermBox('denied',e.message); }
 }
 
-// ============================================================
-// BUBBLE LEVEL
-// ============================================================
+// ── BUBBLE ───────────────────────────────────────────────────
 function updateBubble() {
-  const plate = document.querySelector('.bubble-plate');
+  const plate  = document.getElementById('bubblePlate');
   const bubble = document.getElementById('bubble');
-  const size = plate.offsetWidth;
-  const maxOffset = size * 0.35;
-
-  // Clamp
-  const px = Math.max(-maxOffset, Math.min(maxOffset, (roll / 90) * maxOffset));
-  const py = Math.max(-maxOffset, Math.min(maxOffset, (pitch / 90) * maxOffset));
-
-  bubble.style.left = (50 + (px / size * 100)) + '%';
-  bubble.style.top  = (50 + (py / size * 100)) + '%';
-
-  const dist = Math.sqrt(pitch * pitch + roll * roll);
-  if (dist < LEVEL_THRESHOLD) {
-    bubble.classList.add('centered');
-  } else {
-    bubble.classList.remove('centered');
-  }
+  const size   = plate.offsetWidth;
+  const maxOff = size * 0.36;
+  const px = Math.max(-maxOff, Math.min(maxOff, (roll  / 90) * maxOff));
+  const py = Math.max(-maxOff, Math.min(maxOff, (pitch / 90) * maxOff));
+  bubble.style.left = (50 + px/size*100) + '%';
+  bubble.style.top  = (50 + py/size*100) + '%';
+  bubble.classList.toggle('centered', Math.sqrt(pitch*pitch+roll*roll) < LEVEL_THR);
 }
 
 function updateReadings() {
-  const absPitch = Math.abs(pitch).toFixed(1);
-  const absRoll  = Math.abs(roll).toFixed(1);
-  const dist = Math.sqrt(pitch * pitch + roll * roll);
-
-  // Panel 1
   const pv = document.getElementById('pitchVal');
   const rv = document.getElementById('rollVal');
   pv.textContent = pitch.toFixed(1);
   rv.textContent = roll.toFixed(1);
-  setColor(pv, Math.abs(pitch));
-  setColor(rv, Math.abs(roll));
-
-  // Panel 2
+  colorVal(pv, Math.abs(pitch)); colorVal(rv, Math.abs(roll));
   document.getElementById('pitchVal2').textContent = pitch.toFixed(1);
   document.getElementById('rollVal2').textContent  = roll.toFixed(1);
-
-  // Status
+  const dist = Math.sqrt(pitch*pitch+roll*roll);
   const st = document.getElementById('levelStatus');
-  if (dist < LEVEL_THRESHOLD) {
-    st.textContent = '✓ IN BOLLA';
-    st.className = 'level-status level';
-  } else if (dist < WARN_THRESHOLD) {
-    st.textContent = `⚠ SLIVELLATO — ${dist.toFixed(1)}°`;
-    st.className = 'level-status warning';
-  } else {
-    st.textContent = `✗ SLIVELLATO — ${dist.toFixed(1)}°`;
-    st.className = 'level-status unlevel';
-  }
+  if (dist < LEVEL_THR)   { st.textContent='✓ IN BOLLA';              st.className='level-status level'; }
+  else if(dist<WARN_THR)  { st.textContent=`⚠ SLIVELLATO ${dist.toFixed(1)}°`; st.className='level-status warning'; }
+  else                    { st.textContent=`✗ SLIVELLATO ${dist.toFixed(1)}°`; st.className='level-status unlevel'; }
 }
-
-function setColor(el, val) {
+function colorVal(el,v){
   el.classList.remove('warning','danger');
-  if (val > WARN_THRESHOLD) el.classList.add('danger');
-  else if (val > LEVEL_THRESHOLD) el.classList.add('warning');
+  if(v>WARN_THR) el.classList.add('danger');
+  else if(v>LEVEL_THR) el.classList.add('warning');
 }
 
-// ============================================================
-// INCLINOMETER
-// ============================================================
-function setAxis(ax) {
-  currentAxis = ax;
-  document.getElementById('axisX').classList.toggle('active', ax === 'x');
-  document.getElementById('axisY').classList.toggle('active', ax === 'y');
-  document.getElementById('inclAxisLabel').textContent = ax === 'x' ? 'ASSE X — PITCH' : 'ASSE Y — ROLL';
+// ── INCLINOMETER ─────────────────────────────────────────────
+function setAxis(ax){
+  currentAxis=ax;
+  document.getElementById('axisX').classList.toggle('active',ax==='x');
+  document.getElementById('axisY').classList.toggle('active',ax==='y');
+  document.getElementById('inclAxisLabel').textContent = ax==='x'?'ASSE X — PITCH':'ASSE Y — ROLL';
 }
-
-function updateInclinometer() {
-  const val = currentAxis === 'x' ? pitch : roll;
+function updateInclinometer(){
+  const val = currentAxis==='x' ? pitch : roll;
   document.getElementById('inclPlane').style.transform = `translateY(-50%) rotate(${-val}deg)`;
-  document.getElementById('inclDeg').textContent = val.toFixed(1) + '°';
+  document.getElementById('inclDeg').textContent = val.toFixed(1)+'°';
 }
 
-// ============================================================
-// CALIBRATION
-// ============================================================
-function calibrate() {
-  calPitchOffset += pitch;
-  calRollOffset  += roll;
-  document.getElementById('calPitch').textContent = calPitchOffset.toFixed(2) + '°';
-  document.getElementById('calRoll').textContent  = calRollOffset.toFixed(2) + '°';
-  smoothPitch = 0; smoothRoll = 0;
+// ── CALIBRATION ──────────────────────────────────────────────
+function calibrate(){
+  calPitchOffset+=pitch; calRollOffset+=roll;
+  document.getElementById('calPitch').textContent=calPitchOffset.toFixed(2)+'°';
+  document.getElementById('calRoll').textContent =calRollOffset.toFixed(2)+'°';
+  smoothPitch=0; smoothRoll=0;
+}
+function resetCalib(){
+  calPitchOffset=0; calRollOffset=0;
+  document.getElementById('calPitch').textContent='0.0°';
+  document.getElementById('calRoll').textContent='0.0°';
+}
+function updatePermUI(id,state){
+  const el=document.getElementById(id);
+  el.textContent=state;
+  el.style.color=state.includes('granted')?'var(--safe)':'var(--danger)';
+}
+function setPermBox(type,msg){
+  const b=document.getElementById('permStatusBox');
+  b.textContent=msg; b.className='perm-status '+type;
 }
 
-function resetCalib() {
-  calPitchOffset = 0; calRollOffset = 0;
-  document.getElementById('calPitch').textContent = '0.0°';
-  document.getElementById('calRoll').textContent  = '0.0°';
+// ═══════════════════════════════════════════════════════════════
+// GONIOMETRO — canvas interattivo + sensore
+// ═══════════════════════════════════════════════════════════════
+const RAD = Math.PI/180;
+const DEG = 180/Math.PI;
+
+let gonioMode = 'sensor';   // 'sensor' | 'manual'
+let gonioRays = [];          // up to 2 rays (angles in degrees, 0=right, CCW+)
+let gonioActiveLine = null;  // index being dragged
+let gonioSensorAngle = 0;    // angle from sensor (roll/pitch combo)
+
+function gonioSetMode(m){
+  gonioMode=m;
+  document.getElementById('gonioMode').textContent =
+    m==='sensor' ? 'MODALITÀ: SENSORE (automatico)' : 'MODALITÀ: MANUALE (tocca per misurare)';
+  gonioRays=[];
+  document.getElementById('gonioB').textContent='—';
+  drawGoniometer();
 }
 
-function updatePermUI(id, state) {
-  const el = document.getElementById(id);
-  el.textContent = state;
-  el.style.color = state.includes('granted') ? 'var(--safe)' : 'var(--danger)';
+function gonioReset(){
+  gonioRays=[];
+  document.getElementById('gonioA').textContent='0.0';
+  document.getElementById('gonioB').textContent='—';
+  document.getElementById('gonioAngle').textContent='0.0<small>°</small>';
+  drawGoniometer();
 }
 
-function setPermBox(type, msg) {
-  const box = document.getElementById('permStatusBox');
-  box.textContent = msg;
-  box.className = 'perm-status ' + type;
+function updateGonioSensor(){
+  if(gonioMode!=='sensor') return;
+  // Use roll as the indicator direction (left-right tilt)
+  gonioSensorAngle = -roll; // map roll to angle
+  drawGoniometer();
+  const disp = Math.abs(roll).toFixed(1);
+  document.getElementById('gonioAngle').innerHTML = disp+'<small>°</small>';
+  document.getElementById('gonioA').textContent = roll.toFixed(1);
 }
 
-// ============================================================
-// CAMERA ANGLE MEASURER
-// ============================================================
-let videoStream = null;
-let points = [];
-let canvasCtx = null;
+function drawGoniometer(){
+  const canvas = document.getElementById('gonioCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+  const R  = W/2 - 24;
+  ctx.clearRect(0,0,W,H);
 
-async function startCamera() {
+  // Background
+  const bg = ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+  bg.addColorStop(0,'#0d1a0d'); bg.addColorStop(1,'#060a06');
+  ctx.beginPath(); ctx.arc(cx,cy,R+18,0,Math.PI*2);
+  ctx.fillStyle=bg; ctx.fill();
+
+  // Degree rings & ticks
+  ctx.strokeStyle='rgba(0,255,136,0.08)';
+  [0.33,0.66,1].forEach(f=>{
+    ctx.beginPath(); ctx.arc(cx,cy,R*f,0,Math.PI*2);
+    ctx.lineWidth=1; ctx.stroke();
+  });
+
+  // Tick marks every 10°
+  for(let a=0;a<360;a+=10){
+    const isMain = a%30===0;
+    const len = isMain ? 18 : 10;
+    const ar = a*RAD;
+    const x1=cx+(R)*Math.cos(ar), y1=cy+(R)*Math.sin(ar);
+    const x2=cx+(R-len)*Math.cos(ar), y2=cy+(R-len)*Math.sin(ar);
+    ctx.beginPath();
+    ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    ctx.strokeStyle = isMain ? 'rgba(0,255,136,0.4)' : 'rgba(0,255,136,0.15)';
+    ctx.lineWidth = isMain ? 1.5 : 1;
+    ctx.stroke();
+    if(isMain){
+      ctx.save();
+      ctx.translate(cx+(R-32)*Math.cos(ar), cy+(R-32)*Math.sin(ar));
+      ctx.rotate(ar+Math.PI/2);
+      ctx.font='10px DM Mono,monospace'; ctx.fillStyle='rgba(0,255,136,0.5)';
+      ctx.textAlign='center'; ctx.fillText(a+'°',0,4);
+      ctx.restore();
+    }
+  }
+
+  // Horizon line (0° / 180°)
+  ctx.beginPath();
+  ctx.moveTo(cx-R,cy); ctx.lineTo(cx+R,cy);
+  ctx.strokeStyle='rgba(51,136,255,0.25)'; ctx.lineWidth=1.5;
+  ctx.setLineDash([8,6]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Vertical line (90° / 270°)
+  ctx.beginPath();
+  ctx.moveTo(cx,cy-R); ctx.lineTo(cx,cy+R);
+  ctx.strokeStyle='rgba(51,136,255,0.15)'; ctx.lineWidth=1;
+  ctx.setLineDash([4,8]); ctx.stroke(); ctx.setLineDash([]);
+
+  if(gonioMode==='sensor'){
+    // Draw sensor ray
+    const ang = gonioSensorAngle * RAD;
+    drawRay(ctx,cx,cy,R,ang,'rgba(255,204,0,1)','INCLINAZIONE');
+    // Draw plumb line (always vertical)
+    drawRay(ctx,cx,cy,R,-Math.PI/2,'rgba(51,136,255,0.5)','VERTICALE');
+    // Arc between them
+    const diff = Math.abs(roll);
+    if(diff>0.5){
+      ctx.beginPath();
+      ctx.arc(cx,cy,R*0.35, -Math.PI/2, ang, roll<0);
+      ctx.strokeStyle='rgba(255,204,0,0.4)'; ctx.lineWidth=3;
+      ctx.stroke();
+      ctx.fillStyle='rgba(255,204,0,0.9)'; ctx.font='bold 14px DM Mono,monospace';
+      ctx.textAlign='center';
+      const midAng = (-Math.PI/2 + ang)/2;
+      ctx.fillText(diff.toFixed(1)+'°', cx+R*0.42*Math.cos(midAng), cy+R*0.42*Math.sin(midAng)+5);
+    }
+  } else {
+    // Manual: draw up to 2 rays
+    const colors = ['rgba(255,204,0,1)','rgba(255,51,102,1)'];
+    gonioRays.forEach((angDeg,i)=>{
+      drawRay(ctx,cx,cy,R,angDeg*RAD,colors[i],`RAY ${i+1}`);
+    });
+    if(gonioRays.length===2){
+      let diff = gonioRays[1]-gonioRays[0];
+      if(diff<0) diff+=360;
+      const minDiff = Math.min(diff,360-diff);
+      // Arc
+      const startA = gonioRays[0]*RAD, endA = gonioRays[1]*RAD;
+      ctx.beginPath();
+      ctx.arc(cx,cy,R*0.32, startA, endA);
+      ctx.strokeStyle='rgba(255,204,0,0.35)'; ctx.lineWidth=4;
+      ctx.stroke();
+      // Label
+      const midA = (gonioRays[0]+gonioRays[1])/2*RAD;
+      ctx.fillStyle='rgba(255,204,0,1)'; ctx.font='bold 15px DM Mono,monospace';
+      ctx.textAlign='center';
+      ctx.fillText(minDiff.toFixed(1)+'°',cx+R*0.48*Math.cos(midA),cy+R*0.48*Math.sin(midA)+5);
+      document.getElementById('gonioAngle').innerHTML=minDiff.toFixed(1)+'<small>°</small>';
+    }
+  }
+
+  // Center dot
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2);
+  ctx.fillStyle='var(--accent)'; ctx.fill();
+}
+
+function drawRay(ctx,cx,cy,R,angRad,color,label){
+  const x = cx+R*Math.cos(angRad), y = cy+R*Math.sin(angRad);
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y);
+  ctx.strokeStyle=color; ctx.lineWidth=2.5;
+  ctx.shadowColor=color; ctx.shadowBlur=8;
+  ctx.stroke(); ctx.shadowBlur=0;
+  // Arrowhead
+  const head=12, spread=0.35;
+  ctx.beginPath();
+  ctx.moveTo(x,y);
+  ctx.lineTo(x-head*Math.cos(angRad-spread), y-head*Math.sin(angRad-spread));
+  ctx.lineTo(x-head*Math.cos(angRad+spread), y-head*Math.sin(angRad+spread));
+  ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+  // Label
+  ctx.font='10px DM Mono,monospace'; ctx.fillStyle=color;
+  ctx.textAlign='center';
+  ctx.fillText(label, cx+(R+14)*Math.cos(angRad), cy+(R+14)*Math.sin(angRad)+4);
+}
+
+// Goniometer interactions (manual mode)
+(function(){
+  const canvas = document.getElementById('gonioCanvas');
+  function getAngle(e){
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
+    let cx,cy;
+    if(e.touches){ cx=e.touches[0].clientX; cy=e.touches[0].clientY; }
+    else { cx=e.clientX; cy=e.clientY; }
+    const dx=(cx-rect.left)*scaleX - canvas.width/2;
+    const dy=(cy-rect.top)*scaleY  - canvas.height/2;
+    return Math.atan2(dy,dx)*DEG;
+  }
+  function hit(e){
+    if(gonioMode!=='manual') return;
+    const a=getAngle(e);
+    if(gonioRays.length>=2) gonioRays=[];
+    gonioRays.push(a);
+    if(gonioRays.length===1){
+      document.getElementById('gonioA').textContent=normalizeAngle(a).toFixed(1);
+      document.getElementById('gonioB').textContent='—';
+    } else {
+      const diff=angleDiff(gonioRays[0],gonioRays[1]);
+      document.getElementById('gonioA').textContent=normalizeAngle(gonioRays[0]).toFixed(1);
+      document.getElementById('gonioB').textContent=normalizeAngle(gonioRays[1]).toFixed(1);
+      document.getElementById('gonioAngle').innerHTML=diff.toFixed(1)+'<small>°</small>';
+    }
+    drawGoniometer();
+  }
+  canvas.addEventListener('click',hit);
+  canvas.addEventListener('touchend',e=>{e.preventDefault();hit(e.changedTouches[0]||e);},{passive:false});
+})();
+
+function normalizeAngle(a){ let n=((a%360)+360)%360; return n>180?n-360:n; }
+function angleDiff(a1,a2){ let d=a2-a1; if(d<0)d+=360; return Math.min(d,360-d); }
+
+// ═══════════════════════════════════════════════════════════════
+// FILO A PIOMBO
+// ═══════════════════════════════════════════════════════════════
+let plumbAnim=null;
+
+function initPlumb(){
+  const canvas=document.getElementById('plumbCanvas');
+  const wrapper=canvas.parentElement;
+  canvas.width=wrapper.offsetWidth; canvas.height=wrapper.offsetHeight;
+  drawPlumb();
+}
+
+function updatePlumb(){
+  drawPlumb();
+}
+
+function drawPlumb(){
+  const canvas=document.getElementById('plumbCanvas');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  const cx=W/2, cy=H/2;
+  ctx.clearRect(0,0,W,H);
+
+  // Background grid
+  ctx.strokeStyle='rgba(0,255,136,0.04)';
+  ctx.lineWidth=1;
+  for(let x=0;x<W;x+=30){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke(); }
+  for(let y=0;y<H;y+=30){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke(); }
+
+  // Vertical reference
+  ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,H);
+  ctx.strokeStyle='rgba(51,136,255,0.2)'; ctx.lineWidth=1.5;
+  ctx.setLineDash([8,6]); ctx.stroke(); ctx.setLineDash([]);
+
+  // The plumb string — deviates by roll angle
+  const rollRad = roll * RAD;
+  // String length: from top area to bottom
+  const stringLen = H*0.72;
+  const topY = H*0.12;
+  const endX = cx + Math.sin(rollRad)*stringLen;
+  const endY = topY + Math.cos(rollRad)*stringLen;
+
+  // String
+  ctx.beginPath(); ctx.moveTo(cx, topY); ctx.lineTo(endX, endY);
+  const grad=ctx.createLinearGradient(cx,topY,endX,endY);
+  grad.addColorStop(0,'rgba(255,204,0,0.4)');
+  grad.addColorStop(1,'rgba(255,204,0,0.9)');
+  ctx.strokeStyle=grad; ctx.lineWidth=2.5;
+  ctx.shadowColor='rgba(255,204,0,0.6)'; ctx.shadowBlur=10;
+  ctx.stroke(); ctx.shadowBlur=0;
+
+  // Pivot point
+  ctx.beginPath(); ctx.arc(cx,topY,6,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,204,0,0.8)'; ctx.fill();
+
+  // Bob (weight)
+  const bobR=18;
+  ctx.beginPath(); ctx.arc(endX,endY,bobR,0,Math.PI*2);
+  const bobGrad=ctx.createRadialGradient(endX-5,endY-5,1,endX,endY,bobR);
+  bobGrad.addColorStop(0,'rgba(255,220,80,1)');
+  bobGrad.addColorStop(1,'rgba(180,140,0,0.9)');
+  ctx.fillStyle=bobGrad;
+  ctx.shadowColor='rgba(255,204,0,0.5)'; ctx.shadowBlur=15;
+  ctx.fill(); ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(255,204,0,0.5)'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Bob glint
+  ctx.beginPath(); ctx.arc(endX-6,endY-6,5,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.fill();
+
+  // Deviation arc
+  if(Math.abs(roll)>0.5){
+    ctx.beginPath();
+    ctx.arc(cx,topY, 50, Math.PI/2-rollRad, Math.PI/2, roll<0);
+    ctx.strokeStyle='rgba(255,204,0,0.4)'; ctx.lineWidth=2;
+    ctx.stroke();
+    ctx.font='bold 13px DM Mono,monospace';
+    ctx.fillStyle='rgba(255,204,0,0.9)'; ctx.textAlign='center';
+    ctx.fillText(Math.abs(roll).toFixed(1)+'°', cx+Math.sin(rollRad/2)*70, topY+Math.cos(rollRad/2)*70+5);
+  }
+
+  // Status indicators
+  const absR=Math.abs(roll);
+  const isV = absR<0.8;
+  document.getElementById('plumbH').textContent=roll.toFixed(1);
+  document.getElementById('plumbStatus').textContent = isV?'✓ VERTICALE':'✗ FUORI PIOMBO';
+  document.getElementById('plumbStatus').style.color = isV?'var(--safe)':'var(--danger)';
+
+  // Bottom status bar
+  ctx.fillStyle = isV ? 'rgba(0,255,136,0.1)' : 'rgba(255,51,102,0.1)';
+  ctx.fillRect(0,H-28,W,28);
+  ctx.fillStyle = isV ? 'var(--safe)' : 'var(--danger)';
+  ctx.font='11px DM Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText(isV ? '✓ VERTICALE' : `✗ DEVIAZIONE: ${absR.toFixed(1)}°`, cx, H-9);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CAMERA ANGLE TOOL
+// ═══════════════════════════════════════════════════════════════
+let camStreams = { angle: null, ruler: null };
+let anglePoints = [], angleCtx = null;
+
+async function startCamera(mode){
+  const videoId  = mode==='angle' ? 'cameraVideo' : 'rulerVideo';
+  const canvasId = mode==='angle' ? 'angleCanvas' : 'rulerCanvas';
+  if(camStreams[mode]){ camStreams[mode].getTracks().forEach(t=>t.stop()); }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }
+      video:{ facingMode:{ideal:'environment'}, width:{ideal:1280} }
     });
-    const video = document.getElementById('cameraVideo');
-    video.srcObject = stream;
-    videoStream = stream;
-    video.onloadedmetadata = () => {
-      setupCanvas();
+    const video = document.getElementById(videoId);
+    video.srcObject=stream; camStreams[mode]=stream;
+    video.onloadedmetadata = ()=>{
+      if(mode==='angle') setupAngleCanvas();
+      else setupRulerCanvas();
     };
-    document.getElementById('camOverlayInfo').textContent = 'TOCCA DUE PUNTI PER MISURARE';
-  } catch(e) {
-    alert('Errore camera: ' + e.message);
-  }
+  } catch(e){ alert('Errore camera: '+e.message); }
 }
 
-function stopCamera() {
-  if (videoStream) {
-    videoStream.getTracks().forEach(t => t.stop());
-    videoStream = null;
-  }
-  const canvas = document.getElementById('angleCanvas');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  document.getElementById('angleDisplay').innerHTML = '—<span>°</span>';
+function stopCamera(mode){
+  const videoId  = mode==='angle' ? 'cameraVideo' : 'rulerVideo';
+  const canvasId = mode==='angle' ? 'angleCanvas' : 'rulerCanvas';
+  if(camStreams[mode]){ camStreams[mode].getTracks().forEach(t=>t.stop()); camStreams[mode]=null; }
+  const canvas=document.getElementById(canvasId);
+  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
 }
 
-function setupCanvas() {
-  const video  = document.getElementById('cameraVideo');
-  const canvas = document.getElementById('angleCanvas');
+// ─── Angle canvas ───
+function setupAngleCanvas(){
+  const video=document.getElementById('cameraVideo');
+  const canvas=document.getElementById('angleCanvas');
   canvas.width  = video.videoWidth  || video.offsetWidth;
   canvas.height = video.videoHeight || video.offsetHeight;
-  canvasCtx = canvas.getContext('2d');
-
-  canvas.addEventListener('click', onCanvasClick);
-  canvas.addEventListener('dblclick', resetAngle);
-  // Touch
-  canvas.addEventListener('touchend', e => {
+  angleCtx=canvas.getContext('2d');
+  anglePoints=[];
+  canvas.onclick = onAngleClick;
+  canvas.ondblclick = resetAngle;
+  canvas.addEventListener('touchend',e=>{
     e.preventDefault();
-    if (e.touches.length === 0 && e.changedTouches.length > 0) {
-      const touch = e.changedTouches[0];
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const x = (touch.clientX - rect.left) * scaleX;
-      const y = (touch.clientY - rect.top)  * scaleY;
-      addPoint(x, y);
-    }
-  }, { passive: false });
+    const t=e.changedTouches[0], r=canvas.getBoundingClientRect();
+    const sx=canvas.width/r.width, sy=canvas.height/r.height;
+    addAnglePoint((t.clientX-r.left)*sx,(t.clientY-r.top)*sy);
+  },{passive:false});
 }
 
-function onCanvasClick(e) {
-  const canvas = e.currentTarget;
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const x = (e.clientX - rect.left) * scaleX;
-  const y = (e.clientY - rect.top)  * scaleY;
-  addPoint(x, y);
+function onAngleClick(e){
+  const canvas=e.currentTarget, r=canvas.getBoundingClientRect();
+  const sx=canvas.width/r.width, sy=canvas.height/r.height;
+  addAnglePoint((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);
 }
-
-function addPoint(x, y) {
-  if (points.length >= 2) points = [];
-  points.push({ x, y });
+function addAnglePoint(x,y){
+  if(anglePoints.length>=2) anglePoints=[];
+  anglePoints.push({x,y});
   drawAngle();
-  if (points.length === 1) {
-    document.getElementById('camOverlayInfo').textContent = 'TOCCA IL SECONDO PUNTO';
-    document.getElementById('angleDisplay').innerHTML = '—<span>°</span>';
+  if(anglePoints.length===1) document.getElementById('camBadge').textContent='TOCCA IL SECONDO PUNTO';
+}
+function resetAngle(){
+  anglePoints=[];
+  if(angleCtx) angleCtx.clearRect(0,0,angleCtx.canvas.width,angleCtx.canvas.height);
+  document.getElementById('angleDisplay').innerHTML='—<span>°</span>';
+  document.getElementById('camBadge').textContent='TOCCA DUE PUNTI';
+}
+function drawAngle(){
+  const canvas=document.getElementById('angleCanvas');
+  const ctx=angleCtx; if(!ctx) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const cw=canvas.width,ch=canvas.height;
+  // Horizon
+  ctx.beginPath(); ctx.setLineDash([12,8]);
+  ctx.strokeStyle='rgba(51,136,255,0.35)'; ctx.lineWidth=1.5;
+  ctx.moveTo(0,ch/2); ctx.lineTo(cw,ch/2); ctx.stroke();
+  ctx.setLineDash([]);
+  if(anglePoints.length>=1) drawCross(ctx,anglePoints[0].x,anglePoints[0].y,'rgba(0,255,136,1)');
+  if(anglePoints.length>=2){
+    const p1=anglePoints[0],p2=anglePoints[1];
+    ctx.beginPath(); ctx.strokeStyle='#ff3366'; ctx.lineWidth=2.5;
+    ctx.shadowColor='#ff3366'; ctx.shadowBlur=10;
+    ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+    ctx.shadowBlur=0;
+    drawCross(ctx,p2.x,p2.y,'#ff3366');
+    const dx=p2.x-p1.x, dy=p2.y-p1.y;
+    let deg = Math.atan2(dy,dx)*DEG;
+    if(deg>90) deg=180-deg; if(deg<-90) deg=-180-deg;
+    const abs=Math.abs(deg).toFixed(1);
+    document.getElementById('angleDisplay').innerHTML=abs+'<span>°</span>';
+    document.getElementById('camBadge').textContent=`${abs}° — dbl tap = reset`;
+    const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+    ctx.font='bold 18px DM Mono,monospace'; ctx.fillStyle='#ff3366';
+    ctx.shadowColor='#ff3366'; ctx.shadowBlur=8; ctx.textAlign='center';
+    ctx.fillText(abs+'°',mx,my-14); ctx.shadowBlur=0;
+  }
+}
+function drawCross(ctx,x,y,color){
+  ctx.strokeStyle=color; ctx.lineWidth=2;
+  ctx.shadowColor=color; ctx.shadowBlur=8;
+  ctx.beginPath(); ctx.arc(x,y,8,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x-18,y);ctx.lineTo(x+18,y); ctx.moveTo(x,y-18);ctx.lineTo(x,y+18); ctx.stroke();
+  ctx.shadowBlur=0;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RULER — Camera measurement in cm
+// ═══════════════════════════════════════════════════════════════
+let rulerPoints = [];
+let rulerCtx = null;
+let rulerCalibPxPerCm = null; // null = use FOV method
+
+function resizeRulerCanvas(){
+  const v=document.getElementById('rulerVideo');
+  const c=document.getElementById('rulerCanvas');
+  if(v.videoWidth>0){
+    c.width=v.videoWidth; c.height=v.videoHeight;
+    rulerCtx=c.getContext('2d');
   }
 }
 
-function drawAngle() {
-  const canvas = document.getElementById('angleCanvas');
-  const ctx = canvasCtx;
-  if (!ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+function setupRulerCanvas(){
+  const video=document.getElementById('rulerVideo');
+  const canvas=document.getElementById('rulerCanvas');
+  canvas.width  = video.videoWidth  || video.offsetWidth;
+  canvas.height = video.videoHeight || video.offsetHeight;
+  rulerCtx=canvas.getContext('2d');
+  rulerPoints=[];
+  canvas.onclick = onRulerClick;
+  canvas.ondblclick = resetRuler;
+  canvas.addEventListener('touchend',e=>{
+    e.preventDefault();
+    const t=e.changedTouches[0], r=canvas.getBoundingClientRect();
+    const sx=canvas.width/r.width, sy=canvas.height/r.height;
+    addRulerPoint((t.clientX-r.left)*sx,(t.clientY-r.top)*sy);
+  },{passive:false});
+}
 
-  const cw = canvas.width, ch = canvas.height;
+function onRulerClick(e){
+  const canvas=e.currentTarget, r=canvas.getBoundingClientRect();
+  const sx=canvas.width/r.width, sy=canvas.height/r.height;
+  addRulerPoint((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);
+}
 
-  // Horizon guide
-  ctx.beginPath();
-  ctx.setLineDash([12, 8]);
-  ctx.strokeStyle = 'rgba(51,136,255,0.4)';
-  ctx.lineWidth = 1.5;
-  ctx.moveTo(0, ch / 2);
-  ctx.lineTo(cw, ch / 2);
-  ctx.stroke();
+function addRulerPoint(x,y){
+  if(rulerPoints.length>=2) rulerPoints=[];
+  rulerPoints.push({x,y});
+  drawRuler();
+  if(rulerPoints.length===1){
+    document.getElementById('rulerBadge').textContent='TOCCA IL SECONDO PUNTO';
+    clearRulerResults();
+  }
+}
+
+function clearRulerResults(){
+  ['resPx','resCm','resMm','resAng','resScale','resMethod'].forEach(id=>{
+    document.getElementById(id).textContent='—';
+  });
+}
+
+function computeRulerMeasurement(pxDist, diagPxDist){
+  const canvas=document.getElementById('rulerCanvas');
+  const videoW = canvas.width || 1280;
+  const videoH = canvas.height || 720;
+  const distCm = parseFloat(document.getElementById('objDist').value) || 50;
+  const fovH   = parseFloat(document.getElementById('fovH').value)   || 63;
+  const refW   = parseFloat(document.getElementById('refWidth').value) || 0;
+
+  // ── Method A: trigonometric using FOV ──────────────────────
+  // Full frame width in cm at given distance:
+  // widthAtDist = 2 * distance * tan(FOV_h/2)
+  const widthAtDistCm = 2 * distCm * Math.tan((fovH/2) * RAD);
+  const pxPerCmFOV = videoW / widthAtDistCm;
+  const cmFOV = pxDist / pxPerCmFOV;
+
+  // ── Method B: reference object calibration ─────────────────
+  // If user provided a calibrated px/cm (after pressing CALIBRA)
+  let cmRef = null, scaleRef = null;
+  if(rulerCalibPxPerCm){
+    cmRef = pxDist / rulerCalibPxPerCm;
+    scaleRef = rulerCalibPxPerCm;
+  }
+
+  // ── Choose best method ─────────────────────────────────────
+  const useCal = rulerCalibPxPerCm != null;
+  const finalCm = useCal ? cmRef : cmFOV;
+  const finalScale = useCal ? scaleRef : pxPerCmFOV;
+  const method = useCal ? 'CAL' : 'FOV';
+
+  return { finalCm, finalScale, method, pxPerCmFOV, cmFOV, cmRef };
+}
+
+function drawRuler(){
+  const canvas=document.getElementById('rulerCanvas');
+  const ctx=rulerCtx; if(!ctx) return;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const cw=canvas.width, ch=canvas.height;
+
+  // Grid overlay
+  ctx.strokeStyle='rgba(255,204,0,0.06)'; ctx.lineWidth=1;
+  ctx.setLineDash([4,8]);
+  for(let x=0;x<cw;x+=80){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,ch);ctx.stroke(); }
+  for(let y=0;y<ch;y+=80){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cw,y);ctx.stroke(); }
   ctx.setLineDash([]);
 
-  if (points.length >= 1) {
-    // Point 1
-    drawCrosshair(ctx, points[0].x, points[0].y, 'rgba(0,255,136,1)');
-  }
-  if (points.length >= 2) {
-    const p1 = points[0], p2 = points[1];
+  // Horizontal reference
+  ctx.beginPath(); ctx.moveTo(0,ch/2); ctx.lineTo(cw,ch/2);
+  ctx.strokeStyle='rgba(51,136,255,0.2)'; ctx.lineWidth=1;
+  ctx.setLineDash([10,6]); ctx.stroke(); ctx.setLineDash([]);
 
-    // Measurement line
+  if(rulerPoints.length>=1) drawRulerCross(ctx, rulerPoints[0].x, rulerPoints[0].y, 'rgba(0,255,136,1)', '1');
+
+  if(rulerPoints.length>=2){
+    const p1=rulerPoints[0], p2=rulerPoints[1];
+    const dx=p2.x-p1.x, dy=p2.y-p1.y;
+    const pxDist = Math.sqrt(dx*dx+dy*dy);
+    const diagPxDist = Math.sqrt(cw*cw+ch*ch);
+
+    // Main line
     ctx.beginPath();
-    ctx.strokeStyle = '#ff3366';
-    ctx.lineWidth = 2.5;
-    ctx.shadowColor = '#ff3366';
-    ctx.shadowBlur = 10;
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
-    ctx.stroke();
-    ctx.shadowBlur = 0;
+    ctx.strokeStyle='rgba(255,204,0,1)'; ctx.lineWidth=3;
+    ctx.shadowColor='rgba(255,204,0,0.8)'; ctx.shadowBlur=12;
+    ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+    ctx.shadowBlur=0;
 
-    // Point 2
-    drawCrosshair(ctx, p2.x, p2.y, '#ff3366');
+    // Dimension arrows at ends
+    drawArrowTip(ctx,p1.x,p1.y,dx,dy,'rgba(255,204,0,1)');
+    drawArrowTip(ctx,p2.x,p2.y,-dx,-dy,'rgba(255,204,0,1)');
 
-    // Angle calc
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const angleRad = Math.atan2(dy, dx);
-    let angleDeg = angleRad * 180 / Math.PI;
-    // Normalize to -90..90 relative to horizontal
-    // We show absolute angle relative to horizontal
-    let display = angleDeg;
-    // Normalize to -180 to 180
-    if (display > 90) display = 180 - display;
-    if (display < -90) display = -180 - display;
+    drawRulerCross(ctx, p2.x, p2.y, 'rgba(255,204,0,1)', '2');
 
-    const absAngle = Math.abs(display).toFixed(1);
-    document.getElementById('angleDisplay').innerHTML = absAngle + '<span>°</span>';
-    document.getElementById('camOverlayInfo').textContent = `ANGOLO: ${absAngle}° — doppio tap per reset`;
+    // Dimension line (offset)
+    const ang = Math.atan2(dy,dx);
+    const perpX = -Math.sin(ang)*20, perpY = Math.cos(ang)*20;
+    ctx.beginPath();
+    ctx.moveTo(p1.x+perpX, p1.y+perpY); ctx.lineTo(p2.x+perpX, p2.y+perpY);
+    ctx.strokeStyle='rgba(255,204,0,0.4)'; ctx.lineWidth=1.5;
+    ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+    // End ticks
+    [p1,p2].forEach(p=>{
+      ctx.beginPath();
+      ctx.moveTo(p.x+perpX*0.5,p.y+perpY*0.5);
+      ctx.lineTo(p.x+perpX*1.5,p.y+perpY*1.5);
+      ctx.strokeStyle='rgba(255,204,0,0.5)'; ctx.lineWidth=1.5; ctx.stroke();
+    });
 
-    // Draw angle arc
-    const midX = (p1.x + p2.x) / 2;
-    const midY = (p1.y + p2.y) / 2;
-    ctx.font = 'bold 20px DM Mono, monospace';
-    ctx.fillStyle = '#ff3366';
-    ctx.shadowColor = '#ff3366';
-    ctx.shadowBlur = 8;
-    ctx.textAlign = 'center';
-    ctx.fillText(absAngle + '°', midX, midY - 14);
-    ctx.shadowBlur = 0;
+    // Compute
+    const res = computeRulerMeasurement(pxDist, diagPxDist);
+    let angleDeg = Math.atan2(dy,dx)*DEG;
+    if(angleDeg>90) angleDeg=180-angleDeg;
+    if(angleDeg<-90) angleDeg=-180-angleDeg;
+    const absAng=Math.abs(angleDeg).toFixed(1);
+
+    // Label on canvas
+    const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+    ctx.font='bold 17px DM Mono,monospace'; ctx.textAlign='center';
+    const label=`${res.finalCm.toFixed(1)} cm`;
+    // Text background
+    const tw=ctx.measureText(label).width;
+    ctx.fillStyle='rgba(0,0,0,0.6)';
+    ctx.fillRect(mx-tw/2-8, my-perpY-22, tw+16, 26);
+    ctx.fillStyle='rgba(255,204,0,1)';
+    ctx.shadowColor='rgba(255,204,0,0.8)'; ctx.shadowBlur=8;
+    ctx.fillText(label, mx, my-perpY-4);
+    ctx.shadowBlur=0;
+
+    // px count below
+    ctx.font='11px DM Mono,monospace'; ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.fillText(`${Math.round(pxDist)} px`, mx, my-perpY+16);
+
+    // Update UI results
+    document.getElementById('resPx').textContent     = Math.round(pxDist);
+    document.getElementById('resCm').textContent     = res.finalCm.toFixed(2);
+    document.getElementById('resMm').textContent     = (res.finalCm*10).toFixed(1);
+    document.getElementById('resAng').textContent    = absAng;
+    document.getElementById('resScale').textContent  = res.finalScale.toFixed(1);
+    document.getElementById('resMethod').textContent = res.method;
+    document.getElementById('rulerBadge').textContent=
+      `${res.finalCm.toFixed(1)} cm — ${absAng}° — ${res.method} | dbl tap=reset`;
   }
 }
 
-function drawCrosshair(ctx, x, y, color) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
-  ctx.shadowColor = color;
-  ctx.shadowBlur = 8;
-  ctx.beginPath();
-  ctx.arc(x, y, 8, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x - 18, y); ctx.lineTo(x + 18, y);
-  ctx.moveTo(x, y - 18); ctx.lineTo(x, y + 18);
-  ctx.stroke();
-  ctx.shadowBlur = 0;
+function drawRulerCross(ctx,x,y,color,label){
+  ctx.strokeStyle=color; ctx.lineWidth=2;
+  ctx.shadowColor=color; ctx.shadowBlur=8;
+  ctx.beginPath(); ctx.arc(x,y,9,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x-20,y);ctx.lineTo(x+20,y); ctx.moveTo(x,y-20);ctx.lineTo(x,y+20); ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.font='bold 12px DM Mono,monospace'; ctx.fillStyle=color; ctx.textAlign='center';
+  ctx.fillText('P'+label,x,y-22);
 }
 
-function resetAngle() {
-  points = [];
-  const canvas = document.getElementById('angleCanvas');
-  if (canvasCtx) canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-  document.getElementById('angleDisplay').innerHTML = '—<span>°</span>';
-  document.getElementById('camOverlayInfo').textContent = 'TOCCA DUE PUNTI PER MISURARE';
-  drawAngle();
+function drawArrowTip(ctx,x,y,dx,dy,color){
+  const len=16, spread=0.4;
+  const ang=Math.atan2(dy,dx);
+  ctx.beginPath();
+  ctx.moveTo(x,y);
+  ctx.lineTo(x-len*Math.cos(ang-spread), y-len*Math.sin(ang-spread));
+  ctx.lineTo(x-len*Math.cos(ang+spread), y-len*Math.sin(ang+spread));
+  ctx.closePath(); ctx.fillStyle=color; ctx.fill();
 }
 
-// ============================================================
+function calibrateRuler(){
+  // Takes the current 2 points as the reference object width
+  if(rulerPoints.length<2){
+    alert('Traccia prima una linea sul riferimento noto (imposta la sua larghezza reale nel campo Rif.)');
+    return;
+  }
+  const refW = parseFloat(document.getElementById('refWidth').value)||0;
+  if(refW<=0){ alert('Imposta la larghezza del riferimento noto (cm) nel campo sopra.'); return; }
+  const p1=rulerPoints[0],p2=rulerPoints[1];
+  const dx=p2.x-p1.x,dy=p2.y-p1.y;
+  const pxDist=Math.sqrt(dx*dx+dy*dy);
+  rulerCalibPxPerCm = pxDist/refW;
+  document.getElementById('resScale').textContent=rulerCalibPxPerCm.toFixed(2);
+  document.getElementById('resMethod').textContent='CAL';
+  alert(`✓ Calibrazione: ${rulerCalibPxPerCm.toFixed(2)} px/cm (riferimento: ${refW} cm)`);
+  drawRuler();
+}
+
+function resetRuler(){
+  rulerPoints=[];
+  if(rulerCtx) rulerCtx.clearRect(0,0,rulerCtx.canvas.width,rulerCtx.canvas.height);
+  document.getElementById('rulerBadge').textContent='TOCCA DUE PUNTI';
+  clearRulerResults();
+}
+
+// ═══════════════════════════════════════════════════════════════
 // API DETECTION
-// ============================================================
-function detectAPIs() {
-  const yes = '✓ DISPONIBILE', no = '✗ NON DISPONIBILE';
-  const col = (ok) => ok ? 'var(--safe)' : 'var(--danger)';
-
-  const hasDO = 'DeviceOrientationEvent' in window;
-  const el1 = document.getElementById('apiDO');
-  el1.textContent = hasDO ? yes : no;
-  el1.style.color = col(hasDO);
-
-  const hasGS = 'Accelerometer' in window;
-  const el2 = document.getElementById('apiGS');
-  el2.textContent = hasGS ? yes : no;
-  el2.style.color = col(hasGS);
-
-  const hasCam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-  const el3 = document.getElementById('apiCam');
-  el3.textContent = hasCam ? yes : no;
-  el3.style.color = col(hasCam);
+// ═══════════════════════════════════════════════════════════════
+function detectAPIs(){
+  const yes='✓ SÌ', no='✗ NO';
+  const c=(ok)=>ok?'var(--safe)':'var(--danger)';
+  const set=(id,ok)=>{ const e=document.getElementById(id); e.textContent=ok?yes:no; e.style.color=c(ok); };
+  set('apiDO','DeviceOrientationEvent' in window);
+  set('apiGS','Accelerometer' in window);
+  set('apiCam',!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia));
 }
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════════
 // INIT
-// ============================================================
+// ═══════════════════════════════════════════════════════════════
 detectAPIs();
+window.addEventListener('load',()=>{
+  initPlumb();
+  drawGoniometer();
+  // resize plumb on orientation change
+  window.addEventListener('orientationchange',()=>setTimeout(initPlumb,300));
+});
 
-// Try auto-start on Android (no permission dialog needed)
-if (typeof DeviceOrientationEvent !== 'undefined' &&
-    typeof DeviceOrientationEvent.requestPermission !== 'function') {
+// Auto-start sensors on Android
+if(typeof DeviceOrientationEvent!=='undefined' &&
+   typeof DeviceOrientationEvent.requestPermission!=='function'){
   startOrientation();
 }
 </script>
