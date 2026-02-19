@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f2027">
+<title>WebOS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --accent:#0078d4;--accent2:#60cdff;
+  --glass:rgba(28,28,30,0.82);--glass2:rgba(40,40,42,0.93);
+  --glass-border:rgba(255,255,255,0.1);
+  --text:#fff;--text2:rgba(255,255,255,0.65);--text3:rgba(255,255,255,0.35);
+  --shadow:0 12px 40px rgba(0,0,0,0.55);
+  --radius:14px;--tbh:56px;
+  --blur:blur(24px) saturate(180%);
+  --font:'Inter',system-ui,sans-serif;
+}
+.light{
+  --glass:rgba(240,240,245,0.88);--glass2:rgba(252,252,255,0.94);
+  --glass-border:rgba(0,0,0,0.09);
+  --text:#111;--text2:rgba(0,0,0,0.6);--text3:rgba(0,0,0,0.32);
+  --shadow:0 12px 40px rgba(0,0,0,0.18);
+}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);background:#000;color:var(--text);touch-action:none;}
+#wallpaper{position:fixed;inset:0;z-index:0;background:linear-gradient(135deg,#0f2027 0%,#203a43 50%,#2c5364 100%);transition:background 0.6s;}
+#wallpaper.light{background:linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%);}
+#wp-canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0.25;pointer-events:none;}
+#desktop{position:fixed;inset:0;bottom:var(--tbh);z-index:1;overflow:hidden;}
+.icon{position:absolute;width:80px;text-align:center;cursor:pointer;border-radius:10px;padding:8px 4px 6px;transition:background 0.15s,transform 0.1s;touch-action:none;}
+.icon:active{transform:scale(0.92);}
+.icon.hovered{background:rgba(255,255,255,0.13);}
+.icon.selected{background:rgba(0,120,212,0.38);}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+.icon.lpanim{animation:wiggle 0.35s ease;}
+.icon .icon-img{width:48px;height:48px;margin:0 auto 5px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 10px rgba(0,0,0,0.45));}
+.icon .icon-img svg{width:48px;height:48px;}
+.icon .icon-label{font-size:11px;font-weight:500;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,0.85);line-height:1.3;word-break:break-word;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.light .icon .icon-label{color:#111;text-shadow:0 1px 4px rgba(255,255,255,0.7);}
+/* TASKBAR */
+#taskbar{position:fixed;bottom:0;left:0;right:0;height:var(--tbh);background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-top:1px solid var(--glass-border);display:flex;align-items:center;justify-content:space-between;z-index:1000;padding:0 6px;gap:4px;}
+#tb-left,#tb-right{display:flex;align-items:center;gap:3px;flex-shrink:0;}
+#tb-center{display:flex;align-items:center;gap:3px;flex:1;justify-content:center;overflow:hidden;}
+#running-apps{display:flex;gap:3px;align-items:center;overflow:hidden;max-width:100%;}
+.tbbtn{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;color:var(--text2);flex-shrink:0;}
+.tbbtn:hover,.tbbtn:active{background:rgba(255,255,255,0.13);color:var(--text);}
+.tbbtn svg{width:20px;height:20px;}
+.tbapp{height:44px;min-width:44px;max-width:110px;padding:0 7px;border-radius:10px;display:flex;align-items:center;gap:5px;cursor:pointer;transition:background 0.15s;position:relative;flex-shrink:0;overflow:hidden;}
+.tbapp:hover{background:rgba(255,255,255,0.11);}
+.tbapp.active{background:rgba(255,255,255,0.17);}
+.tbapp .dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;background:var(--accent2);border-radius:50%;}
+.tbapp .tlbl{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55px;color:var(--text);}
+@media(max-width:600px){.tbapp .tlbl{display:none;}}
+#clock-w{font-size:11px;line-height:1.35;text-align:right;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--text);}
+#clock-w:hover{background:rgba(255,255,255,0.1);}
+#clock-date{font-size:10px;color:var(--text2);}
+/* START MENU */
+#startmenu{
+  position:fixed;bottom:calc(var(--tbh) + 8px);left:50%;transform:translateX(-50%) translateY(18px);
+  width:min(660px,97vw);background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border:1px solid var(--glass-border);border-radius:18px;box-shadow:var(--shadow);
+  z-index:2000;opacity:0;pointer-events:none;
+  transition:opacity 0.22s cubic-bezier(.4,0,.2,1),transform 0.22s cubic-bezier(.4,0,.2,1);
+  max-height:82vh;display:flex;flex-direction:column;overflow:hidden;
+}
+#startmenu.open{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0);}
+@media(max-width:600px){
+  #startmenu{bottom:0;left:0;transform:translateY(100%);width:100%;border-radius:20px 20px 0 0;max-height:90vh;}
+  #startmenu.open{transform:translateY(0);}
+}
+#sm-drag{width:40px;height:4px;background:rgba(255,255,255,0.22);border-radius:2px;margin:10px auto 2px;}
+#sm-hdr{padding:10px 16px 8px;}
+#sm-sw{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);border:1px solid var(--glass-border);border-radius:10px;padding:8px 12px;}
+#sm-sw svg{width:15px;height:15px;color:var(--text3);flex-shrink:0;}
+#sm-s{flex:1;background:none;border:none;color:var(--text);font-size:14px;font-family:var(--font);outline:none;}
+#sm-s::placeholder{color:var(--text3);}
+#sm-tabs{display:flex;gap:4px;padding:8px 14px 0;overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+#sm-tabs::-webkit-scrollbar{display:none;}
+.smtab{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;transition:background 0.15s,color 0.15s;white-space:nowrap;color:var(--text2);flex-shrink:0;}
+.smtab.on{background:var(--accent);color:#fff;}
+.smtab:not(.on):hover{background:rgba(255,255,255,0.1);color:var(--text);}
+#sm-body{flex:1;overflow-y:auto;padding:8px 12px 12px;scrollbar-width:thin;}
+#sm-body::-webkit-scrollbar{width:4px;}
+#sm-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:2px;}
+.smcat{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin:10px 4px 5px;}
+.smgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:3px;margin-bottom:6px;}
+.smapp{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;cursor:pointer;transition:background 0.15s,transform 0.1s;}
+.smapp:hover{background:rgba(255,255,255,0.1);}
+.smapp:active{transform:scale(0.93);}
+.smapp .si{width:44px;height:44px;display:flex;align-items:center;justify-content:center;}
+.smapp .si svg{width:44px;height:44px;}
+.smapp span{font-size:10.5px;font-weight:500;color:var(--text);text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#sm-bot{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 12px;border-top:1px solid var(--glass-border);flex-shrink:0;}
+#uavatar{width:34px;height:34px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;}
+#sm-pw{display:flex;gap:4px;}
+.smpb{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);}
+.smpb:hover,.smpb:active{background:rgba(255,255,255,0.13);color:var(--text);}
+/* WINDOWS */
+.window{position:fixed;background:var(--glass2);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;z-index:100;min-width:280px;min-height:180px;animation:wo 0.22s cubic-bezier(.34,1.45,.64,1);}
+@keyframes wo{from{opacity:0;transform:scale(0.9) translateY(14px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.window.manim{animation:wc 0.18s ease forwards;}
+@keyframes wc{to{opacity:0;transform:scale(0.88) translateY(20px);}}
+.window.maximized{left:0!important;top:0!important;width:100vw!important;height:calc(100vh - var(--tbh))!important;border-radius:0!important;}
+.window.snl{left:0!important;top:0!important;width:50vw!important;height:calc(100vh - var(--tbh))!important;}
+.window.snr{left:50vw!important;top:0!important;width:50vw!important;height:calc(100vh - var(--tbh))!important;}
+@media(max-width:768px){
+  .window{left:0!important;top:0!important;width:100vw!important;height:calc(100vh - var(--tbh))!important;border-radius:12px 12px 0 0!important;}
+  .rh{display:none!important;}
+}
+.wtb{display:flex;align-items:center;padding:0 8px 0 12px;height:40px;gap:8px;flex-shrink:0;border-radius:var(--radius) var(--radius) 0 0;cursor:move;user-select:none;}
+.wi{width:18px;height:18px;flex-shrink:0;} .wi svg{width:18px;height:18px;}
+.wt{flex:1;font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.wctrl{display:flex;}
+.wbtn{width:42px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;color:var(--text2);border-radius:6px;}
+.wbtn:hover,.wbtn:active{background:rgba(255,255,255,0.13);color:var(--text);}
+.wbtn.cls:hover,.wbtn.cls:active{background:#c42b1c;color:#fff;}
+.wbtn svg{width:10px;height:10px;}
+.wbody{flex:1;overflow:hidden;border-radius:0 0 var(--radius) var(--radius);}
+.wbody iframe{width:100%;height:100%;border:none;background:#fff;}
+.bwrap{display:flex;flex-direction:column;height:100%;}
+.rh{position:absolute;z-index:10;}
+.rh.se{bottom:0;right:0;width:16px;height:16px;cursor:se-resize;}
+.rh.sw{bottom:0;left:0;width:16px;height:16px;cursor:sw-resize;}
+.rh.ne{top:0;right:0;width:16px;height:16px;cursor:ne-resize;}
+.rh.nw{top:0;left:0;width:16px;height:16px;cursor:nw-resize;}
+.rh.n{top:0;left:16px;right:16px;height:5px;cursor:n-resize;}
+.rh.s{bottom:0;left:16px;right:16px;height:5px;cursor:s-resize;}
+.rh.e{right:0;top:16px;bottom:16px;width:5px;cursor:e-resize;}
+.rh.w{left:0;top:16px;bottom:16px;width:5px;cursor:w-resize;}
+#snapprev{position:fixed;background:rgba(0,120,212,0.18);border:2px solid var(--accent);border-radius:8px;z-index:9999;pointer-events:none;opacity:0;transition:opacity 0.15s;}
+/* CTX MENU */
+#ctx{position:fixed;background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:12px;box-shadow:var(--shadow);z-index:5000;min-width:210px;padding:5px;opacity:0;pointer-events:none;transition:opacity 0.13s,transform 0.13s;transform:scale(0.95);transform-origin:top left;}
+#ctx.open{opacity:1;pointer-events:all;transform:scale(1);}
+@media(max-width:600px){
+  #ctx{position:fixed;bottom:0;left:0;right:0;border-radius:18px 18px 0 0;min-width:unset;transform:translateY(100%);transition:opacity 0.2s,transform 0.25s;padding:0 6px 20px;transform-origin:bottom center;}
+  #ctx.open{transform:translateY(0);}
+  #ctx::before{content:'';display:block;width:40px;height:4px;background:rgba(255,255,255,0.22);border-radius:2px;margin:10px auto 8px;}
+}
+.ci{padding:9px 14px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:10px;color:var(--text);}
+.ci:hover,.ci:active{background:rgba(255,255,255,0.1);}
+.ci.red:hover,.ci.red:active{background:rgba(196,43,28,0.25);color:#ff7b7b;}
+.csep{height:1px;background:var(--glass-border);margin:4px 8px;}
+.ctitle{padding:7px 14px 2px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;}
+/* NOTEPAD */
+.nptb{display:flex;gap:4px;padding:7px 10px;background:rgba(0,0,0,0.18);border-bottom:1px solid var(--glass-border);flex-wrap:wrap;align-items:center;}
+.npbtn{padding:5px 11px;border-radius:6px;background:rgba(255,255,255,0.09);border:1px solid var(--glass-border);color:var(--text);font-size:12px;cursor:pointer;font-family:var(--font);}
+.npbtn:hover{background:rgba(255,255,255,0.18);}
+.npfn{font-size:11px;color:var(--text3);margin-left:4px;}
+.npta{flex:1;width:100%;background:transparent;border:none;color:var(--text);font-family:'Courier New',monospace;font-size:14px;padding:12px 16px;resize:none;outline:none;line-height:1.65;}
+/* FILE MANAGER */
+.fmtb{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(0,0,0,0.15);border-bottom:1px solid var(--glass-border);flex-wrap:wrap;}
+.fmbtn{padding:5px 10px;border-radius:6px;background:rgba(255,255,255,0.09);border:1px solid var(--glass-border);color:var(--text);font-size:12px;cursor:pointer;}
+.fmpath{flex:1;background:rgba(0,0,0,0.2);border:1px solid var(--glass-border);border-radius:6px;padding:4px 10px;color:var(--text);font-size:12px;min-width:0;}
+.fmgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;padding:12px;overflow-y:auto;align-content:flex-start;}
+.fmitem{text-align:center;padding:10px 6px;border-radius:8px;cursor:pointer;transition:background 0.13s;}
+.fmitem:hover,.fmitem:active{background:rgba(255,255,255,0.1);}
+.fmitem svg{width:40px;height:40px;margin:0 auto 5px;}
+.fmitem span{font-size:11px;color:var(--text);word-break:break-word;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fmdel{font-size:10px;color:rgba(255,100,100,0.6);cursor:pointer;margin-top:2px;}
+/* FOLDER WIN */
+.flgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;padding:12px;overflow-y:auto;align-content:flex-start;height:100%;}
+.flitem{text-align:center;padding:10px 4px;border-radius:8px;cursor:pointer;transition:background 0.13s;}
+.flitem:hover,.flitem:active{background:rgba(255,255,255,0.1);}
+.flitem svg{width:40px;height:40px;margin:0 auto 5px;}
+.flitem span{font-size:11px;color:var(--text);}
+/* SEARCH */
+#srch{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.35);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:flex-start;justify-content:center;padding-top:60px;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+@media(max-width:600px){#srch{align-items:flex-end;padding-top:0;}}
+#srch.open{opacity:1;pointer-events:all;}
+#sbox{background:var(--glass2);border:1px solid var(--glass-border);border-radius:16px;width:min(560px,95vw);box-shadow:var(--shadow);overflow:hidden;}
+@media(max-width:600px){#sbox{border-radius:18px 18px 0 0;width:100%;}}
+#siw{display:flex;align-items:center;gap:10px;padding:14px 16px;}
+#siw svg{width:18px;height:18px;color:var(--text3);flex-shrink:0;}
+#si{flex:1;background:none;border:none;color:var(--text);font-size:16px;font-family:var(--font);outline:none;}
+#si::placeholder{color:var(--text3);}
+#sres{padding:0 8px 10px;max-height:min(400px,55vh);overflow-y:auto;}
+.srow{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:9px;cursor:pointer;}
+.srow:hover,.srow:active{background:rgba(255,255,255,0.1);}
+.srow .sri{width:34px;height:34px;flex-shrink:0;}
+.srow .sri svg{width:34px;height:34px;}
+.srow .sinfo .sname{font-size:13px;font-weight:500;color:var(--text);}
+.srow .sinfo .scat{font-size:11px;color:var(--text3);}
+/* TOAST */
+#toasts{position:fixed;bottom:calc(var(--tbh)+10px);right:12px;z-index:9000;display:flex;flex-direction:column;gap:7px;pointer-events:none;}
+@media(max-width:600px){#toasts{left:12px;right:12px;}}
+.toast{background:var(--glass2);border:1px solid var(--glass-border);border-radius:11px;padding:10px 16px;font-size:13px;color:var(--text);box-shadow:var(--shadow);animation:tin 0.3s ease,tout 0.35s ease 2.65s forwards;}
+@keyframes tin{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
+@keyframes tout{to{opacity:0;transform:translateX(20px);}}
+@media(max-width:600px){
+  @keyframes tin{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes tout{to{opacity:0;transform:translateY(10px);}}
+}
+/* RIPPLE */
+.lpripple{position:fixed;border-radius:50%;background:rgba(255,255,255,0.18);pointer-events:none;z-index:9998;transform:scale(0);animation:lpr 0.55s ease forwards;}
+@keyframes lpr{to{transform:scale(1);opacity:0;}}
+/* DRAG GHOST */
+.dg{position:fixed;pointer-events:none;opacity:0.72;z-index:9999;background:var(--glass);border-radius:10px;padding:8px 6px;text-align:center;width:80px;box-shadow:var(--shadow);}
+/* SWIPE HINT */
+#swiphint{position:fixed;bottom:calc(var(--tbh)+8px);left:50%;transform:translateX(-50%);color:var(--text3);font-size:11px;pointer-events:none;transition:opacity 1s;}
+#swiphint.gone{opacity:0;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div id="wallpaper"><canvas id="wp-canvas"></canvas></div>
+<div id="desktop"></div>
+<div id="snapprev"></div>
+<div id="ctx"></div>
+<div id="toasts"></div>
+
+<div id="srch">
+  <div id="sbox">
+    <div id="siw">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="si" placeholder="Cerca app, file, cartelle…" autocomplete="off" spellcheck="false">
+    </div>
+    <div id="sres"></div>
+  </div>
+</div>
+
+<div id="taskbar">
+  <div id="tb-left">
+    <div class="tbbtn" id="startbtn" onclick="togStart()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg>
+    </div>
+    <div class="tbbtn" onclick="togSrch()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </div>
+  </div>
+  <div id="tb-center"><div id="running-apps"></div></div>
+  <div id="tb-right">
+    <div class="tbbtn" onclick="togTheme()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </div>
+    <div class="tbbtn" onclick="togFS()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+    </div>
+    <div id="clock-w" onclick="togStart()">
+      <div id="clock-t"></div>
+      <div id="clock-date"></div>
+    </div>
+  </div>
+</div>
+
+<div id="startmenu">
+  <div id="sm-drag"></div>
+  <div id="sm-hdr">
+    <div id="sm-sw">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="sm-s" placeholder="Cerca app…" autocomplete="off" spellcheck="false">
+    </div>
+  </div>
+  <div id="sm-tabs"></div>
+  <div id="sm-body"></div>
+  <div id="sm-bot">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div id="uavatar">W</div>
+      <span style="font-size:13px;">WebOS User</span>
+    </div>
+    <div id="sm-pw">
+      <div class="smpb" onclick="location.reload()" title="Ricarica">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      </div>
+      <div class="smpb" onclick="togFS()" title="Fullscreen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =================== APP DATA ===================
+const APPS=[
+  {id:'office',name:'Web Office',file:'WEB_OFFICE_WORD.html',color:'#185abd',ic:'doc',cat:'Produttività'},
+  {id:'agenda',name:'Agenda',file:'LUXURY_AGENDA.html',color:'#9e5330',ic:'calendar',cat:'Produttività'},
+  {id:'gantt',name:'Gantt Project',file:'WORK_GANTT_PROJECT.html',color:'#c19c00',ic:'gantt',cat:'Produttività'},
+  {id:'metrics',name:'Metriche',file:'METRIC_TOOLS.html',color:'#0e7a0d',ic:'chart',cat:'Produttività'},
+  {id:'stock',name:'Stock Card',file:'STOCK_CARD.html',color:'#016b3c',ic:'trending',cat:'Finanza'},
+  {id:'space',name:'Space Invaders',file:'GAME_SPACE_INVADERS.html',color:'#107c10',ic:'gamepad',cat:'Giochi'},
+  {id:'tetris',name:'Tetris',file:'GAME_TETRIS.html',color:'#038387',ic:'grid',cat:'Giochi'},
+  {id:'ebook',name:'eBook Reader',file:'EBOOK_READER.html',color:'#7a4f9e',ic:'book',cat:'Media'},
+  {id:'foto',name:'Foto Tessera',file:'FOTO_TESSERA.html',color:'#c7521a',ic:'image',cat:'Media'},
+  {id:'cam',name:'Cam Scanner',file:'CAM_SCANNER.html',color:'#0078d4',ic:'camera',cat:'Media'},
+  {id:'clock',name:'Orologio',file:'CLOCK_NIGHT_DAY.html',color:'#005fb8',ic:'clock',cat:'Utilità'},
+  {id:'night',name:'Night Filter',file:'NIGHT_FILTERS.html',color:'#744da9',ic:'moon',cat:'Utilità'},
+  {id:'i2t',name:'Img→Testo',file:'IMG_TO_TEXT.html',color:'#8764b8',ic:'scan',cat:'Utilità'},
+  {id:'trans',name:'Trascrivi',file:'TRANSCRIBE.html',color:'#0067c0',ic:'mic',cat:'Utilità'},
+  {id:'pass',name:'Password Mgr',file:'PASSWORD_MANAGER.html',color:'#e74856',ic:'lock',cat:'Sicurezza'},
+  {id:'home',name:'Home',file:'index.html',color:'#0f6cbd',ic:'home',cat:'Sistema'},
+];
+const BUILTIN=[
+  {id:'notepad',name:'Blocco Note',builtin:'notepad',color:'#5d5a58',ic:'note',cat:'Sistema'},
+  {id:'fm',name:'File Manager',builtin:'fm',color:'#0f6cbd',ic:'folder2',cat:'Sistema'},
+];
+const ALLA=[...APPS,...BUILTIN];
+const CATS=['Tutti',...new Set(ALLA.map(a=>a.cat))];
+
+// =================== ICONS ===================
+function IC(t,c='#fff',s=48){
+  const q=`width="${s}" height="${s}" viewBox="0 0 48 48"`;
+  const M={
+    camera:`<svg ${q}><rect x="4" y="12" width="40" height="28" rx="5" fill="${c}" opacity="0.18" stroke="${c}" stroke-width="3"/><circle cx="24" cy="26" r="8" fill="${c}" opacity="0.8"/><circle cx="24" cy="26" r="4" fill="${c}"/><rect x="16" y="8" width="16" height="6" rx="3" fill="${c}" opacity="0.55"/><circle cx="36" cy="18" r="2.5" fill="${c}" opacity="0.6"/></svg>`,
+    clock:`<svg ${q}><circle cx="24" cy="24" r="19" fill="${c}" opacity="0.18" stroke="${c}" stroke-width="3"/><path d="M24 12v12l8 5" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="24" cy="24" r="2.5" fill="${c}"/></svg>`,
+    book:`<svg ${q}><rect x="7" y="4" width="28" height="38" rx="4" fill="${c}" opacity="0.18" stroke="${c}" stroke-width="3"/><rect x="7" y="4" width="6" height="38" rx="3" fill="${c}" opacity="0.4"/><line x1="17" y1="14" x2="31" y2="14" stroke="${c}" stroke-width="2" stroke-linecap="round"/><line x1="17" y1="20" x2="31" y2="20" stroke="${c}" stroke-width="2" stroke-linecap="round" opacity=".6"/><line x1="17" y1="26" x2="26" y2="26" stroke="${c}" stroke-width="2" stroke-linecap="round" opacity=".4"/></svg>`,
+    image:`<svg ${q}><rect x="4" y="8" width="40" height="32" rx="5" fill="${c}" opacity="0.18" stroke="${c}" stroke-width="3"/><circle cx="15" cy="19" r="4" fill="${c}" opacity="0.7"/><path d="M4 31l11-9 9 8 6-6 14 16" stroke="${c}" stroke-width="2.5" stroke-linejoin="round" fill="none" opacity=".8"/></svg>`,
+    gamepad:`<svg ${q}><rect x="4" y="14" width="40" height="22" rx="9" fill="${c}" opacity="0.18" stroke="${c}" stroke-width="3"/><line x1="13" y1="21" x2="13" y2="29" stroke="${c}" stroke-width="3" stroke-linecap="round"/><line x1="9" y1="25" x2="17" y2="25" stroke="${c}" stroke-width="3" stroke-linecap="round"/><circle cx="31" cy="21" r="2.5" fill="${c}"/><circle cx="37" cy="25" r="2.5" fill="${c}" opacity=".6"/><circle cx="25" cy="25" r="2.5" fill="${c}" opacity=".6"/><circle cx="31" cy="29" r="2.5" fill="${c}" opacity=".4"/></svg>`,
+    grid:`<svg ${q}><rect x="4" y="4" width="17" height="17" rx="3" fill="${c}"/><rect x="27" y="4" width="17" height="17" rx="3" fill="${c}" opacity=".65"/><rect x="4" y="27" width="17" height="17" rx="3" fill="${c}" opacity=".65"/><rect x="27" y="27" width="17" height="17" rx="3" fill="${c}" opacity=".35"/></svg>`,
+    scan:`<svg ${q}><rect x="4" y="4" width="40" height="40" rx="5" fill="${c}" opacity="0.12" stroke="${c}" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="${c}"/><rect x="27" y="11" width="10" height="10" rx="2" fill="${c}" opacity=".7"/><rect x="11" y="27" width="10" height="10" rx="2" fill="${c}" opacity=".7"/><rect x="27" y="27" width="10" height="10" rx="2" fill="${c}" opacity=".4"/><line x1="4" y1="24" x2="44" y2="24" stroke="${c}" stroke-width="1.5" opacity=".4"/></svg>`,
+    home:`<svg ${q}><path d="M6 22 24 5l18 17v20H31V30H17v14H6z" fill="${c}" opacity="0.18" stroke="${c}" stroke-width="3" stroke-linejoin="round"/><rect x="20" y="30" width="8" height="12" rx="2" fill="${c}" opacity="0.5"/></svg>`,
+    calendar:`<svg ${q}><rect x="4" y="8" width="40" height="35" rx="5" fill="${c}" opacity="0.18" stroke="${c}" stroke-width="3"/><line x1="4" y1="18" x2="44" y2="18" stroke="${c}" stroke-width="2"/><rect x="14" y="5" width="4" height="8" rx="2" fill="${c}"/><rect x="30" y="5" width="4" height="8" rx="2" fill="${c}"/><rect x="10" y="25" width="7" height="7" rx="2" fill="${c}" opacity=".5"/><rect x="20" y="25" width="7" height="7" rx="2" fill="${c}"/><rect x="30" y="25" width="7" height="7" rx="2" fill="${c}" opacity=".5"/></svg>`,
+    chart:`<svg ${q}><rect x="4" y="4" width="40" height="40" rx="4" fill="${c}" opacity="0.1" stroke="${c}" stroke-width="2"/><polyline points="10,36 18,22 26,28 36,12" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="26" cy="28" r="3" fill="${c}"/></svg>`,
+    moon:`<svg ${q}><path d="M30 26A14 14 0 0 1 18 12a14 14 0 1 0 12 14z" fill="${c}" opacity="0.3" stroke="${c}" stroke-width="3"/><circle cx="34" cy="12" r="2.5" fill="${c}"/><circle cx="40" cy="18" r="1.5" fill="${c}" opacity=".6"/></svg>`,
+    lock:`<svg ${q}><rect x="10" y="20" width="28" height="22" rx="5" fill="${c}" opacity="0.18" stroke="${c}" stroke-width="3"/><path d="M14 20v-6a10 10 0 0 1 20 0v6" fill="none" stroke="${c}" stroke-width="3"/><circle cx="24" cy="31" r="3" fill="${c}"/><line x1="24" y1="34" x2="24" y2="38" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+    trending:`<svg ${q}><polyline points="6,36 16,22 24,28 34,14 42,20" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/><polyline points="34,14 42,14 42,22" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`,
+    mic:`<svg ${q}><rect x="16" y="4" width="16" height="24" rx="8" fill="${c}" opacity="0.25" stroke="${c}" stroke-width="3"/><path d="M10 26a14 14 0 0 0 28 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/><line x1="24" y1="40" x2="24" y2="44" stroke="${c}" stroke-width="3" stroke-linecap="round"/></svg>`,
+    doc:`<svg ${q}><path d="M10 2h18l10 10v34H10z" fill="${c}" opacity="0.18" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/><path d="M28 2v10h10" fill="none" stroke="${c}" stroke-width="2" opacity=".5"/><line x1="16" y1="22" x2="32" y2="22" stroke="${c}" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="28" x2="34" y2="28" stroke="${c}" stroke-width="2" stroke-linecap="round" opacity=".6"/><line x1="16" y1="34" x2="26" y2="34" stroke="${c}" stroke-width="2" stroke-linecap="round" opacity=".4"/></svg>`,
+    gantt:`<svg ${q}><rect x="4" y="4" width="40" height="40" rx="4" fill="${c}" opacity="0.1" stroke="${c}" stroke-width="2"/><rect x="10" y="13" width="22" height="5" rx="2.5" fill="${c}"/><rect x="18" y="21.5" width="16" height="5" rx="2.5" fill="${c}" opacity=".7"/><rect x="10" y="30" width="26" height="5" rx="2.5" fill="${c}" opacity=".5"/></svg>`,
+    note:`<svg ${q}><rect x="8" y="4" width="28" height="38" rx="4" fill="${c}" opacity="0.18" stroke="${c}" stroke-width="2.5"/><line x1="14" y1="13" x2="30" y2="13" stroke="${c}" stroke-width="2" stroke-linecap="round"/><line x1="14" y1="19" x2="30" y2="19" stroke="${c}" stroke-width="2" stroke-linecap="round" opacity=".6"/><line x1="14" y1="25" x2="24" y2="25" stroke="${c}" stroke-width="2" stroke-linecap="round" opacity=".4"/><path d="M28 34l8 10-6-1-3 3 1-6z" fill="${c}" opacity=".7"/></svg>`,
+    folder:`<svg ${q}><path d="M4 14h18l4 5h18v23H4z" fill="${c}" opacity="0.3" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/><path d="M4 21h40v18H4z" fill="${c}" opacity="0.12"/></svg>`,
+    folder2:`<svg ${q}><path d="M4 14h18l4 5h18v23H4z" fill="${c}" opacity="0.28" stroke="${c}" stroke-width="2.5" stroke-linejoin="round"/></svg>`,
+    txt:`<svg ${q}><path d="M10 2h18l10 10v34H10z" fill="#60cdff" opacity="0.22" stroke="#60cdff" stroke-width="2.5" stroke-linejoin="round"/><path d="M28 2v10h10" fill="none" stroke="#60cdff" stroke-width="2" opacity=".5"/><line x1="16" y1="22" x2="32" y2="22" stroke="#60cdff" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="28" x2="34" y2="28" stroke="#60cdff" stroke-width="2" stroke-linecap="round" opacity=".6"/></svg>`,
+  };
+  return M[t]||M.doc;
+}
+
+// =================== STATE ===================
+let wins={},winZ=100,actWin=null,smOpen=false,srchOpen=false,dark=true,curTab='Tutti';
+let vfs=JSON.parse(localStorage.getItem('wos-fs')||'{"root":{}}');
+let folders=JSON.parse(localStorage.getItem('wos-fld')||'[]');
+let dicons=JSON.parse(localStorage.getItem('wos-dic')||'null');
+
+if(!dicons){
+  dicons=APPS.map((a,i)=>({id:a.id,x:14+Math.floor(i/7)*96,y:14+(i%7)*96}));
+  dicons.push(...BUILTIN.map((a,i)=>({id:a.id,x:14+Math.floor((APPS.length+i)/7)*96,y:14+((APPS.length+i)%7)*96})));
+  svDI();
+}
+function svDI(){localStorage.setItem('wos-dic',JSON.stringify(dicons));}
+function svFLD(){localStorage.setItem('wos-fld',JSON.stringify(folders));}
+function svFS(){localStorage.setItem('wos-fs',JSON.stringify(vfs));}
+function gfp(n){return JSON.parse(localStorage.getItem('wos-fp-'+n)||'null');}
+function sfp(n,p){localStorage.setItem('wos-fp-'+n,JSON.stringify(p));}
+const tbH=()=>parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tbh'))||56;
+
+// =================== PARTICLES ===================
+(()=>{
+  const cv=document.getElementById('wp-canvas'),cx=cv.getContext('2d');
+  let pts=[];
+  const sz=()=>{cv.width=innerWidth;cv.height=innerHeight;};sz();
+  addEventListener('resize',sz);
+  for(let i=0;i<55;i++)pts.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,r:Math.random()*1.8+.5});
+  function draw(){
+    cx.clearRect(0,0,cv.width,cv.height);
+    pts.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>cv.width)p.vx*=-1;
+      if(p.y<0||p.y>cv.height)p.vy*=-1;
+      cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fillStyle='rgba(255,255,255,0.55)';cx.fill();
+    });
+    for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+      const d=Math.hypot(pts[i].x-pts[j].x,pts[i].y-pts[j].y);
+      if(d<130){cx.beginPath();cx.moveTo(pts[i].x,pts[i].y);cx.lineTo(pts[j].x,pts[j].y);cx.strokeStyle=`rgba(255,255,255,${.13*(1-d/130)})`;cx.stroke();}
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// =================== CLOCK ===================
+function tick(){
+  const n=new Date();
+  document.getElementById('clock-t').textContent=n.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('clock-date').textContent=n.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
+}
+setInterval(tick,1000);tick();
+
+// =================== UTILS ===================
+function togTheme(){dark=!dark;document.body.classList.toggle('light',!dark);document.getElementById('wallpaper').classList.toggle('light',!dark);toast(dark?'🌙 Tema scuro':'☀️ Tema chiaro');}
+function togFS(){if(!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});else document.exitFullscreen();}
+function toast(m){const e=document.createElement('div');e.className='toast';e.textContent=m;document.getElementById('toasts').appendChild(e);setTimeout(()=>e.remove(),3100);}
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// =================== START MENU ===================
+function buildTabs(){
+  const b=document.getElementById('sm-tabs');b.innerHTML='';
+  CATS.forEach(c=>{
+    const t=document.createElement('div');t.className='smtab'+(c===curTab?' on':'');
+    t.textContent=c;t.onclick=()=>{curTab=c;buildTabs();renderSM(document.getElementById('sm-s').value);};
+    b.appendChild(t);
+  });
+}
+function renderSM(q=''){
+  const body=document.getElementById('sm-body');body.innerHTML='';
+  let apps=ALLA.filter(a=>{
+    const mc=curTab==='Tutti'||a.cat===curTab;
+    const ms=!q||a.name.toLowerCase().includes(q.toLowerCase());
+    return mc&&ms;
+  });
+  if(q){
+    const g=document.createElement('div');g.className='smgrid';
+    apps.forEach(a=>g.appendChild(mkSMApp(a)));body.appendChild(g);
+  } else {
+    [...new Set(apps.map(a=>a.cat))].forEach(cat=>{
+      const title=document.createElement('div');title.className='smcat';title.textContent=cat;body.appendChild(title);
+      const g=document.createElement('div');g.className='smgrid';
+      apps.filter(a=>a.cat===cat).forEach(a=>g.appendChild(mkSMApp(a)));body.appendChild(g);
+    });
+  }
+}
+function mkSMApp(a){
+  const d=document.createElement('div');d.className='smapp';
+  d.innerHTML=`<div class="si">${IC(a.ic,a.color,44)}</div><span title="${a.name}">${a.name}</span>`;
+  const fn=()=>{openApp(a);closeStart();};
+  d.onclick=fn;
+  // touch double-tap
+  let lt=0;
+  d.addEventListener('touchend',e=>{
+    const now=Date.now();if(now-lt<400){fn();}lt=now;
+    e.preventDefault();
+  });
+  return d;
+}
+function togStart(){smOpen=!smOpen;document.getElementById('startmenu').classList.toggle('open',smOpen);if(smOpen){buildTabs();renderSM();document.getElementById('sm-s').value='';setTimeout(()=>document.getElementById('sm-s').focus(),120);}}
+function closeStart(){smOpen=false;document.getElementById('startmenu').classList.remove('open');}
+document.getElementById('sm-s').addEventListener('input',e=>renderSM(e.target.value));
+
+// Swipe UP on taskbar → open start (mobile)
+let swipeY0=null;
+document.getElementById('taskbar').addEventListener('touchstart',e=>{swipeY0=e.touches[0].clientY;},{passive:true});
+document.getElementById('taskbar').addEventListener('touchend',e=>{
+  if(swipeY0!==null&&swipeY0-e.changedTouches[0].clientY>28)togStart();
+  swipeY0=null;
+},{passive:true});
+
+// Swipe DOWN on start menu → close
+let smSY=null;
+document.getElementById('startmenu').addEventListener('touchstart',e=>{smSY=e.touches[0].clientY;},{passive:true});
+document.getElementById('startmenu').addEventListener('touchend',e=>{
+  if(smSY!==null&&e.changedTouches[0].clientY-smSY>60)closeStart();
+  smSY=null;
+},{passive:true});
+
+// =================== SEARCH ===================
+function togSrch(){srchOpen=!srchOpen;document.getElementById('srch').classList.toggle('open',srchOpen);if(srchOpen)setTimeout(()=>document.getElementById('si').focus(),80);}
+function closeSrch(){srchOpen=false;document.getElementById('srch').classList.remove('open');}
+document.getElementById('si').addEventListener('input',function(){
+  const q=this.value.toLowerCase().trim(),res=document.getElementById('sres');res.innerHTML='';
+  if(!q)return;
+  [...ALLA.filter(a=>a.name.toLowerCase().includes(q)).map(a=>({...a,type:'app'})),
+   ...folders.filter(f=>f.name.toLowerCase().includes(q)).map(f=>({...f,type:'folder',ic:'folder',color:'#f9c74f'})),
+   ...Object.keys(vfs.root||{}).filter(n=>n.toLowerCase().includes(q)).map(n=>({id:'f:'+n,name:n,type:'file',ic:'txt',color:'#60cdff',cat:'File'})),
+  ].slice(0,9).forEach(h=>{
+    const d=document.createElement('div');d.className='srow';
+    d.innerHTML=`<div class="sri">${IC(h.ic,h.color,34)}</div><div class="sinfo"><div class="sname">${h.name}</div><div class="scat">${h.cat||h.type||''}</div></div>`;
+    const fn=()=>{closeSrch();if(h.type==='app')openApp(h);else if(h.type==='folder')openFldWin(h);else openNP(h.name,vfs.root[h.name]);};
+    d.onclick=fn;let lt=0;d.addEventListener('touchend',e=>{const now=Date.now();if(now-lt<400)fn();lt=now;e.preventDefault();});
+    res.appendChild(d);
+  });
+});
+document.getElementById('srch').addEventListener('click',e=>{if(e.target===document.getElementById('srch'))closeSrch();});
+
+// =================== DESKTOP ===================
+function renderDesktop(){
+  const desk=document.getElementById('desktop');desk.innerHTML='';
+  dicons.forEach(ic=>{const a=ALLA.find(x=>x.id===ic.id);if(a)desk.appendChild(mkIconEl(a,ic.x,ic.y));});
+  folders.forEach(f=>desk.appendChild(mkFldEl(f)));
+  Object.keys(vfs.root||{}).forEach(n=>{const p=gfp(n);if(p)desk.appendChild(mkFileEl(n,p.x,p.y));});
+}
+function mkIconEl(a,x,y){
+  const el=document.createElement('div');el.className='icon';el.dataset.id=a.id;
+  el.style.cssText=`left:${x}px;top:${y}px;`;
+  el.innerHTML=`<div class="icon-img">${IC(a.ic,a.color)}</div><div class="icon-label">${a.name}</div>`;
+  setupIC(el,'app',a.id,()=>openApp(a));return el;
+}
+function mkFldEl(f){
+  const el=document.createElement('div');el.className='icon folder';el.dataset.fid=f.id;
+  el.style.cssText=`left:${f.x}px;top:${f.y}px;`;
+  el.innerHTML=`<div class="icon-img">${IC('folder','#f9c74f')}</div><div class="icon-label">${f.name}</div>`;
+  setupIC(el,'folder',f.id,()=>openFldWin(f));return el;
+}
+function mkFileEl(n,x,y){
+  const el=document.createElement('div');el.className='icon';el.dataset.fname=n;
+  el.style.cssText=`left:${x}px;top:${y}px;`;
+  el.innerHTML=`<div class="icon-img">${IC('txt','#60cdff')}</div><div class="icon-label">${n}</div>`;
+  setupIC(el,'file',n,()=>openNP(n,vfs.root[n]||''));return el;
+}
+
+// =================== ICON INTERACTION ===================
+const LP_MS=550;
+
+function setupIC(el,type,id,openFn){
+  let lpTimer=null,lpDone=false,moved=false,startX=0,startY=0;
+  let tapT=0,tapN=0;
+  let dragging=false,dGhost=null,dOffX=0,dOffY=0;
+
+  function cancel(){clearTimeout(lpTimer);lpTimer=null;lpDone=false;}
+
+  function onPtrDown(cx,cy,isTouch){
+    moved=false;lpDone=false;dragging=false;
+    startX=cx;startY=cy;
+    el.classList.add('hovered');
+    lpTimer=setTimeout(()=>{
+      if(!moved){
+        lpDone=true;
+        el.classList.add('lpanim');setTimeout(()=>el.classList.remove('lpanim'),400);
+        if(navigator.vibrate)navigator.vibrate(35);
+        ripple(el);
+        showCtx(el,type,id,openFn);
+      }
+    },LP_MS);
+  }
+  function onPtrMove(cx,cy){
+    const d=Math.abs(cx-startX)+Math.abs(cy-startY);
+    if(d>8){moved=true;clearTimeout(lpTimer);}
+  }
+  function onPtrUp(cx,cy,isTouch){
+    clearTimeout(lpTimer);el.classList.remove('hovered');
+    if(lpDone||dragging){cancel();return;}
+    const now=Date.now();
+    if(now-tapT<400)tapN++;else tapN=1;
+    tapT=now;
+    if(!isTouch){if(tapN>=2){tapN=0;openFn();}}
+    else{if(tapN>=2){tapN=0;openFn();}else{el.classList.add('selected');setTimeout(()=>el.classList.remove('selected'),500);}}
+    cancel();
+  }
+
+  // ---- MOUSE ----
+  el.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;
+    e.preventDefault();
+    onPtrDown(e.clientX,e.clientY,false);
+    const r=el.getBoundingClientRect();dOffX=e.clientX-r.left;dOffY=e.clientY-r.top;
+    const mm=ev=>{
+      onPtrMove(ev.clientX,ev.clientY);
+      if(moved&&!dragging){dragging=true;el.style.opacity='.35';dGhost=mkGhost(el);document.body.appendChild(dGhost);}
+      if(dGhost){dGhost.style.left=(ev.clientX-dOffX)+'px';dGhost.style.top=(ev.clientY-dOffY)+'px';}
+      hlFolder(ev.clientX,ev.clientY,el);
+    };
+    const mu=ev=>{
+      document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);
+      unhlFolder();
+      if(dGhost){dGhost.remove();dGhost=null;}el.style.opacity='';
+      if(dragging){
+        const fi=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('.icon.folder');
+        if(fi&&fi!==el)dropInFolder(fi.dataset.fid,id,type);
+        else movePos(type,id,ev.clientX-dOffX,ev.clientY-dOffY);
+      } else onPtrUp(ev.clientX,ev.clientY,false);
+    };
+    document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);
+  });
+  el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();showCtx(el,type,id,openFn);});
+
+  // ---- TOUCH ----
+  el.addEventListener('touchstart',e=>{
+    const t=e.touches[0];
+    onPtrDown(t.clientX,t.clientY,true);
+    const r=el.getBoundingClientRect();dOffX=t.clientX-r.left;dOffY=t.clientY-r.top;
+  },{passive:true});
+  el.addEventListener('touchmove',e=>{
+    const t=e.touches[0];
+    onPtrMove(t.clientX,t.clientY);
+    if(moved&&!dragging){dragging=true;clearTimeout(lpTimer);el.style.opacity='.35';dGhost=mkGhost(el);document.body.appendChild(dGhost);}
+    if(dGhost){dGhost.style.left=(t.clientX-dOffX)+'px';dGhost.style.top=(t.clientY-dOffY)+'px';}
+    hlFolder(t.clientX,t.clientY,el);
+  },{passive:true});
+  el.addEventListener('touchend',e=>{
+    const t=e.changedTouches[0];
+    unhlFolder();
+    if(dGhost){dGhost.remove();dGhost=null;}el.style.opacity='';
+    if(dragging){
+      const fi=document.elementFromPoint(t.clientX,t.clientY)?.closest('.icon.folder');
+      if(fi&&fi!==el)dropInFolder(fi.dataset.fid,id,type);
+      else movePos(type,id,t.clientX-dOffX,t.clientY-dOffY);
+      dragging=false;cancel();
+    } else onPtrUp(t.clientX,t.clientY,true);
+  },{passive:true});
+}
+
+function mkGhost(el){const g=document.createElement('div');g.className='dg';g.innerHTML=el.innerHTML;return g;}
+function hlFolder(x,y,skip){document.querySelectorAll('.icon.folder').forEach(f=>{f.classList.toggle('hovered',f!==skip&&!!document.elementFromPoint(x,y)?.closest('.icon.folder')&&document.elementFromPoint(x,y)?.closest('.icon.folder')===f);});}
+function unhlFolder(){document.querySelectorAll('.icon.folder').forEach(f=>f.classList.remove('hovered'));}
+function ripple(el){const r=el.getBoundingClientRect(),s=Math.max(r.width,r.height)*2;const rpl=document.createElement('div');rpl.className='lpripple';rpl.style.cssText=`width:${s}px;height:${s}px;left:${r.left+r.width/2-s/2}px;top:${r.top+r.height/2-s/2}px;`;document.body.appendChild(rpl);setTimeout(()=>rpl.remove(),600);}
+
+function movePos(type,id,x,y){
+  const nx=Math.max(0,Math.min(x,innerWidth-84)),ny=Math.max(0,Math.min(y,innerHeight-tbH()-90));
+  if(type==='app'){const ic=dicons.find(i=>i.id===id);if(ic){ic.x=nx;ic.y=ny;}svDI();}
+  else if(type==='folder'){const f=folders.find(f=>f.id===id);if(f){f.x=nx;f.y=ny;}svFLD();}
+  else{sfp(id,{x:nx,y:ny});}
+  renderDesktop();
+}
+function dropInFolder(fid,itemId,type){
+  const f=folders.find(f=>f.id===fid);if(!f)return;
+  const key=type==='file'?'file:'+itemId:itemId;
+  if(!f.items.includes(key))f.items.push(key);
+  if(type==='app'){dicons=dicons.filter(i=>i.id!==itemId);svDI();}
+  svFLD();renderDesktop();toast(`📁 Spostato in "${f.name}"`);
+}
+
+// =================== CONTEXT MENU ===================
+const ctxEl=document.getElementById('ctx');
+let ctxVisible=false;
+
+// Desktop long press (no icon)
+let deskLP=null;
+document.getElementById('desktop').addEventListener('touchstart',e=>{
+  if(e.target.closest('.icon'))return;
+  const t=e.touches[0];
+  deskLP=setTimeout(()=>{if(navigator.vibrate)navigator.vibrate(35);showCtxDesk(t.clientX,t.clientY);},LP_MS);
+},{passive:true});
+document.getElementById('desktop').addEventListener('touchend',()=>clearTimeout(deskLP),{passive:true});
+document.getElementById('desktop').addEventListener('touchmove',()=>clearTimeout(deskLP),{passive:true});
+document.getElementById('desktop').addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  const ico=e.target.closest('.icon');
+  if(!ico){showCtxDesk(e.clientX,e.clientY);}
+  else if(ico.dataset.id)showCtx(ico,'app',ico.dataset.id,null);
+  else if(ico.dataset.fid)showCtx(ico,'folder',ico.dataset.fid,null);
+  else if(ico.dataset.fname)showCtx(ico,'file',ico.dataset.fname,null);
+});
+
+function showCtxDesk(x,y){
+  buildCtx([
+    {l:'📁 Nuova cartella',fn:newFld},
+    {l:'📝 Nuovo .txt',fn:newTxtFile},
+    {sep:1},
+    {l:'🎨 Cambia tema',fn:togTheme},
+    {l:'🔲 Schermo intero',fn:togFS},
+    {sep:1},
+    {l:'⚙️ Aggiorna desktop',fn:renderDesktop},
+  ],x,y,'Desktop');
+}
+function showCtx(el,type,id,openFn){
+  const r=el?.getBoundingClientRect();
+  const x=r?r.left+r.width/2:innerWidth/2;
+  const y=r?r.top:innerHeight/2;
+  if(type==='app'){
+    const a=ALLA.find(x=>x.id===id);
+    buildCtx([
+      {l:'▶️ Apri',fn:()=>a&&openApp(a)},
+      {sep:1},
+      {l:'📁 Sposta in cartella…',fn:()=>mvToFld(id,'app')},
+      {l:'🗑️ Rimuovi dal desktop',fn:()=>{dicons=dicons.filter(i=>i.id!==id);svDI();renderDesktop();},red:1},
+    ],x,y,a?.name||'App');
+  } else if(type==='folder'){
+    const f=folders.find(f=>f.id===id);
+    buildCtx([
+      {l:'📂 Apri',fn:()=>f&&openFldWin(f)},
+      {l:'✏️ Rinomina',fn:()=>renameFld(id)},
+      {sep:1},
+      {l:'🗑️ Elimina',fn:()=>delFld(id),red:1},
+    ],x,y,f?.name||'Cartella');
+  } else if(type==='file'){
+    buildCtx([
+      {l:'📝 Apri',fn:()=>openNP(id,vfs.root[id]||'')},
+      {l:'📁 Sposta in cartella…',fn:()=>mvToFld(id,'file')},
+      {sep:1},
+      {l:'🗑️ Elimina',fn:()=>delFile(id),red:1},
+    ],x,y,id);
+  }
+}
+function buildCtx(items,x,y,title){
+  ctxEl.innerHTML='';
+  if(title){const t=document.createElement('div');t.className='ctitle';t.textContent=title;ctxEl.appendChild(t);}
+  items.forEach(it=>{
+    if(it.sep){const s=document.createElement('div');s.className='csep';ctxEl.appendChild(s);}
+    else{
+      const d=document.createElement('div');d.className='ci'+(it.red?' red':'');d.textContent=it.l;
+      const fn=it.fn;
+      const go=()=>{hideCtx();fn();};
+      d.onclick=go;
+      d.addEventListener('touchend',e=>{e.preventDefault();go();});
+      ctxEl.appendChild(d);
+    }
+  });
+  const mob=innerWidth<=600;
+  if(!mob){
+    ctxEl.style.left=Math.min(x,innerWidth-220)+'px';
+    ctxEl.style.top=Math.min(y,innerHeight-60-items.length*40)+'px';
+  }
+  ctxEl.classList.add('open');ctxVisible=true;
+}
+function hideCtx(){ctxEl.classList.remove('open');ctxVisible=false;}
+document.addEventListener('mousedown',e=>{if(ctxVisible&&!ctxEl.contains(e.target))hideCtx();});
+document.addEventListener('touchstart',e=>{if(ctxVisible&&!ctxEl.contains(e.target))hideCtx();},{passive:true});
+
+// =================== FOLDER/FILE ACTIONS ===================
+function newFld(){const n=prompt('Nome cartella:','Nuova cartella');if(!n)return;const id='f'+Date.now();folders.push({id,name:n,x:90,y:90,items:[]});svFLD();renderDesktop();toast('📁 Creata');}
+function newTxtFile(){const n=prompt('Nome file:','appunti.txt');if(!n)return;const fn=n.endsWith('.txt')?n:n+'.txt';vfs.root[fn]='';svFS();sfp(fn,{x:90,y:200});renderDesktop();openNP(fn,'');toast('📝 Creato');}
+function renameFld(fid){const f=folders.find(f=>f.id===fid);if(!f)return;const n=prompt('Nuovo nome:',f.name);if(!n)return;f.name=n;svFLD();renderDesktop();}
+function delFld(fid){if(!confirm('Eliminare?'))return;folders=folders.filter(f=>f.id!==fid);svFLD();renderDesktop();}
+function delFile(n){if(!confirm(`Eliminare "${n}"?`))return;delete vfs.root[n];svFS();localStorage.removeItem('wos-fp-'+n);renderDesktop();}
+function mvToFld(id,type){
+  if(!folders.length){toast('Crea prima una cartella (tap lungo sul desktop)');return;}
+  const list=folders.map((f,i)=>`${i+1}. ${f.name}`).join('\n');
+  const idx=parseInt(prompt('Scegli cartella:\n'+list,'1'));
+  if(!idx||idx<1||idx>folders.length)return;
+  dropInFolder(folders[idx-1].id,id,type);
+}
+
+// =================== OPEN APP ===================
+function openApp(a){
+  if(a.builtin==='notepad'){openNP('Blocco Note','');return;}
+  if(a.builtin==='fm'){openFM();return;}
+  const wid='w'+Date.now();
+  mkWin({id:wid,title:a.name,ih:IC(a.ic,a.color,18),body:`<iframe src="${a.file}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>`,w:920,h:640});
+  addTBI(wid,a);
+}
+
+// =================== NOTEPAD ===================
+function openNP(fn,content){
+  const wid='np'+Date.now();const tid='ta'+wid;
+  const h=`<div class="bwrap" style="background:rgba(0,0,0,0.18);">
+    <div class="nptb">
+      <button class="npbtn" onclick="svNP('${tid}','${escH(fn)}')">💾 Salva</button>
+      <button class="npbtn" onclick="svNPAs('${tid}')">💾 Salva come…</button>
+      <span class="npfn">${escH(fn)}</span>
+    </div>
+    <textarea id="${tid}" class="npta">${escH(content)}</textarea>
+  </div>`;
+  mkWin({id:wid,title:fn,ih:IC('note','#60cdff',18),body:h,w:700,h:500});
+  addTBI(wid,{name:fn,ic:'note',color:'#60cdff'});
+}
+function svNP(tid,fn){const ta=document.getElementById(tid);if(!ta)return;vfs.root[fn]=ta.value;svFS();if(!gfp(fn))sfp(fn,{x:90,y:200});renderDesktop();toast('💾 '+fn);}
+function svNPAs(tid){const ta=document.getElementById(tid);if(!ta)return;const n=prompt('Nome:','appunti.txt');if(!n)return;const fn=n.endsWith('.txt')?n:n+'.txt';vfs.root[fn]=ta.value;svFS();sfp(fn,{x:90,y:200});renderDesktop();toast('💾 '+fn);}
+
+// =================== FILE MANAGER ===================
+function openFM(){
+  const wid='fm'+Date.now();const gid='fg'+wid;
+  const h=`<div class="bwrap">
+    <div class="fmtb">
+      <button class="fmbtn" onclick="rFM('${gid}')">🏠</button>
+      <div class="fmpath">/ root</div>
+      <button class="fmbtn" onclick="newFMF('${gid}')">+ File</button>
+      <button class="fmbtn" onclick="newFld()">+ Cartella</button>
+    </div>
+    <div class="fmgrid" id="${gid}"></div>
+  </div>`;
+  mkWin({id:wid,title:'File Manager',ih:IC('folder2','#0078d4',18),body:h,w:700,h:520});
+  addTBI(wid,{name:'File Manager',ic:'folder2',color:'#0f6cbd'});
+  setTimeout(()=>rFM(gid),40);
+}
+function rFM(gid){
+  const g=document.getElementById(gid);if(!g)return;g.innerHTML='';
+  folders.forEach(f=>{
+    const d=document.createElement('div');d.className='fmitem';
+    d.innerHTML=IC('folder','#f9c74f',40)+`<span>${f.name}</span>`;
+    const fn=()=>openFldWin(f);d.ondblclick=fn;let lt=0;d.addEventListener('touchend',e=>{const now=Date.now();if(now-lt<400)fn();lt=now;e.preventDefault();});
+    g.appendChild(d);
+  });
+  Object.keys(vfs.root||{}).forEach(n=>{
+    const d=document.createElement('div');d.className='fmitem';
+    d.innerHTML=IC('txt','#60cdff',40)+`<span>${n}</span><div class="fmdel" onclick="delFile('${n}');rFM('${gid}')">🗑️</div>`;
+    const fn=()=>openNP(n,vfs.root[n]||'');d.ondblclick=fn;let lt=0;d.addEventListener('touchend',e=>{const now=Date.now();if(now-lt<400)fn();lt=now;e.preventDefault();});
+    g.appendChild(d);
+  });
+}
+function newFMF(gid){const n=prompt('Nome:','note.txt');if(!n)return;const fn=n.endsWith('.txt')?n:n+'.txt';vfs.root[fn]='';svFS();sfp(fn,{x:90,y:200});renderDesktop();rFM(gid);}
+
+// =================== FOLDER WINDOW ===================
+function openFldWin(fld){
+  const wid='fw'+fld.id+Date.now();const gid='fg'+wid;
+  mkWin({id:wid,title:fld.name,ih:IC('folder','#f9c74f',18),body:`<div class="flgrid" id="${gid}"></div>`,w:580,h:440});
+  addTBI(wid,{name:fld.name,ic:'folder',color:'#f9c74f'});
+  setTimeout(()=>{
+    const g=document.getElementById(gid);if(!g)return;
+    fld.items.forEach(itemId=>{
+      const d=document.createElement('div');d.className='flitem';
+      if(itemId.startsWith('file:')){
+        const fn2=itemId.slice(5);
+        d.innerHTML=IC('txt','#60cdff',40)+`<span>${fn2}</span>`;
+        const fn=()=>openNP(fn2,vfs.root[fn2]||'');d.ondblclick=fn;let lt=0;d.addEventListener('touchend',e=>{const now=Date.now();if(now-lt<400)fn();lt=now;e.preventDefault();});
+      } else {
+        const a=ALLA.find(x=>x.id===itemId);if(!a)return;
+        d.innerHTML=IC(a.ic,a.color,40)+`<span>${a.name}</span>`;
+        const fn=()=>openApp(a);d.ondblclick=fn;let lt=0;d.addEventListener('touchend',e=>{const now=Date.now();if(now-lt<400)fn();lt=now;e.preventDefault();});
+      }
+      g.appendChild(d);
+    });
+  },40);
+}
+
+// =================== WINDOW MANAGER ===================
+function mkWin({id,title,ih,body,w=800,h=500}){
+  const mob=innerWidth<=768,TH=tbH();
+  const maxW=innerWidth,maxH=innerHeight-TH;
+  const nl=mob?0:Math.max(0,Math.min(40+Object.keys(wins).length*18,maxW-w));
+  const nt=mob?0:Math.max(0,Math.min(30+Object.keys(wins).length*18,maxH-h));
+  const nw=mob?maxW:Math.min(w,maxW),nh=mob?maxH:Math.min(h,maxH);
+  const win=document.createElement('div');win.className='window';win.id=id;
+  win.style.cssText=`left:${nl}px;top:${nt}px;width:${nw}px;height:${nh}px;z-index:${++winZ};`;
+  win.innerHTML=`
+    <div class="wtb" id="tb-${id}">
+      <div class="wi">${ih}</div>
+      <div class="wt">${title}</div>
+      <div class="wctrl">
+        <div class="wbtn" onclick="minWin('${id}')" title="Minimizza"><svg viewBox="0 0 10 10"><line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" stroke-width="1.5"/></svg></div>
+        <div class="wbtn" onclick="togMax('${id}')" title="Massimizza"><svg viewBox="0 0 10 10"><rect x=".5" y=".5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>
+        <div class="wbtn cls" onclick="closeWin('${id}')" title="Chiudi"><svg viewBox="0 0 10 10"><line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" stroke-width="1.5"/></svg></div>
+      </div>
+    </div>
+    <div class="wbody">${body}</div>
+    <div class="rh n" data-d="n"></div><div class="rh s" data-d="s"></div>
+    <div class="rh e" data-d="e"></div><div class="rh w" data-d="w"></div>
+    <div class="rh ne" data-d="ne"></div><div class="rh nw" data-d="nw"></div>
+    <div class="rh se" data-d="se"></div><div class="rh sw" data-d="sw"></div>`;
+  document.body.appendChild(win);
+  wins[id]={el:win,min:false,max:mob,snap:null,rect:{x:nl,y:nt,w:nw,h:nh}};
+  mkWinDrag(id);mkWinResize(id);
+  const focus=()=>focusWin(id);
+  win.addEventListener('mousedown',focus);win.addEventListener('touchstart',focus,{passive:true});
+  focusWin(id);
+}
+function focusWin(id){
+  if(!wins[id])return;
+  Object.values(wins).forEach(w=>w.el.style.zIndex=99);
+  wins[id].el.style.zIndex=++winZ;actWin=id;
+  document.querySelectorAll('.tbapp').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tbapp[data-wid="${id}"]`)?.classList.add('active');
+}
+function minWin(id){
+  const w=wins[id];if(!w)return;
+  w.el.classList.add('manim');setTimeout(()=>{w.el.style.display='none';w.el.classList.remove('manim');},180);
+  w.min=true;document.querySelector(`.tbapp[data-wid="${id}"]`)?.classList.remove('active');
+}
+function restoreWin(id){const w=wins[id];if(!w)return;w.el.style.display='flex';w.min=false;focusWin(id);}
+function togMax(id){
+  const w=wins[id];if(!w)return;
+  if(w.max||w.snap){
+    w.el.classList.remove('maximized','snl','snr');
+    w.el.style.cssText=`left:${w.rect.x}px;top:${w.rect.y}px;width:${w.rect.w}px;height:${w.rect.h}px;z-index:${w.el.style.zIndex};`;
+    w.max=false;w.snap=null;
+  } else {
+    w.rect={x:parseInt(w.el.style.left)||0,y:parseInt(w.el.style.top)||0,w:parseInt(w.el.style.width)||800,h:parseInt(w.el.style.height)||500};
+    w.el.classList.add('maximized');w.max=true;
+  }
+}
+function closeWin(id){wins[id]?.el.remove();delete wins[id];document.querySelector(`.tbapp[data-wid="${id}"]`)?.remove();}
+
+// =================== WIN DRAG ===================
+const snPrev=document.getElementById('snapprev');
+function showSn(s){const H=innerHeight-tbH();snPrev.style.cssText=s==='l'?`left:0;top:0;width:50vw;height:${H}px;opacity:1;`:`left:50vw;top:0;width:50vw;height:${H}px;opacity:1;`;}
+function hideSn(){snPrev.style.opacity='0';}
+function snapWin(id,s){
+  const w=wins[id];if(!w)return;
+  w.rect={x:parseInt(w.el.style.left)||0,y:parseInt(w.el.style.top)||0,w:parseInt(w.el.style.width)||800,h:parseInt(w.el.style.height)||500};
+  w.el.classList.remove('maximized','snl','snr');
+  w.el.classList.add(s==='l'?'snl':'snr');w.snap=s;
+}
+
+function mkWinDrag(id){
+  const tb=document.getElementById('tb-'+id);const win=document.getElementById(id);if(!tb||!win)return;
+  // MOUSE
+  tb.addEventListener('mousedown',e=>{
+    if(e.target.closest('.wctrl'))return;e.preventDefault();
+    const w=wins[id];focusWin(id);
+    const r=win.getBoundingClientRect();let ox=e.clientX-r.left,oy=e.clientY-r.top;
+    if(w.max||w.snap){win.classList.remove('maximized','snl','snr');win.style.width=w.rect.w+'px';win.style.height=w.rect.h+'px';ox=w.rect.w/2;oy=20;w.max=false;w.snap=null;}
+    const mm=ev=>{win.style.left=(ev.clientX-ox)+'px';win.style.top=Math.max(0,ev.clientY-oy)+'px';if(ev.clientX<14)showSn('l');else if(ev.clientX>innerWidth-14)showSn('r');else hideSn();};
+    const mu=ev=>{document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);hideSn();if(ev.clientX<14)snapWin(id,'l');else if(ev.clientX>innerWidth-14)snapWin(id,'r');};
+    document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);
+  });
+  tb.addEventListener('dblclick',e=>{if(!e.target.closest('.wctrl'))togMax(id);});
+  // TOUCH
+  let tDrag=false,tOX=0,tOY=0,tSX=0,tSY=0,ltTap=0;
+  tb.addEventListener('touchstart',e=>{
+    if(e.target.closest('.wctrl'))return;
+    const t=e.touches[0];const w=wins[id];focusWin(id);
+    const r=win.getBoundingClientRect();tOX=t.clientX-r.left;tOY=t.clientY-r.top;tSX=t.clientX;tSY=t.clientY;tDrag=false;
+    if(w.max||w.snap){win.classList.remove('maximized','snl','snr');win.style.width=w.rect.w+'px';win.style.height=w.rect.h+'px';tOX=w.rect.w/2;tOY=20;w.max=false;w.snap=null;}
+  },{passive:true});
+  tb.addEventListener('touchmove',e=>{
+    const t=e.touches[0];
+    if(!tDrag&&(Math.abs(t.clientX-tSX)>8||Math.abs(t.clientY-tSY)>8))tDrag=true;
+    if(!tDrag)return;
+    win.style.left=(t.clientX-tOX)+'px';win.style.top=Math.max(0,t.clientY-tOY)+'px';
+    if(t.clientX<14)showSn('l');else if(t.clientX>innerWidth-14)showSn('r');else hideSn();
+  },{passive:true});
+  tb.addEventListener('touchend',e=>{
+    hideSn();
+    const t=e.changedTouches[0];
+    if(tDrag){if(t.clientX<14)snapWin(id,'l');else if(t.clientX>innerWidth-14)snapWin(id,'r');tDrag=false;return;}
+    // double tap = maximize
+    const now=Date.now();if(now-ltTap<350)togMax(id);ltTap=now;
+  },{passive:true});
+}
+
+function mkWinResize(id){
+  if(innerWidth<=768)return;
+  const win=document.getElementById(id);if(!win)return;
+  win.querySelectorAll('.rh').forEach(h=>{
+    h.addEventListener('mousedown',e=>{
+      e.preventDefault();e.stopPropagation();focusWin(id);
+      const dir=h.dataset.d,r=win.getBoundingClientRect();
+      let sx=e.clientX,sy=e.clientY,sl=r.left,st=r.top,sw=r.width,sh=r.height;
+      const mm=ev=>{
+        const dx=ev.clientX-sx,dy=ev.clientY-sy;let nl=sl,nt=st,nw=sw,nh=sh;
+        if(dir.includes('e'))nw=Math.max(300,sw+dx);if(dir.includes('s'))nh=Math.max(180,sh+dy);
+        if(dir.includes('w')){nw=Math.max(300,sw-dx);nl=sl+sw-nw;}if(dir.includes('n')){nh=Math.max(180,sh-dy);nt=st+sh-nh;}
+        win.style.cssText=`left:${nl}px;top:${nt}px;width:${nw}px;height:${nh}px;z-index:${win.style.zIndex};`;
+      };
+      const mu=()=>{document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};
+      document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);
+    });
+  });
+}
+
+// =================== TASKBAR ITEMS ===================
+function addTBI(wid,a){
+  const c=document.getElementById('running-apps');
+  const el=document.createElement('div');el.className='tbapp active';el.dataset.wid=wid;
+  el.innerHTML=`${IC(a.ic||'doc',a.color||'#0078d4',20)}<span class="tlbl">${a.name}</span><div class="dot"></div>`;
+  el.title=a.name;
+  el.onclick=()=>{const w=wins[wid];if(!w)return;if(w.min)restoreWin(wid);else if(wid===actWin)minWin(wid);else focusWin(wid);};
+  c.appendChild(el);
+  document.querySelectorAll('.tbapp').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// =================== GLOBAL DISMISS ===================
+document.addEventListener('mousedown',e=>{
+  if(smOpen&&!document.getElementById('startmenu').contains(e.target)&&!document.getElementById('startbtn').contains(e.target))closeStart();
+  if(srchOpen&&!document.getElementById('srch').contains(e.target))closeSrch();
+});
+document.addEventListener('touchstart',e=>{
+  if(smOpen&&!document.getElementById('startmenu').contains(e.target)&&!document.getElementById('startbtn').contains(e.target))closeStart();
+  if(srchOpen&&!document.getElementById('srch').contains(e.target))closeSrch();
+},{passive:true});
+
+// =================== KEYBOARD ===================
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeStart();closeSrch();hideCtx();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='f'){e.preventDefault();togSrch();}
+  if(e.key==='F11'){e.preventDefault();togFS();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='w'){e.preventDefault();if(actWin)closeWin(actWin);}
+});
+
+// =================== INIT ===================
+renderDesktop();
+toast('👋 Benvenuto in WebOS');
+
+// Swipe hint for mobile
+const hint=document.createElement('div');hint.id='swiphint';hint.textContent='↑ Scorri in alto per il menu';
+document.body.appendChild(hint);
+const rmHint=()=>{hint.classList.add('gone');setTimeout(()=>hint?.remove(),1200);};
+document.addEventListener('touchstart',rmHint,{once:true,passive:true});
+setTimeout(rmHint,5000);
+</script>
+</body>
+</html>
