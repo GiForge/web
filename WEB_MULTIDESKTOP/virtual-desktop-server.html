@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>VirtualDesk – Server</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0d0e14;
+    --surface: #13141f;
+    --surface2: #1a1c2e;
+    --border: #2a2d45;
+    --accent: #5d6af0;
+    --accent2: #a78bfa;
+    --text: #e2e4f0;
+    --text2: #8b8fad;
+    --win-header: #1e2035;
+    --taskbar: #0f1018ee;
+    --red: #f04f5d;
+    --green: #4fc87a;
+    --yellow: #f0c04f;
+    --glass: rgba(30,32,53,0.85);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  /* ── WALLPAPER ─────────────────────────────────── */
+  #wallpaper {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse at 20% 80%, #1a0a3a 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, #0a1a3a 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 50%, #0d0e14 0%, #080910 100%);
+  }
+  #wallpaper canvas { width:100%;height:100%; }
+
+  /* ── DESKTOP AREA ──────────────────────────────── */
+  #desktop {
+    position: fixed; inset: 0; bottom: 48px; z-index: 1;
+    overflow: hidden;
+  }
+
+  /* ── ICONS ─────────────────────────────────────── */
+  .icon-grid {
+    position: absolute; top: 12px; right: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 2;
+  }
+  .desk-icon {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    width: 68px; cursor: pointer; padding: 6px; border-radius: 10px;
+    transition: background .15s;
+  }
+  .desk-icon:active { background: rgba(93,106,240,.2); }
+  .desk-icon .icon-img {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  }
+  .desk-icon span { font-size: 10px; color: var(--text); text-align: center;
+    text-shadow: 0 1px 4px rgba(0,0,0,.8); line-height: 1.2; }
+
+  /* ── WINDOWS ───────────────────────────────────── */
+  .window {
+    position: absolute;
+    min-width: 260px; min-height: 180px;
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 0 0.5px rgba(255,255,255,.05) inset;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transition: box-shadow .2s, transform .15s;
+    z-index: 10;
+  }
+  .window.focused {
+    box-shadow: 0 24px 80px rgba(0,0,0,.7), 0 0 0 1.5px var(--accent), 0 0 0 0.5px rgba(255,255,255,.05) inset;
+    z-index: 20;
+  }
+  .window.minimized { display: none; }
+
+  .win-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; background: var(--win-header);
+    border-bottom: 1px solid var(--border);
+    cursor: grab; flex-shrink: 0;
+  }
+  .win-header:active { cursor: grabbing; }
+  .win-controls { display: flex; gap: 6px; }
+  .win-btn {
+    width: 13px; height: 13px; border-radius: 50%; border: none; cursor: pointer;
+    transition: filter .15s;
+  }
+  .win-btn:hover { filter: brightness(1.3); }
+  .win-btn.close { background: var(--red); }
+  .win-btn.min { background: var(--yellow); }
+  .win-btn.max { background: var(--green); }
+  .win-title { font-size: 12px; color: var(--text2); font-weight: 600; margin-left: 4px; flex:1; }
+  .win-emoji { font-size: 14px; }
+
+  .win-body {
+    flex: 1; overflow: hidden; position: relative;
+  }
+  .win-body iframe {
+    width: 100%; height: 100%; border: none;
+    background: #fff;
+  }
+  .win-body .app-content {
+    width: 100%; height: 100%; padding: 16px;
+    overflow-y: auto; font-size: 13px; line-height: 1.6;
+    color: var(--text);
+  }
+
+  /* ── RESIZE HANDLE ─────────────────────────────── */
+  .win-resize {
+    position: absolute; bottom: 0; right: 0;
+    width: 20px; height: 20px; cursor: se-resize;
+    display: flex; align-items: flex-end; justify-content: flex-end;
+    padding: 3px; opacity: .4;
+  }
+  .win-resize svg { width:12px;height:12px;fill:var(--text2); }
+
+  /* ── TASKBAR ───────────────────────────────────── */
+  #taskbar {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 48px;
+    background: var(--taskbar);
+    backdrop-filter: blur(24px);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 4px; padding: 0 8px;
+    z-index: 100;
+  }
+
+  #start-btn {
+    height: 36px; padding: 0 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 8px; cursor: pointer;
+    font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px;
+    color: #fff; display: flex; align-items: center; gap: 6px;
+    transition: transform .1s, filter .15s;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  #start-btn:active { transform: scale(.95); }
+
+  .taskbar-win {
+    height: 36px; padding: 0 10px;
+    background: rgba(255,255,255,.07);
+    border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer;
+    font-size: 11px; color: var(--text2);
+    display: flex; align-items: center; gap: 6px;
+    transition: background .15s; max-width: 120px; overflow: hidden;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .taskbar-win.active { background: rgba(93,106,240,.25); border-color: var(--accent); color: var(--text); }
+  .taskbar-win:active { background: rgba(93,106,240,.35); }
+
+  #taskbar-right {
+    margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  }
+  #clock { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text2); }
+  #peer-status {
+    font-size: 10px; padding: 3px 8px;
+    border-radius: 20px; font-weight: 600;
+    background: rgba(240,79,93,.15); color: var(--red);
+    border: 1px solid rgba(240,79,93,.3);
+    transition: all .3s;
+  }
+  #peer-status.connected {
+    background: rgba(79,200,122,.15); color: var(--green);
+    border-color: rgba(79,200,122,.3);
+  }
+
+  /* ── START MENU ────────────────────────────────── */
+  #start-menu {
+    position: fixed; bottom: 52px; left: 8px;
+    width: 280px;
+    background: var(--glass);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 -20px 60px rgba(0,0,0,.5);
+    z-index: 200; overflow: hidden;
+    display: none;
+    animation: menuIn .15s ease;
+  }
+  #start-menu.open { display: block; }
+  @keyframes menuIn {
+    from { opacity:0; transform: translateY(10px) scale(.97); }
+    to { opacity:1; transform: none; }
+  }
+  .menu-header {
+    padding: 16px; border-bottom: 1px solid var(--border);
+    font-size: 11px; color: var(--text2); font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .menu-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; cursor: pointer;
+    transition: background .12s; font-size: 14px;
+  }
+  .menu-item:hover, .menu-item:active { background: rgba(93,106,240,.15); }
+  .menu-item .mi-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .menu-item .mi-info { flex:1; }
+  .menu-item .mi-name { font-weight: 600; font-size: 13px; }
+  .menu-item .mi-desc { font-size: 11px; color: var(--text2); }
+  .menu-section-title {
+    padding: 8px 16px 4px; font-size: 10px; color: var(--text2);
+    text-transform: uppercase; letter-spacing: .08em; font-weight: 700;
+  }
+
+  /* ── CONNECT PANEL ─────────────────────────────── */
+  #connect-panel {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px; width: 320px;
+    z-index: 500;
+    box-shadow: 0 30px 80px rgba(0,0,0,.7);
+  }
+  #connect-panel h2 { font-size: 18px; margin-bottom: 6px; }
+  #connect-panel p { font-size: 12px; color: var(--text2); margin-bottom: 16px; line-height: 1.5; }
+  #room-code-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px; font-weight: 700; letter-spacing: .15em;
+    color: var(--accent2); text-align: center;
+    padding: 16px; background: var(--surface2);
+    border-radius: 12px; margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  .panel-btn {
+    width: 100%; padding: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 10px; color: #fff;
+    font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: filter .15s;
+  }
+  .panel-btn:active { filter: brightness(.9); }
+  #connect-status { font-size: 12px; color: var(--text2); text-align:center; margin-top:10px; min-height:18px; }
+
+  /* ── NOTIFICATION ──────────────────────────────── */
+  #notif {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    background: var(--glass); backdrop-filter: blur(12px);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 10px 18px; font-size: 13px;
+    z-index: 999; opacity: 0; pointer-events: none;
+    transition: opacity .3s; white-space: nowrap;
+  }
+  #notif.show { opacity: 1; }
+
+  /* ── REMOTE CURSOR ─────────────────────────────── */
+  #remote-cursor {
+    position: fixed; width: 20px; height: 20px; pointer-events: none;
+    z-index: 999; display: none;
+  }
+  #remote-cursor::before {
+    content: ''; position: absolute; inset: 0;
+    border-radius: 50%; background: var(--accent2);
+    opacity: .6; animation: pulse 1s infinite;
+  }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+
+  /* ── DUAL SCREEN INDICATOR ─────────────────────── */
+  #dual-indicator {
+    position: fixed; top: 12px; left: 12px;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--glass); backdrop-filter: blur(12px);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 6px 12px; font-size: 11px; z-index: 50;
+  }
+  .screen-dot { width: 8px; height: 8px; border-radius: 2px; }
+  .screen-dot.this { background: var(--accent); }
+  .screen-dot.remote { background: var(--border); transition: background .3s; }
+  .screen-dot.remote.on { background: var(--accent2); }
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+</head>
+<body>
+
+<!-- Wallpaper -->
+<div id="wallpaper"><canvas id="starfield"></canvas></div>
+
+<!-- Desktop area -->
+<div id="desktop">
+  <div class="icon-grid" id="icon-grid"></div>
+</div>
+
+<!-- Remote cursor -->
+<div id="remote-cursor"></div>
+
+<!-- Dual screen indicator -->
+<div id="dual-indicator">
+  <div class="screen-dot this"></div>
+  <div class="screen-dot remote" id="remote-dot"></div>
+  <span style="color:var(--text2)">Monitor 1</span>
+</div>
+
+<!-- Taskbar -->
+<div id="taskbar">
+  <button id="start-btn" onclick="toggleMenu()">⊞ Start</button>
+  <div id="taskbar-windows"></div>
+  <div id="taskbar-right">
+    <div id="peer-status" onclick="showConnect()">⬡ Offline</div>
+    <div id="clock"></div>
+  </div>
+</div>
+
+<!-- Start Menu -->
+<div id="start-menu">
+  <div class="menu-header">🖥 VirtualDesk · Monitor 1</div>
+  <div class="menu-section-title">App</div>
+  <div id="menu-apps"></div>
+  <div class="menu-section-title">Sistema</div>
+  <div class="menu-item" onclick="openConnectApp()">
+    <div class="mi-icon" style="background:linear-gradient(135deg,#5d6af0,#a78bfa)">📡</div>
+    <div class="mi-info"><div class="mi-name">Connetti Monitor 2</div><div class="mi-desc">Aggiungi secondo schermo</div></div>
+  </div>
+  <div class="menu-item" onclick="sendToClient('ARRANGE','side-by-side')">
+    <div class="mi-icon" style="background:linear-gradient(135deg,#f04f5d,#f0904f)">⇹</div>
+    <div class="mi-info"><div class="mi-name">Sposta finestra →</div><div class="mi-desc">Invia al Monitor 2</div></div>
+  </div>
+</div>
+
+<!-- Connect Panel -->
+<div id="connect-panel">
+  <h2>📡 Connetti Monitor 2</h2>
+  <p style="font-size:11px;color:var(--text2);margin:6px 0 12px">📱 Smartphone: scansiona QR &nbsp;|&nbsp; 🖥 PC: copia/incolla testo</p>
+  <button class="panel-btn" onclick="initServer()">📲 Genera QR / Offerta</button>
+  <div id="cp-body" style="margin-top:12px"></div>
+  <div id="connect-status" style="font-size:11px;color:var(--text2);margin-top:8px"></div>
+</div>
+
+<!-- Notification -->
+<div id="notif"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// STARFIELD ANIMATION
+// ══════════════════════════════════════════════════
+(function(){
+  const c = document.getElementById('starfield');
+  const ctx = c.getContext('2d');
+  let W,H,stars=[];
+  function resize(){ W=c.width=window.innerWidth; H=c.height=window.innerHeight; }
+  function mkStars(){ stars=[]; for(let i=0;i<120;i++) stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2,a:Math.random(),s:Math.random()*.003+.001}); }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    stars.forEach(s=>{
+      s.a+=s.s; if(s.a>1||s.a<0) s.s*=-1;
+      ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${s.a*.7})`; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',()=>{resize();mkStars();});
+  resize(); mkStars(); draw();
+})();
+
+// ══════════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════════
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updateClock,1000); updateClock();
+
+// ══════════════════════════════════════════════════
+// APPS REGISTRY
+// ══════════════════════════════════════════════════
+const APPS = [
+  { id:'calc', name:'Calcolatrice', icon:'🧮', bg:'linear-gradient(135deg,#f04f5d,#f0904f)', type:'builtin' },
+  { id:'notes', name:'Note', icon:'📝', bg:'linear-gradient(135deg,#f0c04f,#f08a4f)', type:'builtin' },
+  { id:'browser', name:'Browser', icon:'🌐', bg:'linear-gradient(135deg,#4f9ff0,#4fc8f0)', type:'url', url:'https://example.com' },
+  { id:'files', name:'File', icon:'📁', bg:'linear-gradient(135deg,#4fc87a,#4ff0c4)', type:'builtin' },
+  { id:'clock2', name:'Orologio', icon:'🕐', bg:'linear-gradient(135deg,#a78bfa,#5d6af0)', type:'builtin' },
+  { id:'weather', name:'Meteo', icon:'⛅', bg:'linear-gradient(135deg,#60a5fa,#818cf8)', type:'builtin' },
+];
+
+// ══════════════════════════════════════════════════
+// RENDER ICONS + MENU
+// ══════════════════════════════════════════════════
+const iconGrid = document.getElementById('icon-grid');
+const menuApps = document.getElementById('menu-apps');
+
+APPS.forEach(app => {
+  // Desktop icon
+  const d = document.createElement('div');
+  d.className = 'desk-icon';
+  d.innerHTML = `<div class="icon-img" style="background:${app.bg}">${app.icon}</div><span>${app.name}</span>`;
+  d.addEventListener('click', () => { openApp(app); closeMenu(); });
+  iconGrid.appendChild(d);
+
+  // Menu item
+  const m = document.createElement('div');
+  m.className = 'menu-item';
+  m.innerHTML = `<div class="mi-icon" style="background:${app.bg}">${app.icon}</div>
+    <div class="mi-info"><div class="mi-name">${app.name}</div></div>`;
+  m.addEventListener('click', () => { openApp(app); closeMenu(); });
+  menuApps.appendChild(m);
+});
+
+// ══════════════════════════════════════════════════
+// WINDOW MANAGER
+// ══════════════════════════════════════════════════
+let windows = {};
+let wCount = 0;
+let zTop = 10;
+
+function openApp(app, pos) {
+  wCount++;
+  const id = 'w' + wCount;
+  const x = pos ? pos.x : 30 + (wCount % 5) * 20;
+  const y = pos ? pos.y : 40 + (wCount % 5) * 20;
+
+  const win = document.createElement('div');
+  win.className = 'window';
+  win.id = id;
+  win.style.cssText = `left:${x}px;top:${y}px;width:300px;height:220px;z-index:${++zTop}`;
+
+  win.innerHTML = `
+    <div class="win-header" data-wid="${id}">
+      <div class="win-controls">
+        <button class="win-btn close" onclick="closeWin('${id}')"></button>
+        <button class="win-btn min" onclick="minWin('${id}')"></button>
+        <button class="win-btn max" onclick="maxWin('${id}')"></button>
+      </div>
+      <span class="win-emoji">${app.icon}</span>
+      <span class="win-title">${app.name}</span>
+    </div>
+    <div class="win-body" id="body-${id}">${buildAppContent(app, id)}</div>
+    <div class="win-resize" data-wid="${id}">
+      <svg viewBox="0 0 12 12"><path d="M12 0L0 12h4L12 4V0zm0 8l-4 4h4V8z"/></svg>
+    </div>`;
+
+  document.getElementById('desktop').appendChild(win);
+  windows[id] = { app, win, minimized: false };
+  focusWin(id);
+  addTaskbarItem(id, app);
+  makeDraggable(win);
+  makeResizable(win);
+  return id;
+}
+
+function buildAppContent(app, id) {
+  switch(app.id) {
+    case 'calc': return buildCalc(id);
+    case 'notes': return buildNotes(id);
+    case 'clock2': return buildClock(id);
+    case 'files': return buildFiles(id);
+    case 'weather': return buildWeather(id);
+    case 'browser': return `<div class="app-content" style="padding:8px">
+      <input style="width:100%;padding:6px 10px;background:#0d0e14;border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:12px" placeholder="URL..." value="${app.url||'https://example.com'}">
+      <div style="color:var(--text2);font-size:12px;margin-top:12px;text-align:center">⚠ iframe CORS limitato nel browser.<br>Usa per URL locali o same-origin.</div>
+    </div>`;
+    default: return `<div class="app-content"><p>App: ${app.name}</p></div>`;
+  }
+}
+
+function buildCalc(id) {
+  return `<div class="app-content" style="padding:8px;display:flex;flex-direction:column;gap:4px">
+    <input id="calc-d-${id}" readonly style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:20px;padding:8px 10px;text-align:right;margin-bottom:4px" value="0">
+    ${[['7','8','9','÷'],['4','5','6','×'],['1','2','3','−'],['C','0','.','+'],[' ','=','','']]
+      .map(row => `<div style="display:flex;gap:4px">${row.map(k=>k?
+        `<button onclick="calcKey(this,'${id}')" data-k="${k}" style="flex:1;padding:10px;background:${k==='='?'linear-gradient(135deg,var(--accent),var(--accent2))':'rgba(255,255,255,.06)'};border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:'JetBrains Mono',monospace;cursor:pointer">${k}</button>`:
+        `<div style="flex:1"></div>`).join('')}</div>`).join('')}
+  </div>`;
+}
+
+function buildNotes(id) {
+  return `<textarea style="width:100%;height:100%;background:transparent;border:none;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;padding:12px;resize:none;line-height:1.6" placeholder="Scrivi qui le tue note..."></textarea>`;
+}
+
+function buildClock(id) {
+  const cid = 'clk-'+id;
+  setTimeout(()=>{
+    const el = document.getElementById(cid);
+    if(!el) return;
+    setInterval(()=>{
+      el.textContent = new Date().toLocaleTimeString('it-IT');
+    },1000);
+  },100);
+  return `<div class="app-content" style="display:flex;align-items:center;justify-content:center;height:100%">
+    <div id="${cid}" style="font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:700;color:var(--accent2);letter-spacing:.05em"></div>
+  </div>`;
+}
+
+function buildFiles(id) {
+  const items = ['📁 Documenti','📁 Immagini','📁 Download','📄 report.pdf','📄 notes.txt','🖼 photo.jpg'];
+  return `<div class="app-content">
+    ${items.map(i=>`<div style="padding:8px 6px;border-radius:6px;cursor:pointer;font-size:13px;transition:background .12s" onmouseenter="this.style.background='rgba(93,106,240,.15)'" onmouseleave="this.style.background=''">${i}</div>`).join('')}
+  </div>`;
+}
+
+function buildWeather(id) {
+  return `<div class="app-content" style="text-align:center;padding:20px">
+    <div style="font-size:56px;margin-bottom:8px">⛅</div>
+    <div style="font-size:32px;font-weight:700;color:var(--text)">18°C</div>
+    <div style="color:var(--text2);font-size:13px">Milano, IT – Parzialmente nuvoloso</div>
+    <div style="display:flex;justify-content:center;gap:16px;margin-top:16px;font-size:12px;color:var(--text2)">
+      <div>💧 64%</div><div>💨 12 km/h</div><div>🌡 16-21°</div>
+    </div>
+  </div>`;
+}
+
+let calcBuf = ''; let calcOp = ''; let calcPrev = '';
+function calcKey(btn, id) {
+  const display = document.getElementById('calc-d-'+id);
+  const k = btn.dataset.k;
+  if(k==='C'){calcBuf='0';calcOp='';calcPrev='';display.value='0';return;}
+  if(k==='='){
+    try{
+      const expr = calcPrev + calcOp.replace('÷','/').replace('×','*').replace('−','-') + calcBuf;
+      calcBuf = String(eval(expr)); display.value=calcBuf; calcOp=''; calcPrev='';
+    }catch(e){display.value='Err';}
+    return;
+  }
+  if(['÷','×','−','+'].includes(k)){
+    calcPrev=calcBuf; calcOp=k; calcBuf=''; return;
+  }
+  if(calcBuf==='0'&&k!=='.') calcBuf='';
+  calcBuf+=k; display.value=calcBuf;
+}
+
+function focusWin(id) {
+  Object.keys(windows).forEach(wid => windows[wid].win.classList.remove('focused'));
+  const w = windows[id];
+  if(w){ w.win.classList.add('focused'); w.win.style.zIndex = ++zTop; }
+  updateTaskbar();
+}
+
+function closeWin(id) {
+  const w = windows[id];
+  if(!w) return;
+  w.win.remove();
+  delete windows[id];
+  const tb = document.getElementById('tb-'+id);
+  if(tb) tb.remove();
+}
+
+function minWin(id) {
+  const w = windows[id];
+  if(!w) return;
+  w.minimized = !w.minimized;
+  w.win.classList.toggle('minimized', w.minimized);
+  updateTaskbar();
+}
+
+let isMax = {};
+function maxWin(id) {
+  const w = windows[id];
+  if(!w) return;
+  if(!isMax[id]) {
+    isMax[id] = {left:w.win.style.left,top:w.win.style.top,width:w.win.style.width,height:w.win.style.height};
+    w.win.style.cssText += ';left:0;top:0;width:100%;height:calc(100vh - 48px);border-radius:0';
+  } else {
+    Object.assign(w.win.style,{left:isMax[id].left,top:isMax[id].top,width:isMax[id].width,height:isMax[id].height,borderRadius:'14px'});
+    delete isMax[id];
+  }
+}
+
+function addTaskbarItem(id, app) {
+  const tb = document.getElementById('taskbar-windows');
+  const item = document.createElement('div');
+  item.className = 'taskbar-win'; item.id = 'tb-'+id;
+  item.innerHTML = `${app.icon} ${app.name}`;
+  item.onclick = () => { minWin(id); focusWin(id); };
+  tb.appendChild(item);
+}
+
+function updateTaskbar() {
+  Object.keys(windows).forEach(wid => {
+    const tb = document.getElementById('tb-'+wid);
+    if(tb) tb.classList.toggle('active', !windows[wid].minimized && windows[wid].win.classList.contains('focused'));
+  });
+}
+
+// ══════════════════════════════════════════════════
+// DRAG & RESIZE
+// ══════════════════════════════════════════════════
+function makeDraggable(win) {
+  const header = win.querySelector('.win-header');
+  let dragging=false, sx,sy,ox,oy;
+  function start(e){
+    dragging=true; win.style.transition='none';
+    const p = e.touches?e.touches[0]:e;
+    sx=p.clientX; sy=p.clientY;
+    ox=parseInt(win.style.left)||0; oy=parseInt(win.style.top)||0;
+    focusWin(win.id);
+    e.preventDefault();
+  }
+  function move(e){
+    if(!dragging) return;
+    const p = e.touches?e.touches[0]:e;
+    win.style.left = (ox+p.clientX-sx)+'px';
+    win.style.top  = Math.max(0, oy+p.clientY-sy)+'px';
+    sendCursorPos(p.clientX, p.clientY);
+    e.preventDefault();
+  }
+  function end(){ dragging=false; win.style.transition=''; }
+  header.addEventListener('mousedown',start);
+  header.addEventListener('touchstart',start,{passive:false});
+  window.addEventListener('mousemove',move);
+  window.addEventListener('touchmove',move,{passive:false});
+  window.addEventListener('mouseup',end);
+  window.addEventListener('touchend',end);
+}
+
+function makeResizable(win) {
+  const handle = win.querySelector('.win-resize');
+  let resizing=false,sx,sy,ow,oh;
+  handle.addEventListener('mousedown',e=>{
+    resizing=true; sx=e.clientX; sy=e.clientY;
+    ow=win.offsetWidth; oh=win.offsetHeight; e.preventDefault();
+  });
+  handle.addEventListener('touchstart',e=>{
+    resizing=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+    ow=win.offsetWidth; oh=win.offsetHeight; e.preventDefault();
+  },{passive:false});
+  window.addEventListener('mousemove',e=>{
+    if(!resizing) return;
+    win.style.width=Math.max(200,ow+e.clientX-sx)+'px';
+    win.style.height=Math.max(140,oh+e.clientY-sy)+'px';
+  });
+  window.addEventListener('touchmove',e=>{
+    if(!resizing) return;
+    win.style.width=Math.max(200,ow+e.touches[0].clientX-sx)+'px';
+    win.style.height=Math.max(140,oh+e.touches[0].clientY-sy)+'px';
+  },{passive:false});
+  window.addEventListener('mouseup',()=>resizing=false);
+  window.addEventListener('touchend',()=>resizing=false);
+}
+
+// ══════════════════════════════════════════════════
+// START MENU
+// ══════════════════════════════════════════════════
+function toggleMenu() {
+  document.getElementById('start-menu').classList.toggle('open');
+}
+function closeMenu() {
+  document.getElementById('start-menu').classList.remove('open');
+}
+document.getElementById('desktop').addEventListener('click', closeMenu);
+
+function openConnectApp() { closeMenu(); showConnect(); }
+
+// ══════════════════════════════════════════════════
+// WEBRTC SIGNALING — QR + copia/incolla
+// ══════════════════════════════════════════════════
+let pc = null, dc = null, scanning = false, scanTimer = null;
+const ICE = {iceServers:[
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun1.l.google.com:19302'}
+]};
+
+function showConnect() {
+  document.getElementById('connect-panel').style.display = 'block';
+}
+
+async function initServer() {
+  const panel = document.getElementById('connect-panel');
+  panel.querySelector('#cp-body').innerHTML = '<p style="color:var(--text2);font-size:12px">⏳ Generazione offerta...</p>';
+
+  if(pc) { try{pc.close();}catch(e){} }
+  pc = new RTCPeerConnection(ICE);
+  dc = pc.createDataChannel('vdesk', {ordered:true});
+  setupDC(dc);
+
+  await new Promise(async resolve => {
+    pc.onicecandidate = e => { if(!e.candidate) resolve(); };
+    pc.onicegatheringstatechange = () => { if(pc.iceGatheringState==='complete') resolve(); };
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    setTimeout(resolve, 5000);
+  });
+
+  const offerJSON = JSON.stringify({type:pc.localDescription.type, sdp:pc.localDescription.sdp});
+
+  panel.querySelector('#cp-body').innerHTML = `
+    <p style="font-size:11px;color:var(--text2);margin-bottom:8px">📱 <b>Smartphone:</b> fai scansionare questo QR al Monitor 2</p>
+    <div id="qr-offer" style="background:#fff;padding:8px;border-radius:10px;display:inline-block;margin-bottom:10px"></div>
+    <p style="font-size:11px;color:var(--text2);margin:8px 0 4px">🖥 <b>PC/Test:</b> copia questo testo nel Monitor 2</p>
+    <textarea id="offer-txt" readonly style="width:100%;height:60px;font-size:8px;font-family:monospace;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);padding:6px;resize:none">${offerJSON}</textarea>
+    <button class="panel-btn" onclick="copyText('offer-txt')" style="font-size:11px;margin-top:4px">📋 Copia offerta</button>
+    <hr style="border-color:var(--border);margin:12px 0">
+    <p style="font-size:11px;color:var(--text2);margin-bottom:6px">📱 <b>Smartphone:</b> premi per scansionare il QR risposta</p>
+    <button class="panel-btn" onclick="startScanAnswer()" style="margin-bottom:8px">📷 Scansiona risposta</button>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:4px">🖥 <b>PC/Test:</b> incolla qui la risposta del Monitor 2</p>
+    <textarea id="ans-txt" placeholder='{"type":"answer","sdp":"v=0..."}' style="width:100%;height:60px;font-size:8px;font-family:monospace;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px;resize:none"></textarea>
+    <button class="panel-btn" onclick="pasteAnswer()" style="font-size:11px;margin-top:4px">✅ Connetti con testo</button>
+    <div id="scan-area" style="display:none;margin-top:8px">
+      <video id="scan-video" style="width:100%;border-radius:8px;background:#000" autoplay playsinline muted></video>
+      <canvas id="scan-canvas" style="display:none"></canvas>
+      <div id="scan-status" style="font-size:11px;color:var(--text2);margin-top:4px;text-align:center">🔍 Ricerca QR...</div>
+    </div>`;
+
+  new QRCode(document.getElementById('qr-offer'), {
+    text: offerJSON, width:200, height:200,
+    colorDark:'#000', colorLight:'#fff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+function copyText(id) {
+  const ta = document.getElementById(id);
+  if(!ta) return;
+  navigator.clipboard.writeText(ta.value)
+    .then(()=>notify('📋 Copiato!'))
+    .catch(()=>{ ta.select(); document.execCommand('copy'); notify('📋 Copiato!'); });
+}
+
+async function pasteAnswer() {
+  const raw = document.getElementById('ans-txt').value.trim();
+  await connectWithAnswer(raw);
+}
+
+async function startScanAnswer() {
+  document.getElementById('scan-area').style.display = 'block';
+  const video = document.getElementById('scan-video');
+  const canvas = document.getElementById('scan-canvas');
+  const status = document.getElementById('scan-status');
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+  } catch(e) { status.textContent = '❌ Fotocamera: '+e.message; return; }
+  video.srcObject = stream;
+  scanning = true;
+  function tick() {
+    if(!scanning) return;
+    if(video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video,0,0);
+      const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+      const result = jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+      if(result) {
+        scanning = false;
+        stream.getTracks().forEach(t=>t.stop());
+        status.textContent = '✅ QR rilevato!';
+        connectWithAnswer(result.data);
+        return;
+      }
+    }
+    scanTimer = requestAnimationFrame(tick);
+  }
+  scanTimer = requestAnimationFrame(tick);
+}
+
+async function connectWithAnswer(raw) {
+  const status = document.getElementById('scan-status') || document.getElementById('connect-status');
+  try {
+    if(!raw||!raw.trim()) throw new Error('Testo vuoto');
+    const ans = JSON.parse(raw.trim());
+    if(typeof ans.type!=='string'||typeof ans.sdp!=='string'||!ans.sdp.startsWith('v='))
+      throw new Error('Dati non validi');
+    await pc.setRemoteDescription(new RTCSessionDescription({type:ans.type, sdp:ans.sdp}));
+    if(status) status.textContent = '🔗 Connessione stabilita!';
+  } catch(e) {
+    if(status) status.textContent = '❌ '+e.message;
+    notify('❌ '+e.message);
+  }
+}
+
+function setupDC(channel) {
+  channel.onopen = () => {
+    document.getElementById('peer-status').textContent = '⬡ Monitor 2';
+    document.getElementById('peer-status').classList.add('connected');
+    document.getElementById('remote-dot').classList.add('on');
+    document.getElementById('connect-panel').style.display='none';
+    notify('✅ Monitor 2 connesso!');
+  };
+  channel.onclose = () => {
+    document.getElementById('peer-status').textContent = '⬡ Offline';
+    document.getElementById('peer-status').classList.remove('connected');
+    document.getElementById('remote-dot').classList.remove('on');
+    notify('⚠ Monitor 2 disconnesso');
+  };
+  channel.onmessage = e => handleMessage(JSON.parse(e.data));
+}
+
+function sendToClient(type, payload) {
+  if(dc && dc.readyState==='open') {
+    dc.send(JSON.stringify({type, payload}));
+  } else {
+    notify('⚠ Monitor 2 non connesso');
+  }
+}
+
+function sendCursorPos(x,y) {
+  sendToClient('CURSOR', {x: x/window.innerWidth, y: y/window.innerHeight});
+}
+
+function handleMessage(msg) {
+  switch(msg.type) {
+    case 'CURSOR':
+      const cur = document.getElementById('remote-cursor');
+      cur.style.display='block';
+      cur.style.left=(msg.payload.x*window.innerWidth)+'px';
+      cur.style.top=(msg.payload.y*window.innerHeight)+'px';
+      break;
+    case 'OPEN_APP':
+      const app = APPS.find(a=>a.id===msg.payload.id);
+      if(app) openApp(app, msg.payload.pos);
+      break;
+    case 'NOTIFY':
+      notify(msg.payload);
+      break;
+  }
+}
+
+// ══════════════════════════════════════════════════
+// NOTIFICATION
+// ══════════════════════════════════════════════════
+let notifTimer;
+function notify(txt) {
+  const el = document.getElementById('notif');
+  el.textContent = txt; el.classList.add('show');
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ══════════════════════════════════════════════════
+// MOVE FOCUSED WINDOW TO CLIENT
+// ══════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if(e.key==='ArrowRight' && e.altKey) {
+    const focused = Object.values(windows).find(w=>w.win.classList.contains('focused'));
+    if(focused) {
+      sendToClient('OPEN_APP',{id:focused.app.id, pos:{x:20,y:60}});
+      closeWin(focused.win.id);
+    }
+  }
+});
+</script>
+</body>
+</html>
