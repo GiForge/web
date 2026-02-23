@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Enterprise OS v11.0 - Full Suite</title>
+    <title>Enterprise OS v11.5 - Audio Sync Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
@@ -11,24 +11,23 @@
         :root { --accent: #0078d7; --taskbar-bg: rgba(20, 20, 20, 0.95); --win-bg: #f3f3f3; }
         body, html { margin: 0; padding: 0; height: 100%; background: #000; font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; touch-action: none; }
         
-        /* Desktop & Canvas */
+        /* Desktop */
         #viewport { width: 100vw; height: 100vh; position: relative; overflow: hidden; background: #1a1a1a; }
         #canvas { position: absolute; top: 0; left: 0; height: 100%; width: 5000px; transition: left 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
 
-        /* Window System */
-        .window { position: absolute; background: var(--win-bg); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; color: #000; min-width: 300px; min-height: 200px; z-index: 100; overflow: hidden; border: 1px solid #444; }
+        /* Windows */
+        .window { position: absolute; background: var(--win-bg); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; color: #000; min-width: 300px; z-index: 100; overflow: hidden; border: 1px solid #444; }
         .window.active { z-index: 500; border: 2px solid var(--accent); }
-        .window.maximized { border-radius: 0 !important; width: 100vw !important; height: calc(100vh - 48px) !important; top: 0 !important; left: 0 !important; transform: none !important; }
+        .window.maximized { width: 100vw !important; height: calc(100vh - 48px) !important; top: 0 !important; left: 0 !important; transform: none !important; border-radius: 0; }
         .win-header { height: 40px; background: #e1e1e1; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #ccc; }
         .win-drag { flex: 1; height: 100%; display: flex; align-items: center; padding-left: 12px; cursor: move; font-size: 13px; font-weight: bold; }
         .win-controls { display: flex; height: 100%; }
-        .win-btn { width: 45px; height: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
-        .win-btn:hover { background: rgba(0,0,0,0.1); }
+        .win-btn { width: 45px; height: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .win-btn.close:hover { background: #e81123; color: white; }
-        .win-content { flex: 1; background: white; position: relative; }
+        .win-content { flex: 1; background: white; }
 
         /* Icons */
-        .desktop-icon { position: absolute; width: 85px; padding: 10px; text-align: center; cursor: pointer; z-index: 5; user-select: none; }
+        .desktop-icon { position: absolute; width: 85px; padding: 10px; text-align: center; cursor: pointer; z-index: 5; }
         .icon-img { font-size: 35px; display: block; margin-bottom: 5px; pointer-events: none; }
         .desktop-icon small { font-size: 11px; text-shadow: 1px 1px 2px #000; color: white; }
 
@@ -37,15 +36,17 @@
         #dock { display: flex; gap: 8px; margin-left: 15px; }
         .dock-item { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 6px; cursor: pointer; font-size: 20px; }
 
-        /* Connection Overlay */
-        #overlay { position: fixed; inset: 0; background: #111; z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+        /* Overlay Connection */
+        #overlay { position: fixed; inset: 0; background: #111; z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .card { background: #222; padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; border: 1px solid #444; }
         .qr-wrapper { background: white; padding: 10px; margin: 15px auto; border-radius: 8px; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; }
         .setup-btn { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--accent); color: white; }
+        
         .dots { display: flex; justify-content: center; gap: 8px; margin: 15px 0; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; background: #333; border: 1px solid #555; }
-        .dot.active { background: #28a745; box-shadow: 0 0 10px #28a745; }
-        .signal-area { width: 100%; height: 60px; background: #000; color: #0f0; font-size: 10px; border: 1px solid #444; margin: 10px 0; border-radius: 5px; padding: 5px; box-sizing: border-box; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #333; border: 1px solid #555; transition: 0.3s; }
+        .dot.active { background: #28a745; box-shadow: 0 0 10px #28a745; border-color: #fff; }
+
+        .signal-area { width: 100%; height: 60px; background: #000; color: #0f0; font-size: 10px; border: 1px solid #444; margin: 10px 0; border-radius: 5px; padding: 5px; box-sizing: border-box; resize: none; }
 
         #scanner-container { position: fixed; inset: 0; background: #000; z-index: 6000; display: none; flex-direction: column; }
         #reader { flex: 1; }
@@ -55,23 +56,23 @@
 
 <div id="overlay">
     <div class="card">
-        <h3>Enterprise OS v11.0</h3>
+        <h3>Enterprise OS v11.5</h3>
         <div id="setup-initial">
-            <button class="setup-btn" onclick="boot('server')">SERVER MODE</button>
-            <button class="setup-btn" style="background:#444" onclick="boot('client')">CLIENT MODE</button>
+            <button class="setup-btn" onclick="boot('server')">MODALITÀ SERVER</button>
+            <button class="setup-btn" style="background:#444" onclick="boot('client')">MODALITÀ CLIENT</button>
         </div>
         <div id="setup-conn" style="display:none">
             <div id="qrcode" class="qr-wrapper"></div>
-            <div id="qr-label" style="font-size:12px; color:#aaa">Generazione...</div>
+            <div id="qr-label" style="font-size:12px; color:#aaa">Generazione codici...</div>
             <div style="display:flex; gap:10px; margin-bottom:10px;">
                 <button class="setup-btn" style="background:#444" onclick="changeQR(-1)">⬅</button>
                 <button class="setup-btn" style="background:#444" onclick="changeQR(1)">➡</button>
             </div>
             <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-            <button class="setup-btn" onclick="openScanner()">📸 SCANNER FULLSCREEN</button>
+            <button class="setup-btn" onclick="openScanner()">📸 SCANNER (FULLSCREEN)</button>
             <button class="setup-btn" style="background:#444" onclick="copyFullCode()">📋 COPIA CODICE ZIP</button>
-            <textarea id="rSig" class="signal-area" placeholder="Incolla codice qui..."></textarea>
-            <button id="btn-connect" class="setup-btn" style="background:#28a745; display:none" onclick="connect()">⚡ CONNETTI</button>
+            <textarea id="rSig" class="signal-area" placeholder="Incolla codice integrale qui..."></textarea>
+            <button id="btn-connect" class="setup-btn" style="background:#28a745; display:none" onclick="connect()">⚡ CONNETTI ORA</button>
         </div>
     </div>
 </div>
@@ -83,47 +84,55 @@
     </div>
 </div>
 
-<div id="start-menu" style="position:fixed; bottom:55px; left:10px; width:260px; max-height:70vh; background:rgba(30,30,30,0.98); display:none; border-radius:12px; padding:10px; z-index:3000; border:1px solid #444; overflow-y:auto;"></div>
-
 <div id="viewport"><div id="canvas"></div></div>
 
 <div id="taskbar">
     <div onclick="toggleStart()" style="font-size:28px; cursor:pointer; color:var(--accent)">⊞</div>
     <div id="dock"></div>
-    <div style="margin-left:auto; display:flex; gap:15px; font-size:12px;">
+    <div style="margin-left:auto; display:flex; gap:15px; font-size:12px; align-items:center;">
         <span onclick="document.documentElement.requestFullscreen()" style="cursor:pointer">⛶</span>
         <span id="clock">00:00</span>
     </div>
 </div>
+
+<div id="start-menu" style="position:fixed; bottom:55px; left:10px; width:260px; max-height:70vh; background:rgba(30,30,30,0.98); display:none; border-radius:12px; padding:10px; z-index:3000; border:1px solid #444; overflow-y:auto;"></div>
 
 <script>
     let role, pc, dataChannel, state = { windows: [], icons: [], sW: window.innerWidth, activeWin: null };
     let qrChunks = [], currentChunkIdx = 0, receivedChunks = new Array(4).fill(null), fullZippedCode = "";
 
     const apps = [
-        { id: 'app_menu', name: 'Menu', icon: '🌉', url: 'MENU.html' },
-        { id: 'app_cam', name: 'Scanner', icon: '📷', url: 'CAM_SCANNER.html' },
         { id: 'app_clock', name: 'Clock', icon: '⏰', url: 'CLOCK_NIGHT_DAY.html' },
-        { id: 'app_ebook', name: 'Ebook', icon: '📖', url: 'EBOOK_READER.html' },
-        { id: 'app_foto', name: 'Foto', icon: '🆔', url: 'FOTO_TESSERA.html' },
-        { id: 'app_invaders', name: 'Invaders', icon: '👾', url: 'GAME_SPACE_INVADERS.html' },
         { id: 'app_tetris', name: 'Tetris', icon: '🧱', url: 'GAME_TETRIS.html' },
-        { id: 'app_imgtext', name: 'OCR', icon: '🔍', url: 'IMG_TO_TEXT.html' },
         { id: 'app_agenda', name: 'Agenda', icon: '📅', url: 'LUXURY_AGENDA.html' },
-        { id: 'app_metric', name: 'Metric', icon: '📏', url: 'METRIC_TOOLS.html' },
-        { id: 'app_excel', name: 'Excel', icon: '📊', url: 'EXCEL_EXSTRATOR.html' },
         { id: 'app_pass', name: 'Passwd', icon: '🔑', url: 'PASSWORD_MANAGER.html' },
-        { id: 'app_stock', name: 'Stock', icon: '📈', url: 'STOCK_CARD.html' },
         { id: 'app_word', name: 'Word', icon: '📄', url: 'WEB_OFFICE_WORD.html' },
-        { id: 'app_multi', name: 'Multi', icon: '🖥️', url: 'WEB_OS_MULTI_DESKTOP.html' },
-        { id: 'app_gantt', name: 'Gantt', icon: '📅', url: 'WORK_GANTT_PROJECT.html' }
+        { id: 'app_gantt', name: 'Gantt', icon: '📊', url: 'WORK_GANTT_PROJECT.html' }
     ];
 
-    // --- LOGICA CONNESSIONE ---
+    // --- FUNZIONE BEEP ---
+    function playBeep() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.type = "sine";
+            oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Nota La (A5)
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1); // Durata 100ms
+        } catch(e) { console.log("Audio non supportato"); }
+    }
+
+    // --- CONNESSIONE ---
     const zip = (s) => btoa(String.fromCharCode(...pako.deflate(new TextEncoder().encode(s))));
     const unzip = (b) => { try { return new TextDecoder().decode(pako.inflate(Uint8Array.from(atob(b), c => c.charCodeAt(0)))); } catch(e) { return null; } };
 
-    document.getElementById('rSig').addEventListener('input', function() { document.getElementById('btn-connect').style.display = this.value.length > 50 ? 'block' : 'none'; });
+    document.getElementById('rSig').addEventListener('input', function() { 
+        document.getElementById('btn-connect').style.display = this.value.trim().length > 50 ? 'block' : 'none'; 
+    });
 
     function boot(m) {
         role = m;
@@ -143,6 +152,7 @@
                 let sdp = pc.localDescription.sdp.split('\r\n').filter(l => !l.startsWith('a=extmap') && !l.startsWith('a=rtcp')).join('\r\n');
                 fullZippedCode = zip(JSON.stringify({t: pc.localDescription.type, s: sdp}));
                 const size = Math.ceil(fullZippedCode.length / 4);
+                qrChunks = [];
                 for(let i=0; i<4; i++) qrChunks.push(`F${i+1}|${fullZippedCode.substring(i*size, (i+1)*size)}`);
                 updateQRDisplay();
             }
@@ -159,77 +169,30 @@
 
     function changeQR(dir) { currentChunkIdx = (currentChunkIdx + dir + 4) % 4; updateQRDisplay(); }
 
- // --- COPIA DA QUI ---
     let scanner;
     async function openScanner() {
-        const container = document.getElementById('scanner-container');
-        container.style.display = 'flex';
-        
-        if (scanner) { try { await scanner.stop(); } catch(e) {} }
-
+        document.getElementById('scanner-container').style.display = 'flex';
         scanner = new Html5Qrcode("reader");
+        const config = { fps: 25, qrbox: 250, videoConstraints: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } };
         
-        // Configurazione per forzare la nitidezza su monitor
-        const config = { 
-            fps: 25, 
-            qrbox: (viewWidth, viewHeight) => {
-                const minSize = Math.min(viewWidth, viewHeight);
-                return { width: minSize * 0.8, height: minSize * 0.8 }; 
-            },
-            aspectRatio: 1.0,
-            videoConstraints: {
-                facingMode: "environment",
-                width: { ideal: 1920 }, // Prova a forzare il Full HD
-                height: { ideal: 1080 },
-                focusMode: "continuous" 
-            }
-        };
+        scanner.start({ facingMode: "environment" }, config, (text) => {
+            if(text.startsWith("F")) {
+                const n = parseInt(text.charAt(1)) - 1;
+                if(!receivedChunks[n]) {
+                    receivedChunks[n] = text.split("|")[1];
+                    document.querySelectorAll('.dot')[n].classList.add('active');
+                    playBeep(); // <--- BEEP!
+                    if(navigator.vibrate) navigator.vibrate(100);
 
-        scanner.start(
-            { facingMode: "environment" }, 
-            config, 
-            (text) => {
-                // Logica di riconoscimento frammenti F1, F2, F3, F4
-                if(text.includes("|")) {
-                    const parts = text.split("|");
-                    const head = parts[0]; 
-                    const data = parts[1];
-                    const n = parseInt(head.replace("F", "")) - 1;
-
-                    if(!isNaN(n) && n >= 0 && n < 4 && !receivedChunks[n]) {
-                        receivedChunks[n] = data;
-                        const dots = document.querySelectorAll('.dot');
-                        if(dots[n]) dots[n].classList.add('active');
-                        
-                        if(navigator.vibrate) navigator.vibrate(100);
-
-                        if(receivedChunks.every(c => c !== null)) { 
-                            document.getElementById('rSig').value = receivedChunks.join(""); 
-                            document.getElementById('btn-connect').style.display = 'block';
-                            closeScanner();
-                            alert("Scansione Completata!");
-                        }
+                    if(receivedChunks.every(c => c !== null)) { 
+                        document.getElementById('rSig').value = receivedChunks.join(""); 
+                        document.getElementById('btn-connect').style.display = 'block';
+                        closeScanner();
                     }
                 }
-            },
-            (error) => { /* Ignora errori di ricerca frame */ }
-        ).catch(err => {
-            alert("Errore Fotocamera: " + err);
-            container.style.display = 'none';
-        });
+            }
+        }).catch(err => alert("Errore fotocamera: " + err));
     }
-
-    function closeScanner() {
-        if(scanner) {
-            scanner.stop().then(() => {
-                document.getElementById('scanner-container').style.display = 'none';
-                scanner = null;
-            }).catch(() => {
-                document.getElementById('scanner-container').style.display = 'none';
-            });
-        }
-    }
-    // --- A QUI ---
 
     function closeScanner() { if(scanner) scanner.stop().then(() => document.getElementById('scanner-container').style.display = 'none'); }
     function copyFullCode() { navigator.clipboard.writeText(fullZippedCode); alert("Copiato!"); }
@@ -239,7 +202,8 @@
             const data = JSON.parse(unzip(document.getElementById('rSig').value.trim()));
             await pc.setRemoteDescription(new RTCSessionDescription({type: data.t, sdp: data.s}));
             if(role === 'client') { const ans = await pc.createAnswer(); await pc.setLocalDescription(ans); }
-        } catch(e) { alert("Codice errato."); }
+            document.getElementById('overlay').style.display = 'none';
+        } catch(e) { alert("Codice invalido."); }
     }
 
     function setupDC(chan) {
@@ -258,7 +222,7 @@
         switch(a.type) {
             case 'OPEN':
                 const id = 'w' + Date.now();
-                state.windows.push({ ...a.app, id, x: a.x, y: 60, w: 750, h: 500, max: false, min: false });
+                state.windows.push({ ...a.app, id, x: 50, y: 60, w: 750, h: 500, max: false, min: false });
                 state.activeWin = id; break;
             case 'MOVE': if(win) { win.x = a.x; win.y = a.y; state.activeWin = win.id; } break;
             case 'CLOSE': state.windows = state.windows.filter(w => w.id !== a.id); break;
