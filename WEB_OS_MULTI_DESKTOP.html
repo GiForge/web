@@ -2,167 +2,168 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Enterprise OS v5.3 - Web App Integration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Enterprise OS v6.5 - Full Apps & Fix</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        :root {
-            --accent: #0078d7;
-            --taskbar-bg: rgba(20, 20, 20, 0.95);
-            --win-bg: #f3f3f3;
-            --win-border: #444;
-        }
-
-        body, html { margin: 0; padding: 0; height: 100%; background: #000; font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; }
-
+        :root { --accent: #0078d7; --taskbar-bg: rgba(20, 20, 20, 0.95); --win-bg: #f3f3f3; --win-border: #444; }
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; touch-action: none; }
+        
         #viewport { width: 100vw; height: 100vh; position: relative; overflow: hidden; background: #1a1a1a; }
         #canvas { position: absolute; top: 0; left: 0; height: 100%; width: 100000px; transition: left 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
 
-        .desktop-icon {
-            position: absolute; width: 85px; padding: 10px; text-align: center;
-            cursor: pointer; border-radius: 6px; z-index: 5; user-select: none;
-        }
-        .desktop-icon:hover { background: rgba(255,255,255,0.1); }
+        /* Desktop Icons */
+        .desktop-icon { position: absolute; width: 85px; padding: 10px; text-align: center; cursor: pointer; z-index: 5; user-select: none; }
         .icon-img { font-size: 35px; display: block; margin-bottom: 5px; pointer-events: none; }
+        .desktop-icon small { font-size: 11px; text-shadow: 1px 1px 2px #000; pointer-events: none; }
 
-        .window {
-            position: absolute; background: var(--win-bg); border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column;
-            color: #000; min-width: 300px; min-height: 200px; z-index: 100; 
-            touch-action: none; overflow: hidden; border: 1px solid var(--win-border);
-        }
-        .window.maximized { border-radius: 0 !important; width: 100vw !important; height: calc(100vh - 48px) !important; top: 0 !important; }
+        /* Window System - FIX DEFINITIVO */
+        .window { position: absolute; background: var(--win-bg); border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; color: #000; min-width: 300px; min-height: 200px; z-index: 100; overflow: hidden; border: 1px solid var(--win-border); }
+        .window.active { z-index: 500; border: 2px solid var(--accent); }
+        .window.maximized { border-radius: 0 !important; width: 100vw !important; height: calc(100vh - 48px) !important; top: 0 !important; left: 0 !important; transform: none !important; }
         .window.minimized { display: none; }
-        .window.active { z-index: 500; border: 1px solid var(--accent); box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
 
-        .win-header {
-            height: 35px; background: #e1e1e1; display: flex; align-items: center;
-            justify-content: space-between; padding: 0 10px; cursor: move; user-select: none;
-        }
-        .win-controls { display: flex; gap: 5px; }
-        .win-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 3px; }
+        .win-header { height: 40px; background: #e1e1e1; display: flex; align-items: center; justify-content: space-between; padding: 0; cursor: move; position: relative; }
+        .win-title { padding-left: 12px; font-size: 13px; font-weight: 600; flex-grow: 1; height: 100%; display: flex; align-items: center; }
+        
+        /* Controlli isolati per evitare il drag */
+        .win-controls { display: flex; height: 100%; z-index: 1001; pointer-events: auto; }
+        .win-btn { width: 45px; height: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; font-family: sans-serif; font-size: 16px; pointer-events: auto; }
         .win-btn:hover { background: rgba(0,0,0,0.1); }
         .win-btn.close:hover { background: #e81123; color: white; }
 
-        .win-content { flex: 1; background: white; position: relative; overflow: hidden; }
-        .app-iframe { width: 100%; height: 100%; border: none; background: white; }
-
-        /* Copertura trasparente per permettere il drag sopra gli iframe */
+        .win-content { flex: 1; background: white; position: relative; }
+        .app-iframe { width: 100%; height: 100%; border: none; }
         .drag-overlay { position: absolute; inset: 0; z-index: 999; display: none; }
         .dragging .drag-overlay { display: block; }
 
-        #taskbar { position: fixed; bottom: 0; left: 0; width: 100%; height: 48px; background: var(--taskbar-bg); backdrop-filter: blur(15px); display: flex; align-items: center; padding: 0 15px; z-index: 1000; border-top: 1px solid rgba(255,255,255,0.1); box-sizing: border-box; }
-        #dock { display: flex; gap: 10px; margin-left: 20px; }
-        .dock-item { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer; font-size: 20px; border-bottom: 2px solid transparent; }
-        .dock-item.active { border-bottom-color: var(--accent); background: rgba(255,255,255,0.2); }
+        /* Taskbar */
+        #taskbar { position: fixed; bottom: 0; left: 0; width: 100%; height: 48px; background: var(--taskbar-bg); backdrop-filter: blur(15px); display: flex; align-items: center; padding: 0 10px; z-index: 2000; }
+        #dock { display: flex; gap: 8px; margin-left: 15px; }
+        .dock-item { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 6px; cursor: pointer; font-size: 20px; }
+        .dock-item.active { border-bottom: 2px solid var(--accent); background: rgba(255,255,255,0.2); }
 
-        #overlay { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .card { background: #222; padding: 30px; border-radius: 12px; width: 400px; text-align: center; border: 1px solid #333; }
-        .signal-box { width: 100%; height: 70px; background: #000; color: #0f0; border: 1px solid #444; font-family: monospace; font-size: 10px; margin: 10px 0; padding: 8px; resize: none; }
-        .setup-btn { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .primary { background: var(--accent); color: white; }
-        
-        #start-menu { position: fixed; bottom: 55px; left: 10px; width: 280px; background: rgba(30,30,30,0.98); border: 1px solid #444; border-radius: 8px; display: none; padding: 8px; z-index: 1001; }
-        .start-item { padding: 12px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 12px; font-size: 14px; }
-        .start-item:hover { background: var(--accent); }
+        /* Overlay */
+        #overlay { position: fixed; inset: 0; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .card { background: #222; padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; border: 1px solid #333; }
+        #qrcode { background: white; padding: 15px; display: inline-block; margin: 10px auto; border-radius: 8px; }
+        #qrcode img { display: block; margin: 0 auto; }
+        .signal-box { width: 100%; height: 50px; background: #000; color: #0f0; border: 1px solid #444; font-size: 10px; margin: 10px 0; }
+        .setup-btn { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="overlay">
     <div class="card">
-        <h2>Enterprise OS v5.3</h2>
+        <h3>Enterprise OS v6.5</h3>
         <div id="setup-initial">
-            <button class="setup-btn primary" onclick="boot('server')">MONITOR 1 (Server)</button>
-            <button class="setup-btn primary" style="background:#444; margin-top:10px;" onclick="boot('client')">MONITOR 2 (Client)</button>
+            <button class="setup-btn" style="background:var(--accent); color:white" onclick="boot('server')">SERVER (Monitor 1)</button>
+            <button class="setup-btn" style="background:#444; color:white" onclick="boot('client')">CLIENT (Smartphone)</button>
         </div>
         <div id="setup-conn" style="display:none">
+            <div id="qrcode"></div>
             <textarea id="lSig" class="signal-box" readonly></textarea>
-            <button id="btnCopy" class="setup-btn" style="background:#444" onclick="copySig()">Copia Codice Locale</button>
-            <textarea id="rSig" class="signal-box" placeholder="Incolla codice remoto..."></textarea>
-            <button class="setup-btn primary" onclick="connect()">CONNETTI</button>
+            <button class="setup-btn" style="background:#444; color:white" onclick="copySig()">COPIA CODICE</button>
+            <div id="reader" style="width:100%; display:none; margin-top:10px;"></div>
+            <button id="btnScan" class="setup-btn" style="background:var(--accent); color:white" onclick="startScanner()">SCANSIONA QR</button>
+            <textarea id="rSig" class="signal-box" placeholder="Incolla codice qui..."></textarea>
+            <button class="setup-btn" style="background:#28a745; color:white" onclick="connect()">CONNETTI</button>
         </div>
     </div>
 </div>
 
-<div id="start-menu"></div>
+<div id="start-menu" style="position:fixed; bottom:55px; left:10px; width:260px; max-height:70vh; background:rgba(30,30,30,0.98); display:none; border-radius:12px; padding:10px; z-index:3000; border:1px solid #444; overflow-y:auto;"></div>
 <div id="viewport"><div id="canvas"></div></div>
 
 <div id="taskbar">
-    <div onclick="toggleStart()" style="font-size:24px; cursor:pointer; color:var(--accent)">⊞</div>
+    <div onclick="toggleStart()" style="font-size:28px; cursor:pointer; color:var(--accent); padding:0 10px;">⊞</div>
     <div id="dock"></div>
-    <div id="clock" style="margin-left:auto; font-size:12px; font-weight: 300;">00:00</div>
+    <div id="clock" style="margin-left:auto; font-size:12px;">00:00</div>
 </div>
 
 <script>
-    let role, pc, dataChannel;
-    
-// Configurazione completa App (Enterprise OS v5.6)
+    let role, pc, dataChannel, state = { windows: [], icons: [], sW: window.innerWidth, activeWin: null };
+
     const apps = [
-        { id: 'app_menu', name: 'Menu', icon: '🌉', type: 'webapp', url: 'MENU.html' },
-        { id: 'app_cam', name: 'Cam Scanner', icon: '📷', type: 'webapp', url: 'CAM_SCANNER.html' },
-        { id: 'app_clock', name: 'Clock Night/Day', icon: '⏰', type: 'webapp', url: 'CLOCK_NIGHT_DAY.html' },
-        { id: 'app_ebook', name: 'Ebook Reader', icon: '📖', type: 'webapp', url: 'EBOOK_READER.html' },
-        { id: 'app_foto', name: 'Foto Tessera', icon: '🆔', type: 'webapp', url: 'FOTO_TESSERA.html' },
-        { id: 'app_invaders', name: 'Space Invaders', icon: '👾', type: 'webapp', url: 'GAME_SPACE_INVADERS.html' },
-        { id: 'app_tetris', name: 'Tetris', icon: '🧱', type: 'webapp', url: 'GAME_TETRIS.html' },
-        { id: 'app_imgtext', name: 'Img to Text', icon: '🔍', type: 'webapp', url: 'IMG_TO_TEXT.html' },
-        { id: 'app_index', name: 'Home Index', icon: '🏠', type: 'webapp', url: 'index.html' },
-        { id: 'app_agenda', name: 'Luxury Agenda', icon: '📅', type: 'webapp', url: 'LUXURY_AGENDA.html' },
-        { id: 'app_metric', name: 'Metric Tools', icon: '📏', type: 'webapp', url: 'METRIC_TOOLS.html' },
-        { id: 'app_night', name: 'Night Filters', icon: '🌙', type: 'webapp', url: 'NIGHT_FILTERS.html' },
-        { id: 'app_excel', name: 'Excel Extractor', icon: '📊', type: 'webapp', url: 'EXCEL_EXSTRATOR.html' },
-        { id: 'app_pass', name: 'Password Manager', icon: '🔑', type: 'webapp', url: 'PASSWORD_MANAGER.html' },
-        { id: 'app_stock', name: 'Stock Card', icon: '📈', type: 'webapp', url: 'STOCK_CARD.html' },
-        { id: 'app_word', name: 'Web Office Word', icon: '📄', type: 'webapp', url: 'WEB_OFFICE_WORD.html' },
-        { id: 'app_webos', name: 'Web OS', icon: '💻', type: 'webapp', url: 'WEB_OS.html' },
-        { id: 'app_multi', name: 'Multi Desktop', icon: '🖥️', type: 'webapp', url: 'WEB_OS_MULTI_DESKTOP.html' },
-        { id: 'app_gantt', name: 'Work Gantt', icon: '📅', type: 'webapp', url: 'WORK_GANTT_PROJECT.html' },
-        { id: 'app_text', name: 'Notepad Sync', icon: '📝', type: 'editor' }
+        { id: 'app_menu', name: 'Menu', icon: '🌉', url: 'MENU.html' },
+        { id: 'app_cam', name: 'Cam Scanner', icon: '📷', url: 'CAM_SCANNER.html' },
+        { id: 'app_clock', name: 'Clock', icon: '⏰', url: 'CLOCK_NIGHT_DAY.html' },
+        { id: 'app_ebook', name: 'Ebook', icon: '📖', url: 'EBOOK_READER.html' },
+        { id: 'app_foto', name: 'Foto Tessera', icon: '🆔', url: 'FOTO_TESSERA.html' },
+        { id: 'app_invaders', name: 'Invaders', icon: '👾', url: 'GAME_SPACE_INVADERS.html' },
+        { id: 'app_tetris', name: 'Tetris', icon: '🧱', url: 'GAME_TETRIS.html' },
+        { id: 'app_imgtext', name: 'Img to Text', icon: '🔍', url: 'IMG_TO_TEXT.html' },
+        { id: 'app_index', name: 'Home', icon: '🏠', url: 'index.html' },
+        { id: 'app_agenda', name: 'Agenda', icon: '📅', url: 'LUXURY_AGENDA.html' },
+        { id: 'app_metric', name: 'Metric Tools', icon: '📏', url: 'METRIC_TOOLS.html' },
+        { id: 'app_night', name: 'Night Filters', icon: '🌙', url: 'NIGHT_FILTERS.html' },
+        { id: 'app_excel', name: 'Excel Extractor', icon: '📊', url: 'EXCEL_EXSTRATOR.html' },
+        { id: 'app_pass', name: 'Password', icon: '🔑', url: 'PASSWORD_MANAGER.html' },
+        { id: 'app_stock', name: 'Stock Card', icon: '📈', url: 'STOCK_CARD.html' },
+        { id: 'app_word', name: 'Word', icon: '📄', url: 'WEB_OFFICE_WORD.html' },
+        { id: 'app_webos', name: 'Web OS', icon: '💻', url: 'WEB_OS.html' },
+        { id: 'app_multi', name: 'Multi Desktop', icon: '🖥️', url: 'WEB_OS_MULTI_DESKTOP.html' },
+        { id: 'app_gantt', name: 'Work Gantt', icon: '📅', url: 'WORK_GANTT_PROJECT.html' },
+        { id: 'app_text', name: 'Notepad', icon: '📝', type: 'editor' }
     ];
-    let state = {
-        windows: [],
-        icons: apps.map((a, i) => ({ ...a, x: 20, y: 20 + i*95 })),
-        sW: window.innerWidth,
-        activeWin: null
-    };
 
-    const getGlobalX = (clientX) => (role === 'client' ? clientX + state.sW : clientX);
-
-    // --- NETWORK CORE ---
     function boot(m) {
         role = m;
         document.getElementById('setup-initial').style.display = 'none';
         document.getElementById('setup-conn').style.display = 'block';
-        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-        pc.onicecandidate = e => { if(!e.candidate) document.getElementById('lSig').value = btoa(JSON.stringify(pc.localDescription)); };
+        if(role === 'server') {
+            state.icons = apps.map((a, i) => ({ ...a, x: 20 + Math.floor(i/8)*90, y: 20 + (i%8)*90 }));
+            initNetwork();
+            initStartMenu();
+        } else { initNetwork(); }
+    }
 
+    function initNetwork() {
+        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        pc.onicecandidate = e => {
+            if(!e.candidate) {
+                const sig = btoa(JSON.stringify(pc.localDescription));
+                document.getElementById('lSig').value = sig;
+                document.getElementById('qrcode').innerHTML = "";
+                // QR Code con correzione errore bassa per densità ridotta
+                new QRCode(document.getElementById("qrcode"), { text: sig, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.L });
+            }
+        };
         if(role === 'server') {
             dataChannel = pc.createDataChannel("os-sync");
             setupDC(dataChannel);
             pc.createOffer().then(d => pc.setLocalDescription(d));
-            initStartMenu();
-        } else {
-            pc.ondatachannel = e => setupDC(e.channel);
-        }
+        } else { pc.ondatachannel = e => setupDC(e.channel); }
+    }
+
+    function startScanner() {
+        const reader = document.getElementById('reader');
+        reader.style.display = 'block';
+        const scanner = new Html5Qrcode("reader");
+        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
+            document.getElementById('rSig').value = text;
+            scanner.stop();
+            reader.style.display = 'none';
+            connect();
+        }).catch(() => alert("Camera error"));
     }
 
     async function connect() {
         try {
             const val = document.getElementById('rSig').value.trim();
-            const desc = new RTCSessionDescription(JSON.parse(atob(val)));
-            await pc.setRemoteDescription(desc);
+            await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(val))));
             if(role === 'client') {
                 const ans = await pc.createAnswer();
                 await pc.setLocalDescription(ans);
             }
-        } catch(e) { alert("Errore di sincronizzazione segnale."); }
+        } catch(e) { alert("Codice errato"); }
     }
 
     function setupDC(chan) {
         dataChannel = chan;
-        dataChannel.onopen = () => {
-            document.getElementById('overlay').style.display = 'none';
-            if(role === 'server') sync();
-        };
+        dataChannel.onopen = () => { document.getElementById('overlay').style.display = 'none'; sync(); };
         dataChannel.onmessage = e => {
             const msg = JSON.parse(e.data);
             if(msg.type === 'SYNC') { state = msg.payload; updateDOM(); }
@@ -170,29 +171,28 @@
         };
     }
 
-    function handleAction(action) {
-        const win = state.windows.find(w => w.id === action.id);
-        const icon = state.icons.find(i => i.id === action.id);
-        switch(action.type) {
-            case 'FOCUS': state.activeWin = action.id; break;
-            case 'DRAG': if(win) { win.x = action.x; win.y = action.y; state.activeWin = win.id; } break;
-            case 'OPEN': 
+    function handleAction(a) {
+        let win = state.windows.find(w => w.id === a.id);
+        let icon = state.icons.find(i => i.id === a.id);
+        switch(a.type) {
+            case 'OPEN':
                 const id = 'w' + Date.now();
-                state.windows.push({ ...action.app, id, x: action.x, y: 100, w: 800, h: 600, max: false, min: false, content: '' });
-                state.activeWin = id;
-                break;
-            case 'CLOSE': state.windows = state.windows.filter(w => w.id !== action.id); break;
-            case 'MAX': if(win) win.max = !win.max; break;
-            case 'MIN': if(win) win.min = true; break;
+                state.windows.push({ ...a.app, id, x: a.x, y: 60, w: 700, h: 480, max: false, min: false });
+                state.activeWin = id; break;
+            case 'DRAG': if(win) { win.x = a.x; win.y = a.y; state.activeWin = win.id; } break;
+            case 'IDRAG': if(icon) { icon.x = a.x; icon.y = a.y; } break;
+            case 'CLOSE': state.windows = state.windows.filter(w => w.id !== a.id); break;
+            case 'MAX': if(win) { win.max = !win.max; state.activeWin = win.id; } break;
+            case 'MIN': if(win) { win.min = true; } break;
             case 'RESTORE': if(win) { win.min = false; state.activeWin = win.id; } break;
-            case 'EDIT': if(win) win.content = action.val; break;
+            case 'FOCUS': state.activeWin = a.id; break;
         }
         sync();
     }
 
-    function send(action) {
-        if(role === 'server') handleAction(action);
-        else if(dataChannel?.readyState === 'open') dataChannel.send(JSON.stringify({type:'ACTION', action}));
+    function send(a) {
+        if(role === 'server') handleAction(a);
+        else if(dataChannel?.readyState === 'open') dataChannel.send(JSON.stringify({type:'ACTION', action: a}));
     }
 
     function sync() {
@@ -203,18 +203,14 @@
         updateDOM();
     }
 
-    // --- UI ENGINE ---
     function updateDOM() {
         const canvas = document.getElementById('canvas');
-        const dock = document.getElementById('dock');
         canvas.style.left = role === 'client' ? `-${state.sW}px` : `0px`;
 
-        // Render icone desktop
         state.icons.forEach(icon => {
             let el = document.getElementById(icon.id);
             if(!el) {
-                el = document.createElement('div');
-                el.id = icon.id; el.className = 'desktop-icon';
+                el = document.createElement('div'); el.id = icon.id; el.className = 'desktop-icon';
                 el.innerHTML = `<span class="icon-img">${icon.icon}</span><small>${icon.name}</small>`;
                 el.ondblclick = () => send({type:'OPEN', app: icon, x: role==='client' ? state.sW + 50 : 50});
                 bindDrag(el, icon.id, 'IDRAG');
@@ -223,112 +219,65 @@
             el.style.transform = `translate(${icon.x}px, ${icon.y}px)`;
         });
 
-        // Gestione Finestre
         const currentIds = state.windows.map(w => w.id);
         document.querySelectorAll('.window').forEach(w => { if(!currentIds.includes(w.id)) w.remove(); });
 
         state.windows.forEach(win => {
             let el = document.getElementById(win.id);
             if(!el) {
-                el = document.createElement('div');
-                el.id = win.id; el.className = 'window';
+                el = document.createElement('div'); el.id = win.id; el.className = 'window';
                 el.innerHTML = `
                     <div class="win-header">
-                        <span>${win.icon} ${win.name}</span>
+                        <div class="win-title">${win.icon} ${win.name}</div>
                         <div class="win-controls">
-                            <div class="win-btn" onclick="send({type:'MIN', id:'${win.id}'})">─</div>
+                            <div class="win-btn" onclick="send({type:'MIN', id:'${win.id}'})">－</div>
                             <div class="win-btn" onclick="send({type:'MAX', id:'${win.id}'})">▢</div>
                             <div class="win-btn close" onclick="send({type:'CLOSE', id:'${win.id}'})">✕</div>
                         </div>
                     </div>
-                    <div class="win-content">
-                        <div class="drag-overlay"></div>
-                        ${win.type === 'webapp' 
-                            ? `<iframe src="${win.url}" class="app-iframe"></iframe>` 
-                            : (win.type === 'editor' ? '<textarea class="text-editor"></textarea>' : '')}
-                    </div>`;
-                
-                if(win.type === 'editor') {
-                    const tx = el.querySelector('textarea');
-                    tx.oninput = (e) => send({type:'EDIT', id: win.id, val: e.target.value});
-                }
-                
-                bindDrag(el.querySelector('.win-header'), win.id, 'DRAG', el);
+                    <div class="win-content"><div class="drag-overlay"></div><iframe src="${win.url}" class="app-iframe"></iframe></div>`;
+                bindDrag(el.querySelector('.win-title'), win.id, 'DRAG', el);
                 canvas.appendChild(el);
             }
-
-            if(win.type === 'editor') {
-                const tx = el.querySelector('textarea');
-                if (document.activeElement !== tx) tx.value = win.content || '';
-            }
-
             el.classList.toggle('active', state.activeWin === win.id);
             el.classList.toggle('maximized', win.max);
-            el.classList.toggle('minimized', win.min);
-            
+            el.style.display = win.min ? 'none' : 'flex';
             if(!win.max) {
-                el.style.width = win.w + 'px'; el.style.height = win.h + 'px';
                 el.style.transform = `translate(${win.x}px, ${win.y}px)`;
+                el.style.width = win.w + 'px'; el.style.height = win.h + 'px';
             } else {
                 el.style.transform = `translate(${win.x >= state.sW ? state.sW : 0}px, 0px)`;
             }
         });
 
-        // Dock Update
-        dock.innerHTML = '';
+        const dock = document.getElementById('dock'); dock.innerHTML = '';
         state.windows.forEach(win => {
-            const item = document.createElement('div');
-            item.className = `dock-item ${(!win.min && state.activeWin === win.id) ? 'active' : ''}`;
+            const item = document.createElement('div'); item.className = `dock-item ${(!win.min && state.activeWin === win.id) ? 'active' : ''}`;
             item.innerHTML = win.icon;
-            item.title = win.name;
-            item.onclick = () => send({type: win.min ? 'RESTORE' : 'MIN', id: win.id});
+            item.onclick = () => send(win.min ? {type:'RESTORE', id:win.id} : {type:'FOCUS', id:win.id});
             dock.appendChild(item);
         });
     }
 
-    function bindDrag(handle, targetId, type, parentEl = null) {
+    function bindDrag(handle, targetId, type, parent = null) {
         handle.onpointerdown = e => {
             const target = (type === 'DRAG') ? state.windows.find(w => w.id === targetId) : state.icons.find(i => i.id === targetId);
             if(!target || target.max) return;
-            
             handle.setPointerCapture(e.pointerId);
-            if(parentEl) parentEl.classList.add('dragging');
+            if(parent) parent.classList.add('dragging');
             send({type: 'FOCUS', id: targetId});
-
-            const startMouseX = getGlobalX(e.clientX);
-            const startMouseY = e.clientY;
-            const startObjX = target.x;
-            const startObjY = target.y;
-
+            const startX = (role === 'client' ? e.clientX + state.sW : e.clientX) - target.x;
+            const startY = e.clientY - target.y;
             handle.onpointermove = ev => {
-                const currentMouseX = getGlobalX(ev.clientX);
-                const currentMouseY = ev.clientY;
-                send({
-                    type, id: targetId,
-                    x: startObjX + (currentMouseX - startMouseX),
-                    y: startObjY + (currentMouseY - startMouseY)
-                });
+                const curX = (role === 'client' ? ev.clientX + state.sW : ev.clientX);
+                send({ type, id: targetId, x: curX - startX, y: ev.clientY - startY });
             };
             handle.onpointerup = () => {
                 handle.onpointermove = null;
-                if(parentEl) parentEl.classList.remove('dragging');
+                if(parent) parent.classList.remove('dragging');
                 handle.releasePointerCapture(e.pointerId);
             };
         };
-    }
-
-    function initStartMenu() {
-        const sm = document.getElementById('start-menu');
-        apps.forEach(a => {
-            const item = document.createElement('div');
-            item.className = 'start-item';
-            item.innerHTML = `<span>${a.icon}</span> ${a.name}`;
-            item.onclick = () => { 
-                send({type:'OPEN', app: a, x: role==='client' ? state.sW+100 : 100}); 
-                toggleStart(); 
-            };
-            sm.appendChild(item);
-        });
     }
 
     function toggleStart() {
@@ -336,15 +285,19 @@
         sm.style.display = sm.style.display === 'block' ? 'none' : 'block';
     }
 
-    function copySig() {
-        const t = document.getElementById('lSig'); t.select(); document.execCommand('copy');
-        document.getElementById('btnCopy').innerText = "COPIATO!";
-        setTimeout(() => document.getElementById('btnCopy').innerText = "Copia Codice Locale", 2000);
+    function initStartMenu() {
+        const sm = document.getElementById('start-menu');
+        apps.forEach(a => {
+            const d = document.createElement('div'); d.style.padding = "12px"; d.style.cursor="pointer";
+            d.innerHTML = `${a.icon} ${a.name}`; d.style.borderBottom = "1px solid #333";
+            d.onclick = () => { send({type:'OPEN', app: a, x: role==='client' ? state.sW + 50 : 50}); toggleStart(); };
+            sm.appendChild(d);
+        });
     }
 
+    function copySig() { const t = document.getElementById('lSig'); t.select(); document.execCommand('copy'); }
     setInterval(() => {
-        const d = new Date();
-        document.getElementById('clock').innerText = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+        const d = new Date(); document.getElementById('clock').innerText = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
     }, 1000);
 </script>
 </body>
