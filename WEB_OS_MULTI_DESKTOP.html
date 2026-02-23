@@ -159,22 +159,77 @@
 
     function changeQR(dir) { currentChunkIdx = (currentChunkIdx + dir + 4) % 4; updateQRDisplay(); }
 
+ // --- COPIA DA QUI ---
     let scanner;
-    function openScanner() {
-        document.getElementById('scanner-container').style.display = 'flex';
+    async function openScanner() {
+        const container = document.getElementById('scanner-container');
+        container.style.display = 'flex';
+        
+        if (scanner) { try { await scanner.stop(); } catch(e) {} }
+
         scanner = new Html5Qrcode("reader");
-        scanner.start({ facingMode: "environment" }, { fps: 20, qrbox: 250 }, (text) => {
-            if(text.startsWith("F")) {
-                const n = parseInt(text.charAt(1)) - 1; receivedChunks[n] = text.split("|")[1];
-                document.querySelectorAll('.dot')[n].classList.add('active');
-                if(receivedChunks.every(c => c !== null)) { 
-                    document.getElementById('rSig').value = receivedChunks.join(""); 
-                    document.getElementById('btn-connect').style.display = 'block';
-                    closeScanner();
-                }
+        
+        // Configurazione per forzare la nitidezza su monitor
+        const config = { 
+            fps: 25, 
+            qrbox: (viewWidth, viewHeight) => {
+                const minSize = Math.min(viewWidth, viewHeight);
+                return { width: minSize * 0.8, height: minSize * 0.8 }; 
+            },
+            aspectRatio: 1.0,
+            videoConstraints: {
+                facingMode: "environment",
+                width: { ideal: 1920 }, // Prova a forzare il Full HD
+                height: { ideal: 1080 },
+                focusMode: "continuous" 
             }
+        };
+
+        scanner.start(
+            { facingMode: "environment" }, 
+            config, 
+            (text) => {
+                // Logica di riconoscimento frammenti F1, F2, F3, F4
+                if(text.includes("|")) {
+                    const parts = text.split("|");
+                    const head = parts[0]; 
+                    const data = parts[1];
+                    const n = parseInt(head.replace("F", "")) - 1;
+
+                    if(!isNaN(n) && n >= 0 && n < 4 && !receivedChunks[n]) {
+                        receivedChunks[n] = data;
+                        const dots = document.querySelectorAll('.dot');
+                        if(dots[n]) dots[n].classList.add('active');
+                        
+                        if(navigator.vibrate) navigator.vibrate(100);
+
+                        if(receivedChunks.every(c => c !== null)) { 
+                            document.getElementById('rSig').value = receivedChunks.join(""); 
+                            document.getElementById('btn-connect').style.display = 'block';
+                            closeScanner();
+                            alert("Scansione Completata!");
+                        }
+                    }
+                }
+            },
+            (error) => { /* Ignora errori di ricerca frame */ }
+        ).catch(err => {
+            alert("Errore Fotocamera: " + err);
+            container.style.display = 'none';
         });
     }
+
+    function closeScanner() {
+        if(scanner) {
+            scanner.stop().then(() => {
+                document.getElementById('scanner-container').style.display = 'none';
+                scanner = null;
+            }).catch(() => {
+                document.getElementById('scanner-container').style.display = 'none';
+            });
+        }
+    }
+    // --- A QUI ---
 
     function closeScanner() { if(scanner) scanner.stop().then(() => document.getElementById('scanner-container').style.display = 'none'); }
     function copyFullCode() { navigator.clipboard.writeText(fullZippedCode); alert("Copiato!"); }
