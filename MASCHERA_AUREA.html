@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>φ Maschera Aurea — Face Morphing</title>
+<style>
+/* ─── FONT & ROOT ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@200;300;400&display=swap');
+
+:root {
+  --gold:       #C8A84B;
+  --gold-dim:   #7A6228;
+  --gold-glow:  rgba(200,168,75,0.15);
+  --bg:         #080705;
+  --surface:    #111009;
+  --surface2:   #181510;
+  --border:     #252015;
+  --border2:    #302A18;
+  --text:       #EDE5CC;
+  --muted:      #7A7060;
+  --danger:     #C05040;
+  --green:      #5A9A50;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle grain texture over the whole page */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999;
+}
+
+/* ─── HEADER ─────────────────────────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.logo-phi {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  color: var(--gold);
+  font-style: italic;
+  line-height: 1;
+}
+
+.logo-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.logo-sub {
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 300;
+}
+
+/* Mode tabs in header */
+.mode-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg);
+  padding: 3px;
+  border: 1px solid var(--border);
+}
+
+.mode-tab {
+  padding: 7px 18px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-tab.active {
+  background: var(--gold-glow);
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+}
+
+/* ─── LAYOUT ──────────────────────────────────────────────────────────────── */
+.workspace {
+  display: grid;
+  grid-template-columns: 220px 1fr 220px;
+  gap: 0;
+  height: calc(100vh - 65px);
+}
+
+/* ─── SIDEBARS ────────────────────────────────────────────────────────────── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar:last-child {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+.sidebar-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-label {
+  font-size: 0.52rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 400;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border2);
+}
+
+/* ─── UPLOAD ZONE ─────────────────────────────────────────────────────────── */
+.upload-zone {
+  border: 1px dashed var(--border2);
+  padding: 20px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  background: var(--surface2);
+  border-radius: 1px;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--gold-dim);
+  background: #1a1608;
+}
+.upload-zone .icon { font-size: 1.4rem; margin-bottom: 6px; color: var(--gold-dim); }
+.upload-zone p { font-size: 0.58rem; color: var(--muted); letter-spacing: 0.1em; line-height: 1.8; }
+#fileInput, #maskFileInput { display: none; }
+
+/* ─── MASK UPLOAD ─────────────────────────────────────────────────────────── */
+.mask-upload-zone {
+  border: 1px dashed var(--border2);
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  background: var(--surface2);
+  margin-bottom: 10px;
+}
+.mask-upload-zone:hover { border-color: var(--gold-dim); }
+.mask-upload-zone p { font-size: 0.55rem; color: var(--muted); letter-spacing: 0.08em; line-height: 1.7; }
+.mask-loaded { font-size: 0.55rem; color: var(--green); letter-spacing: 0.1em; text-align: center; padding: 6px; }
+
+/* ─── BUTTONS ─────────────────────────────────────────────────────────────── */
+.btn {
+  width: 100%; padding: 9px 12px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 6px;
+  display: block;
+}
+.btn:hover { border-color: var(--gold-dim); color: var(--gold); background: var(--gold-glow); }
+.btn-primary { border-color: var(--gold-dim); color: var(--gold); background: var(--gold-glow); }
+.btn-primary:hover { background: rgba(200,168,75,0.22); border-color: var(--gold); }
+.btn-danger { border-color: #3A1810; color: var(--danger); }
+.btn-danger:hover { background: rgba(192,80,64,0.08); border-color: var(--danger); }
+.btn-green { border-color: #1A3010; color: var(--green); }
+.btn-green:hover { background: rgba(90,154,80,0.08); border-color: var(--green); }
+
+/* ─── SLIDERS ─────────────────────────────────────────────────────────────── */
+.control-group { margin-bottom: 12px; }
+.control-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.control-row span { color: var(--gold); font-weight: 400; }
+input[type="range"] {
+  width: 100%; -webkit-appearance: none;
+  height: 1px; background: var(--border2); outline: none; cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 9px; height: 9px;
+  background: var(--gold); border-radius: 50%; cursor: pointer;
+  transition: transform 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.4); }
+
+/* ─── TOGGLE SWITCH ───────────────────────────────────────────────────────── */
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.toggle-label { font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.toggle {
+  position: relative; width: 32px; height: 16px;
+  background: var(--border2); border-radius: 8px; cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle.on { background: var(--gold-dim); }
+.toggle::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 12px; height: 12px; background: var(--muted);
+  border-radius: 50%; transition: all 0.2s;
+}
+.toggle.on::after { left: 18px; background: var(--gold); }
+
+/* ─── MAIN CANVAS AREA ───────────────────────────────────────────────────── */
+.canvas-area {
+  background: #050403;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tool-btn {
+  width: 30px; height: 30px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.18s;
+  font-family: 'DM Sans', sans-serif;
+  flex-shrink: 0;
+}
+.tool-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+.tool-btn.active { background: var(--gold-glow); border-color: var(--gold); color: var(--gold); }
+
+.toolbar-sep { width: 1px; height: 20px; background: var(--border2); margin: 0 4px; flex-shrink: 0; }
+.toolbar-info { font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); flex: 1; }
+
+.canvas-scroll {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#mainCanvas {
+  display: block;
+  cursor: crosshair;
+  max-width: 100%;
+  max-height: 100%;
+  image-rendering: pixelated;
+}
+
+/* Placeholder when no photo loaded */
+.canvas-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 40px;
+  pointer-events: none;
+}
+.ph-phi {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 8rem; color: #1A1608;
+  line-height: 1; margin-bottom: 16px;
+  font-style: italic;
+}
+.ph-text { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: #2A2418; line-height: 2.2; }
+
+/* ─── RIGHT PANEL — PREVIEW & INSTRUCTIONS ──────────────────────────────── */
+.preview-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+  position: relative;
+  min-height: 160px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+#previewCanvas { max-width: 100%; display: block; }
+.preview-label {
+  position: absolute; bottom: 6px; left: 8px;
+  font-size: 0.45rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--gold-dim);
+}
+
+/* Compare split view */
+.compare-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+  min-height: 80px;
+  display: flex;
+  overflow: hidden;
+}
+.compare-half { flex: 1; position: relative; overflow: hidden; }
+.compare-half canvas { width: 100%; height: 100%; object-fit: cover; }
+.compare-half-label {
+  position: absolute; bottom: 4px; left: 0; right: 0;
+  text-align: center;
+  font-size: 0.42rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: rgba(200,168,75,0.5);
+}
+.compare-divider { width: 1px; background: var(--gold-dim); flex-shrink: 0; }
+
+/* ─── INSTRUCTIONS PANEL ─────────────────────────────────────────────────── */
+.instructions-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  text-align: left;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.52rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: color 0.2s;
+}
+.instructions-toggle:hover { color: var(--gold); }
+.instructions-toggle .arrow { transition: transform 0.25s; }
+.instructions-toggle.open .arrow { transform: rotate(180deg); }
+
+.instructions-body {
+  display: none;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.instructions-body.open { display: block; }
+
+.step {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: flex-start;
+}
+.step-num {
+  width: 16px; height: 16px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.45rem; color: var(--gold);
+  flex-shrink: 0; margin-top: 1px;
+}
+.step-text { font-size: 0.55rem; color: var(--muted); line-height: 1.7; letter-spacing: 0.04em; }
+.step-text strong { color: var(--text); font-weight: 400; }
+
+/* ─── STATUS BAR ─────────────────────────────────────────────────────────── */
+.statusbar {
+  padding: 5px 14px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 0.48rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.statusbar span { color: var(--gold); }
+
+/* ─── MODAL (camera) ─────────────────────────────────────────────────────── */
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:200; align-items:center; justify-content:center; }
+.modal.show { display:flex; }
+.modal-box { background:var(--surface); border:1px solid var(--border2); padding:22px; width:90%; max-width:520px; }
+.modal-title { font-size:0.55rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--gold); margin-bottom:14px; }
+#cameraVideo { width:100%; border:1px solid var(--border); display:block; background:#000; }
+.modal-btns { display:flex; gap:8px; margin-top:10px; }
+.modal-btns .btn { margin:0; flex:1; }
+
+/* ─── POINT COLOR LEGEND ─────────────────────────────────────────────────── */
+.legend { display:flex; flex-direction:column; gap:5px; }
+.legend-item { display:flex; align-items:center; gap:8px; font-size:0.52rem; color:var(--muted); letter-spacing:0.08em; }
+.legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* Scrollbar styling */
+.sidebar::-webkit-scrollbar { width:3px; }
+.sidebar::-webkit-scrollbar-track { background:var(--bg); }
+.sidebar::-webkit-scrollbar-thumb { background:var(--border2); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ HEADER ══════ -->
+<header>
+  <div class="logo">
+    <span class="logo-phi">φ</span>
+    <div>
+      <div class="logo-title">Maschera Aurea</div>
+      <div class="logo-sub">Golden Ratio Face Morphing — Marquardt</div>
+    </div>
+  </div>
+
+  <!-- Mode tabs: Overlay vs Morph -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tabOverlay" onclick="setMode('overlay')">① Sovrapponi</button>
+    <button class="mode-tab" id="tabMorph"   onclick="setMode('morph')">② Morphing</button>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════════════════════════ WORKSPACE ══════ -->
+<div class="workspace">
+
+  <!-- ═══════════════════════════════════════════ LEFT SIDEBAR ════════════ -->
+  <div class="sidebar">
+
+    <!-- Photo upload -->
+    <div class="sidebar-section">
+      <div class="section-label">Foto</div>
+      <div class="upload-zone" id="uploadZone">
+        <div class="icon">⬡</div>
+        <p>Trascina foto qui<br>o clicca per caricare</p>
+        <input type="file" id="fileInput" accept="image/*">
+      </div>
+      <button class="btn btn-camera" id="cameraBtn" style="margin-top:8px;">▷ &nbsp;Fotocamera</button>
+    </div>
+
+    <!-- Mask upload (user provides the .gif) -->
+    <div class="sidebar-section">
+      <div class="section-label">Maschera .gif</div>
+      <div class="mask-upload-zone" id="maskUploadZone">
+        <p>Carica il file<br><strong style="color:var(--text)">maschera_aureapicc2.gif</strong><br>dal tuo computer</p>
+        <input type="file" id="maskFileInput" accept="image/*">
+      </div>
+      <div class="mask-loaded" id="maskLoadedMsg" style="display:none;">✓ Maschera caricata</div>
+
+      <!-- Which half of the gif: female (left) or male (right) -->
+      <div class="toggle-row" style="margin-top:8px;">
+        <span class="toggle-label">Femminile</span>
+        <div class="toggle" id="maskGenderToggle" onclick="toggleMaskGender()"></div>
+        <span class="toggle-label">Maschile</span>
+      </div>
+    </div>
+
+    <!-- Overlay controls (shown in overlay mode) -->
+    <div class="sidebar-section" id="overlayControls">
+      <div class="section-label">Maschera</div>
+
+      <div class="control-group">
+        <div class="control-row">Opacità <span id="opacityVal">60%</span></div>
+        <input type="range" id="opacitySlider" min="5" max="100" value="60">
+      </div>
+      <div class="control-group">
+        <div class="control-row">Scala <span id="maskScaleVal">100%</span></div>
+        <input type="range" id="maskScaleSlider" min="10" max="300" value="100">
+      </div>
+      <div class="control-group">
+        <div class="control-row">Rotazione <span id="maskRotVal">0°</span></div>
+        <input type="range" id="maskRotSlider" min="-45" max="45" value="0">
+      </div>
+
+      <div class="section-label" style="margin-top:12px;">Foto</div>
+      <div class="control-group">
+        <div class="control-row">Scala foto <span id="photoScaleVal">100%</span></div>
+        <input type="range" id="photoScaleSlider" min="10" max="300" value="100">
+      </div>
+      <div class="control-group">
+        <div class="control-row">Contrasto <span id="contrastVal">100%</span></div>
+        <input type="range" id="contrastSlider" min="50" max="200" value="100">
+      </div>
+      <div class="control-group">
+        <div class="control-row">Luminosità <span id="brightnessVal">100%</span></div>
+        <input type="range" id="brightnessSlider" min="50" max="200" value="100">
+      </div>
+
+      <div class="toggle-row">
+        <span class="toggle-label">Flip orizzontale</span>
+        <div class="toggle" id="flipToggle" onclick="toggleFlip()"></div>
+      </div>
+    </div>
+
+    <!-- Morph controls (shown in morph mode) -->
+    <div class="sidebar-section" id="morphControls" style="display:none;">
+      <div class="section-label">Pennello Liquify</div>
+
+      <div class="control-group">
+        <div class="control-row">Raggio pennello <span id="warpRadiusVal">60px</span></div>
+        <input type="range" id="warpRadiusSlider" min="10" max="200" value="60">
+      </div>
+      <div class="control-group">
+        <div class="control-row">Forza <span id="warpStrengthVal">60%</span></div>
+        <input type="range" id="warpStrengthSlider" min="5" max="200" value="60">
+      </div>
+      <div class="control-group">
+        <div class="control-row">Opacità maschera <span id="morphMaskOpacityVal">40%</span></div>
+        <input type="range" id="morphMaskOpacitySlider" min="0" max="100" value="40">
+      </div>
+
+      <div class="toggle-row" style="margin-top:8px;">
+        <span class="toggle-label">Mostra maschera</span>
+        <div class="toggle on" id="overlayInMorphToggle" onclick="toggleOverlayInMorph()"></div>
+      </div>
+
+      <button class="btn btn-danger" onclick="resetMorph()" style="margin-top:12px;">↺ &nbsp;Reset Deformazione</button>
+    </div>
+
+  </div><!-- /left sidebar -->
+
+  <!-- ════════════════════════════════════════════════════ CANVAS AREA ═════ -->
+  <div class="canvas-area">
+
+    <!-- Toolbar -->
+    <div class="canvas-toolbar">
+      <!-- Overlay mode tools -->
+      <div id="overlayToolbar">
+        <span class="toolbar-info">Trascina maschera o foto • Usa i cursori per scala e rotazione</span>
+      </div>
+
+      <!-- Morph mode tools -->
+      <div id="morphToolbar" style="display:none; display:flex; align-items:center; gap:6px; width:100%;">
+        <button class="tool-btn active" id="btnWarp" title="Pennello Liquify" onclick="setMorphTool('warp')">〜</button>
+        <div class="toolbar-sep"></div>
+        <button class="tool-btn" id="btnDragMask2" title="Sposta maschera" onclick="setMorphTool('dragMask')">⬡</button>
+        <button class="tool-btn" id="btnDragPhoto" title="Sposta foto" onclick="setMorphTool('dragPhoto')">⊡</button>
+        <div class="toolbar-sep"></div>
+        <span class="toolbar-info" id="morphToolHint">Clicca e trascina per deformare il volto — pennello Liquify</span>
+      </div>
+    </div>
+
+    <!-- Canvas scroll area -->
+    <div class="canvas-scroll">
+      <canvas id="mainCanvas" width="640" height="580"></canvas>
+      <div class="canvas-placeholder" id="placeholder">
+        <div class="ph-phi">φ</div>
+        <div class="ph-text">
+          Carica una foto per iniziare<br>
+          poi carica il .gif della maschera aurea
+        </div>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="statusbar">
+      <div>Modalità: <span id="statusMode">Sovrapposizione</span></div>
+      <div id="statusCoords">x: — &nbsp; y: —</div>
+      <div id="statusPoints" style="display:none;">Punti: <span id="statusPtCount">0</span></div>
+    </div>
+
+  </div><!-- /canvas area -->
+
+  <!-- ══════════════════════════════════════════════ RIGHT SIDEBAR ════════ -->
+  <div class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="section-label">Anteprima</div>
+
+      <!-- Live preview of current canvas state -->
+      <div class="preview-box">
+        <canvas id="previewCanvas" width="188" height="165"></canvas>
+        <div class="preview-label">Preview live</div>
+      </div>
+
+      <!-- Side-by-side compare: original vs morphed -->
+      <div class="compare-box" id="compareBox" style="display:none;">
+        <div class="compare-half">
+          <canvas id="origThumb" width="90" height="80"></canvas>
+          <div class="compare-half-label">Originale</div>
+        </div>
+        <div class="compare-divider"></div>
+        <div class="compare-half">
+          <canvas id="morphThumb" width="90" height="80"></canvas>
+          <div class="compare-half-label">Morphed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export buttons -->
+    <div class="sidebar-section">
+      <div class="section-label">Esporta</div>
+      <button class="btn btn-primary" onclick="exportFinal()">⬇ &nbsp;Salva PNG (con maschera)</button>
+      <button class="btn btn-green" onclick="exportClean()" id="exportCleanBtn" style="display:none;">⬇ &nbsp;Salva PNG (solo volto)</button>
+    </div>
+
+    <!-- Reset global -->
+    <div class="sidebar-section">
+      <button class="btn btn-danger" onclick="resetAll()">⟳ &nbsp;Reset Completo</button>
+    </div>
+
+    <!-- ── Collapsible Instructions ── -->
+    <button class="instructions-toggle open" id="instrToggleBtn" onclick="toggleInstructions()">
+      Come si usa
+      <span class="arrow">▴</span>
+    </button>
+    <div class="instructions-body open" id="instrBody">
+
+      <div style="font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">
+        Fase 1 — Sovrapposizione
+      </div>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Carica la tua <strong>foto</strong> (drag & drop o bottone fotocamera).</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Carica il file <strong>maschera_aureapicc2.gif</strong> originale. Scegli variante femminile o maschile.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Trascina la <strong>maschera</strong> (tool ⬡) o la <strong>foto</strong> (tool ⊡) per allinearle. L'obiettivo fondamentale: <strong>gli occhi devono coincidere.</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">Usa i cursori di <strong>scala e rotazione</strong> per adattare la maschera al volto.</div>
+      </div>
+
+      <div style="font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin:10px 0 10px;">
+        Fase 2 — Morphing
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-text">Passa alla tab <strong>② Morphing</strong>. Si attiva il pennello Liquify.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-text"><strong>Clicca e trascina</strong> direttamente sul volto per spingerlo verso le linee della maschera. I pixel si spostano con effetto di trascinamento fluido.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">7</div>
+        <div class="step-text">Regola <strong>Raggio</strong> (area di influenza) e <strong>Forza</strong> (intensità della deformazione) per lavorare con precisione su zone piccole o grandi.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">8</div>
+        <div class="step-text">Confronta <strong>originale vs morphed</strong> nel pannello anteprima, poi esporta.</div>
+      </div>
+    </div>
+
+  </div><!-- /right sidebar -->
+
+</div><!-- /workspace -->
+
+<!-- ─── Camera Modal ─────────────────────────────────────────────────────── -->
+<div class="modal" id="cameraModal">
+  <div class="modal-box">
+    <div class="modal-title">φ — Acquisizione da Fotocamera</div>
+    <video id="cameraVideo" autoplay playsinline></video>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="capturePhoto()">◉ &nbsp;Scatta</button>
+      <button class="btn" onclick="closeCamera()">✕ &nbsp;Chiudi</button>
+    </div>
+  </div>
+</div>
+<canvas id="hiddenCapture" style="display:none;"></canvas>
+
+<!-- ═══════════════════════════════════════════════════════════ SCRIPTS ══════ -->
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   MASCHERA AUREA — FACE MORPHING ENGINE  v2
+   
+   Architecture:
+   ─ State object holds all application state
+   ─ Two modes: 'overlay' (position mask on photo) and 'morph' (warp photo)
+   
+   Warp algorithm — Gaussian Brush Displacement Map (Liquify-style):
+   ─ We maintain two Float32Arrays (dispX, dispY), one value per canvas pixel.
+     These accumulate the total displacement for every pixel.
+   ─ When the user drags the mouse by (dx, dy), we stamp a 2D Gaussian kernel
+     centred at the brush position onto the displacement map:
+       disp[px] += strength * gaussian(dist(px, brush)) * (dx, dy)
+     The Gaussian gives a smooth falloff so pixels near the brush centre move
+     a lot, pixels at the edge move almost nothing.  No discontinuities, no
+     "slices" — the surface behaves like an elastic membrane.
+   ─ Rendering uses BACKWARD mapping: for each output pixel p we read
+     disp[p] to find where in the ORIGINAL image to sample (bilinear).
+     backward mapping guarantees no holes in the output.
+   ─ The source image is baked once into srcCanvas at the start of a stroke;
+     every mouse-move re-applies the full accumulated displacement map to
+     that baked source so errors do not compound.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+const PHI = 1.6180339887;
+const CW = 640, CH = 580; // canvas logical size
+
+// ─── Application State ───────────────────────────────────────────────────────
+const S = {
+  // Images
+  photo:      null,   // HTMLImageElement — loaded user photo
+  maskImg:    null,   // HTMLImageElement — the .gif mask
+  maskGender: 'f',    // 'f' = left half (femminile), 'm' = right half (maschile)
+
+  // Mode
+  mode: 'overlay',    // 'overlay' | 'morph'
+
+  // Overlay transform
+  photoOffset:  { x: 0, y: 0 },
+  maskOffset:   { x: 0, y: 0 },
+  photoScale:   1.0,
+  maskScale:    1.0,
+  maskRot:      0,      // degrees
+  maskOpacity:  0.6,
+  contrast:     100,
+  brightness:   100,
+  flipH:        false,
+
+  // Generic drag state
+  isDragging:  false,
+  lastMouse:   { x: 0, y: 0 },
+
+  // Morph mode settings
+  morphTool:        'warp',   // 'warp' | 'dragMask' | 'dragPhoto'
+  showMaskInMorph:  true,
+  morphMaskOpacity: 0.4,
+  brushRadius:      60,       // px — Gaussian brush radius
+  brushStrength:    0.6,      // 0..1 — how much displacement per pixel dragged
+
+  /* ── Displacement map ───────────────────────────────────────────────────
+     dispX / dispY: Float32Array of length CW*CH.
+     dispX[y*CW+x] = how many pixels to the LEFT we must look in the source
+                     image to produce output pixel (x,y).
+     Positive dispX means "sample from x + dispX", i.e. pull content rightward.
+     We accumulate strokes here; reset resets these to 0.                   */
+  dispX: new Float32Array(CW * CH),
+  dispY: new Float32Array(CW * CH),
+
+  /* ── Per-stroke baked source ────────────────────────────────────────────
+     At mousedown we bake the current warped photo into srcCanvas.
+     During the stroke we always warp FROM that baked snapshot, never from
+     the previous frame's output — this prevents compounding artifacts.     */
+  srcCanvas:    null,   // HTMLCanvasElement — baked at stroke start
+  srcImageData: null,   // ImageData extracted from srcCanvas (pixel array)
+
+  // Result canvas (written by applyDisplacement, read by render)
+  warpCanvas:   null,
+};
+
+// ─── Canvas references ────────────────────────────────────────────────────────
+const canvas  = document.getElementById('mainCanvas');
+const ctx     = canvas.getContext('2d');
+const prevCvs = document.getElementById('previewCanvas');
+const prevCtx = prevCvs.getContext('2d');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GAUSSIAN BRUSH — stamp a smooth displacement kernel onto the map
+//
+// For each pixel (px,py) within radius of (cx,cy):
+//   weight = exp( -dist² / (2 * sigma²) )   ← bell-curve falloff
+//   dispX[px,py] += weight * dx * strength
+//   dispY[px,py] += weight * dy * strength
+//
+// Using the ACCUMULATED displacement map means every stroke adds smoothly
+// on top of previous strokes — no seams, no slices.
+// ─────────────────────────────────────────────────────────────────────────────
+function stampBrush(cx, cy, dx, dy) {
+  const R  = S.brushRadius;
+  const str = S.brushStrength;
+  // sigma = R/3 so the gaussian reaches ~0 at the brush edge
+  const sigma2 = (R / 3) * (R / 3) * 2;
+
+  const x0 = Math.max(0, Math.floor(cx - R));
+  const x1 = Math.min(CW - 1, Math.ceil(cx + R));
+  const y0 = Math.max(0, Math.floor(cy - R));
+  const y1 = Math.min(CH - 1, Math.ceil(cy + R));
+
+  for (let py = y0; py <= y1; py++) {
+    const edy = py - cy;
+    for (let px = x0; px <= x1; px++) {
+      const edx = px - cx;
+      const d2  = edx * edx + edy * edy;
+      if (d2 > R * R) continue;              // outside brush circle
+      const w   = Math.exp(-d2 / sigma2);    // Gaussian weight 0..1
+      const idx = py * CW + px;
+      S.dispX[idx] += w * dx * str;
+      S.dispY[idx] += w * dy * str;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BAKE SOURCE — captures the current photo (with contrast/brightness/flip/scale)
+// into an offscreen canvas.  Called once at mousedown so the whole stroke
+// warps from a stable snapshot, never from the previous warped frame.
+// ─────────────────────────────────────────────────────────────────────────────
+function bakeSource() {
+  if (!S.photo) return;
+  if (!S.srcCanvas) {
+    S.srcCanvas = document.createElement('canvas');
+    S.srcCanvas.width = CW;
+    S.srcCanvas.height = CH;
+  }
+  const sCtx = S.srcCanvas.getContext('2d');
+  sCtx.clearRect(0, 0, CW, CH);
+  sCtx.filter = `contrast(${S.contrast}%) brightness(${S.brightness}%)`;
+
+  const pw = S.photo.width  * S.photoScale;
+  const ph = S.photo.height * S.photoScale;
+  const dx = CW/2 + S.photoOffset.x - pw/2;
+  const dy = CH/2 + S.photoOffset.y - ph/2;
+
+  if (S.flipH) {
+    sCtx.save();
+    sCtx.translate(CW, 0); sCtx.scale(-1, 1);
+    sCtx.drawImage(S.photo, CW - dx - pw, dy, pw, ph);
+    sCtx.restore();
+  } else {
+    sCtx.drawImage(S.photo, dx, dy, pw, ph);
+  }
+  sCtx.filter = 'none';
+  // Cache the raw pixel data for fast per-pixel sampling
+  S.srcImageData = sCtx.getImageData(0, 0, CW, CH);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APPLY DISPLACEMENT — backward-map every output pixel through the disp map.
+//
+// Backward mapping: output pixel (x,y) reads from source at (x+dispX, y+dispY).
+// We use bilinear interpolation so displaced pixels blend smoothly even when
+// the displacement is sub-pixel.
+//
+// This runs on every mousemove during a stroke, so it must be fast.
+// We iterate every pixel but keep the inner loop minimal (no function calls).
+// ─────────────────────────────────────────────────────────────────────────────
+function applyDisplacement() {
+  if (!S.srcImageData) return;
+
+  if (!S.warpCanvas) {
+    S.warpCanvas = document.createElement('canvas');
+    S.warpCanvas.width = CW; S.warpCanvas.height = CH;
+  }
+  const wCtx = S.warpCanvas.getContext('2d');
+  const dst  = wCtx.createImageData(CW, CH);
+  const dstD = dst.data;
+  const srcD = S.srcImageData.data;
+
+  for (let y = 0; y < CH; y++) {
+    for (let x = 0; x < CW; x++) {
+      const i = y * CW + x;
+
+      // Where in the source does this output pixel come from?
+      const sx = x + S.dispX[i];
+      const sy = y + S.dispY[i];
+
+      // Bilinear interpolation neighbours
+      const sx0 = sx | 0;        // floor
+      const sy0 = sy | 0;
+      const sx1 = sx0 + 1;
+      const sy1 = sy0 + 1;
+      const fx  = sx - sx0;      // fractional part
+      const fy  = sy - sy0;
+
+      const di = i * 4;
+
+      // Sample helper — clamps to canvas bounds
+      const get = (px, py) => {
+        const cx = px < 0 ? 0 : px >= CW ? CW-1 : px;
+        const cy = py < 0 ? 0 : py >= CH ? CH-1 : py;
+        return (cy * CW + cx) * 4;
+      };
+
+      const i00 = get(sx0, sy0), i10 = get(sx1, sy0);
+      const i01 = get(sx0, sy1), i11 = get(sx1, sy1);
+      const w00 = (1-fx)*(1-fy), w10 = fx*(1-fy);
+      const w01 = (1-fx)*fy,     w11 = fx*fy;
+
+      // Blend RGBA channels
+      dstD[di]   = srcD[i00]*w00 + srcD[i10]*w10 + srcD[i01]*w01 + srcD[i11]*w11;
+      dstD[di+1] = srcD[i00+1]*w00 + srcD[i10+1]*w10 + srcD[i01+1]*w01 + srcD[i11+1]*w11;
+      dstD[di+2] = srcD[i00+2]*w00 + srcD[i10+2]*w10 + srcD[i01+2]*w01 + srcD[i11+2]*w11;
+      dstD[di+3] = srcD[i00+3]*w00 + srcD[i10+3]*w10 + srcD[i01+3]*w01 + srcD[i11+3]*w11;
+    }
+  }
+
+  wCtx.putImageData(dst, 0, 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER — composites everything onto the main canvas
+// ─────────────────────────────────────────────────────────────────────────────
+function render() {
+  ctx.clearRect(0, 0, CW, CH);
+  ctx.fillStyle = '#050403';
+  ctx.fillRect(0, 0, CW, CH);
+
+  if (!S.photo) {
+    document.getElementById('placeholder').style.display = 'flex';
+    renderPreview();
+    return;
+  }
+  document.getElementById('placeholder').style.display = 'none';
+
+  if (S.mode === 'overlay') {
+    // ── OVERLAY MODE ─────────────────────────────────────────────────────────
+    drawPhoto(ctx);
+    drawMask(ctx, S.maskOpacity);
+
+  } else {
+    // ── MORPH MODE ───────────────────────────────────────────────────────────
+    // Show warped result if available, otherwise fall back to plain photo
+    if (S.warpCanvas) {
+      ctx.drawImage(S.warpCanvas, 0, 0);
+    } else {
+      drawPhoto(ctx);
+    }
+    // Mask as semi-transparent reference guide
+    if (S.showMaskInMorph) drawMask(ctx, S.morphMaskOpacity);
+    // Brush cursor indicator
+    drawBrushCursor(ctx);
+  }
+
+  renderPreview();
+}
+
+/** Draw the user photo with current transform onto targetCtx */
+function drawPhoto(targetCtx) {
+  targetCtx.save();
+  targetCtx.filter = `contrast(${S.contrast}%) brightness(${S.brightness}%)`;
+  const pw = S.photo.width  * S.photoScale;
+  const ph = S.photo.height * S.photoScale;
+  const dx = CW/2 + S.photoOffset.x - pw/2;
+  const dy = CH/2 + S.photoOffset.y - ph/2;
+  if (S.flipH) {
+    targetCtx.translate(CW, 0); targetCtx.scale(-1, 1);
+    targetCtx.drawImage(S.photo, CW - dx - pw, dy, pw, ph);
+  } else {
+    targetCtx.drawImage(S.photo, dx, dy, pw, ph);
+  }
+  targetCtx.restore();
+}
+
+/** Draw the mask .gif half (femm or masc) scaled and rotated */
+function drawMask(targetCtx, opacity) {
+  if (!S.maskImg) return;
+  const mx = CW/2 + S.maskOffset.x;
+  const my = CH/2 + S.maskOffset.y;
+  targetCtx.save();
+  targetCtx.globalAlpha = opacity;
+  // The gif contains both variants side-by-side; crop to selected half
+  const halfW = S.maskImg.width / 2;
+  const mh    = S.maskImg.height;
+  const srcX  = S.maskGender === 'f' ? 0 : halfW;
+  const dstW  = halfW * S.maskScale * 1.2;
+  const dstH  = mh    * S.maskScale * 1.2;
+  targetCtx.translate(mx, my);
+  targetCtx.rotate(S.maskRot * Math.PI / 180);
+  targetCtx.drawImage(S.maskImg, srcX, 0, halfW, mh, -dstW/2, -dstH/2, dstW, dstH);
+  targetCtx.restore();
+}
+
+/** Show a faint circle indicating the current brush size */
+function drawBrushCursor(targetCtx) {
+  if (!S.isDragging && S.morphTool !== 'warp') return;
+  const m = S.lastMouse;
+  targetCtx.save();
+  targetCtx.beginPath();
+  targetCtx.arc(m.x, m.y, S.brushRadius, 0, Math.PI * 2);
+  targetCtx.strokeStyle = 'rgba(200,168,75,0.35)';
+  targetCtx.lineWidth   = 1;
+  targetCtx.setLineDash([4, 4]);
+  targetCtx.stroke();
+  targetCtx.restore();
+}
+/** Render the live preview thumbnail */
+function renderPreview() {
+  const pw = prevCvs.width, ph = prevCvs.height;
+  prevCtx.clearRect(0, 0, pw, ph);
+  prevCtx.fillStyle = '#050403';
+  prevCtx.fillRect(0, 0, pw, ph);
+  if (S.photo) {
+    const scale = Math.min(pw / CW, ph / CH);
+    prevCtx.drawImage(canvas, 0, 0, CW * scale, CH * scale);
+  }
+  if (S.mode === 'morph' && S.photo) {
+    document.getElementById('compareBox').style.display = 'flex';
+    updateCompareThumbs();
+    document.getElementById('exportCleanBtn').style.display = 'block';
+  }
+}
+
+/** Update the before/after compare thumbnails */
+function updateCompareThumbs() {
+  const oCvs = document.getElementById('origThumb');
+  const mCvs = document.getElementById('morphThumb');
+  const oCtx = oCvs.getContext('2d');
+  const mCtx = mCvs.getContext('2d');
+  const w = oCvs.width, h = oCvs.height;
+  const s = Math.min(w / CW, h / CH);
+  oCtx.fillStyle = '#050403'; oCtx.fillRect(0, 0, w, h);
+  const tmpCvs = document.createElement('canvas');
+  tmpCvs.width = CW; tmpCvs.height = CH;
+  drawPhoto(tmpCvs.getContext('2d'));
+  oCtx.drawImage(tmpCvs, 0, 0, CW * s, CH * s);
+  mCtx.fillStyle = '#050403'; mCtx.fillRect(0, 0, w, h);
+  if (S.warpCanvas) mCtx.drawImage(S.warpCanvas, 0, 0, CW * s, CH * s);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MOUSE / TOUCH EVENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Convert mouse/touch event to canvas logical coordinates */
+function eventToCanvas(e) {
+  const r = canvas.getBoundingClientRect();
+  const scaleX = CW / r.width;
+  const scaleY = CH / r.height;
+  const src = e.touches ? e.touches[0] : e;
+  return {
+    x: (src.clientX - r.left) * scaleX,
+    y: (src.clientY - r.top)  * scaleY
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CANVAS EVENT HANDLERS
+// prevMouse tracks the position from the previous frame so we can compute
+// per-frame deltas (dx, dy) correctly.
+// ─────────────────────────────────────────────────────────────────────────────
+{
+  let prevMouse = { x: 0, y: 0 };
+
+  /** Mousedown / touchstart — begin a drag stroke */
+  function onDown(e) {
+    if (e.cancelable) e.preventDefault();
+    const pos = eventToCanvas(e);
+    S.isDragging = true;
+    prevMouse    = pos;
+    S.lastMouse  = pos;
+    // Bake a clean photo snapshot at the start of each warp stroke
+    if (S.mode === 'morph' && S.morphTool === 'warp') bakeSource();
+  }
+
+  /** Mousemove / touchmove — paint displacement or move layers */
+  function onMove(e) {
+    if (e.cancelable) e.preventDefault();
+    const pos = eventToCanvas(e);
+    S.lastMouse = pos; // used by brush cursor renderer
+    document.getElementById('statusCoords').textContent =
+      `x: ${Math.round(pos.x)} &nbsp; y: ${Math.round(pos.y)}`;
+
+    if (!S.isDragging) { render(); return; } // show brush circle on hover
+
+    const dx = pos.x - prevMouse.x;
+    const dy = pos.y - prevMouse.y;
+    prevMouse = pos;
+
+    if (S.mode === 'overlay') {
+      // In overlay mode the toolbar buttons decide what gets dragged
+      if (S.dragMode === 'mask') {
+        S.maskOffset.x += dx; S.maskOffset.y += dy;
+      } else {
+        S.photoOffset.x += dx; S.photoOffset.y += dy;
+      }
+      render();
+      return;
+    }
+
+    // ── Morph mode ─────────────────────────────────────────────────────────
+    if (S.morphTool === 'warp' && S.srcImageData) {
+      stampBrush(pos.x, pos.y, -dx, -dy); // negative: backward-map pulls source toward mouse
+      applyDisplacement();              // recompute warped image
+      render();
+    } else if (S.morphTool === 'dragMask') {
+      S.maskOffset.x += dx; S.maskOffset.y += dy;
+      render();
+    } else if (S.morphTool === 'dragPhoto') {
+      S.photoOffset.x += dx; S.photoOffset.y += dy;
+      bakeSource(); applyDisplacement(); render();
+    }
+  }
+
+  /** Mouseup / touchend — end stroke */
+  function onUp() {
+    S.isDragging = false;
+    canvas.style.cursor = S.mode === 'morph' ? 'crosshair' : 'grab';
+    render();
+  }
+
+  canvas.addEventListener('mousedown',  onDown);
+  canvas.addEventListener('mousemove',  onMove);
+  canvas.addEventListener('mouseup',    onUp);
+  canvas.addEventListener('mouseleave', onUp);
+  canvas.addEventListener('touchstart', onDown, { passive: false });
+  canvas.addEventListener('touchmove',  onMove, { passive: false });
+  canvas.addEventListener('touchend',   onUp,   { passive: false });
+}
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODE SWITCHING
+// ─────────────────────────────────────────────────────────────────────────────
+
+function setMode(mode) {
+  S.mode = mode;
+  document.getElementById('tabOverlay').classList.toggle('active', mode === 'overlay');
+  document.getElementById('tabMorph').classList.toggle('active',   mode === 'morph');
+  document.getElementById('overlayControls').style.display = mode === 'overlay' ? '' : 'none';
+  document.getElementById('morphControls').style.display   = mode === 'morph'   ? '' : 'none';
+  document.getElementById('overlayToolbar').style.display  = mode === 'overlay' ? '' : 'none';
+  document.getElementById('morphToolbar').style.display    = mode === 'morph'   ? 'flex' : 'none';
+  document.getElementById('statusMode').textContent =
+    mode === 'overlay' ? 'Sovrapposizione' : 'Morphing';
+  document.getElementById('statusPoints').style.display = 'none'; // not used in brush mode
+  canvas.style.cursor = mode === 'morph' ? 'crosshair' : 'grab';
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TOOLBAR TOOLS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function setMorphTool(tool) {
+  S.morphTool = tool;
+  ['btnWarp','btnDragMask2','btnDragPhoto'].forEach(id => {
+    document.getElementById(id)?.classList.remove('active');
+  });
+  const map = { warp:'btnWarp', dragMask:'btnDragMask2', dragPhoto:'btnDragPhoto' };
+  document.getElementById(map[tool])?.classList.add('active');
+
+  const hints = {
+    warp:      'Clicca e trascina per deformare il volto — usa il pennello Liquify',
+    dragMask:  'Trascina per spostare la maschera',
+    dragPhoto: 'Trascina per spostare la foto'
+  };
+  document.getElementById('morphToolHint').textContent = hints[tool] || '';
+  canvas.style.cursor = tool === 'warp' ? 'crosshair' : 'grab';
+}
+
+function toggleFlip() {
+  S.flipH = !S.flipH;
+  document.getElementById('flipToggle').classList.toggle('on', S.flipH);
+  // Re-bake source after flip and reapply map
+  if (S.mode === 'morph' && S.warpCanvas) { bakeSource(); applyDisplacement(); }
+  render();
+}
+
+function toggleMaskGender() {
+  S.maskGender = S.maskGender === 'f' ? 'm' : 'f';
+  document.getElementById('maskGenderToggle').classList.toggle('on', S.maskGender === 'm');
+  render();
+}
+
+function toggleMesh() { render(); } // kept for compatibility
+function toggleAddPoint() {}        // kept for compatibility
+
+function toggleOverlayInMorph() {
+  S.showMaskInMorph = !S.showMaskInMorph;
+  document.getElementById('overlayInMorphToggle').classList.toggle('on', S.showMaskInMorph);
+  render();
+}
+
+function toggleInstructions() {
+  const body = document.getElementById('instrBody');
+  const btn  = document.getElementById('instrToggleBtn');
+  body.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SLIDERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function bindSlider(id, stateKey, labelId, transform, suffix) {
+  document.getElementById(id).addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    S[stateKey] = transform ? transform(v) : v;
+    document.getElementById(labelId).textContent = (transform ? Math.round(v) : v) + suffix;
+    // If photo transform changed, re-bake and re-apply displacement
+    if (['photoScale','contrast','brightness'].includes(stateKey) && S.mode === 'morph') {
+      bakeSource();
+      if (S.warpCanvas) applyDisplacement();
+    }
+    render();
+  });
+}
+
+bindSlider('opacitySlider',          'maskOpacity',       'opacityVal',           v => v/100, '%');
+bindSlider('maskScaleSlider',        'maskScale',         'maskScaleVal',         v => v/100, '%');
+bindSlider('maskRotSlider',          'maskRot',           'maskRotVal',           null,       '°');
+bindSlider('photoScaleSlider',       'photoScale',        'photoScaleVal',        v => v/100, '%');
+bindSlider('contrastSlider',         'contrast',          'contrastVal',          null,       '%');
+bindSlider('brightnessSlider',       'brightness',        'brightnessVal',        null,       '%');
+bindSlider('warpRadiusSlider',       'brushRadius',       'warpRadiusVal',        null,       'px');
+bindSlider('morphMaskOpacitySlider', 'morphMaskOpacity',  'morphMaskOpacityVal',  v => v/100, '%');
+
+document.getElementById('warpStrengthSlider').addEventListener('input', e => {
+  S.brushStrength = parseFloat(e.target.value) / 100;
+  document.getElementById('warpStrengthVal').textContent = e.target.value + '%';
+  render();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESET FUNCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Reset the displacement map — returns photo to original shape */
+function resetMorph() {
+  S.dispX.fill(0);
+  S.dispY.fill(0);
+  S.warpCanvas  = null;
+  S.srcCanvas   = null;
+  S.srcImageData = null;
+  render();
+}
+
+/** Full application reset */
+function resetAll() {
+  S.photoOffset  = { x: 0, y: 0 };
+  S.maskOffset   = { x: 0, y: 0 };
+  S.photoScale   = 1.0;
+  S.maskScale    = 1.0;
+  S.maskRot      = 0;
+  S.maskOpacity  = 0.6;
+  S.contrast     = 100;
+  S.brightness   = 100;
+  S.flipH        = false;
+  S.dispX.fill(0);
+  S.dispY.fill(0);
+  S.warpCanvas   = null;
+  S.srcCanvas    = null;
+  S.srcImageData = null;
+
+  const defaults = {
+    opacitySlider: 60, maskScaleSlider: 100, maskRotSlider: 0,
+    photoScaleSlider: 100, contrastSlider: 100, brightnessSlider: 100
+  };
+  Object.entries(defaults).forEach(([id, v]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+  });
+  document.getElementById('opacityVal').textContent      = '60%';
+  document.getElementById('maskScaleVal').textContent    = '100%';
+  document.getElementById('maskRotVal').textContent      = '0°';
+  document.getElementById('photoScaleVal').textContent   = '100%';
+  document.getElementById('contrastVal').textContent     = '100%';
+  document.getElementById('brightnessVal').textContent   = '100%';
+  document.getElementById('flipToggle').classList.remove('on');
+
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PHOTO LOADING
+// ─────────────────────────────────────────────────────────────────────────────
+
+function loadPhoto(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      S.photo = img;
+      const fitS = Math.min((CW * 0.85) / img.width, (CH * 0.85) / img.height);
+      S.photoScale = fitS;
+      document.getElementById('photoScaleSlider').value = Math.round(fitS * 100);
+      document.getElementById('photoScaleVal').textContent = Math.round(fitS * 100) + '%';
+      S.photoOffset  = { x: 0, y: 0 };
+      // Clear displacement map for fresh photo
+      S.dispX.fill(0); S.dispY.fill(0);
+      S.warpCanvas   = null;
+      S.srcCanvas    = null;
+      S.srcImageData = null;
+      render();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Drag & drop on upload zone
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('click', () => document.getElementById('fileInput').click());
+uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f?.type.startsWith('image/')) loadPhoto(f);
+});
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) loadPhoto(e.target.files[0]);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MASK LOADING (user uploads the .gif)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const maskZone = document.getElementById('maskUploadZone');
+maskZone.addEventListener('click', () => document.getElementById('maskFileInput').click());
+
+document.getElementById('maskFileInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      S.maskImg = img;
+      document.getElementById('maskLoadedMsg').style.display = 'block';
+      maskZone.style.display = 'none';
+      render();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(f);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CAMERA
+// ─────────────────────────────────────────────────────────────────────────────
+
+let cameraStream = null;
+
+document.getElementById('cameraBtn').addEventListener('click', async () => {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: 640, height: 480 }
+    });
+    document.getElementById('cameraVideo').srcObject = cameraStream;
+    document.getElementById('cameraModal').classList.add('show');
+  } catch(err) {
+    alert('Fotocamera non accessibile: ' + err.message);
+  }
+});
+
+function closeCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  document.getElementById('cameraModal').classList.remove('show');
+}
+
+function capturePhoto() {
+  const v   = document.getElementById('cameraVideo');
+  const cap = document.getElementById('hiddenCapture');
+  cap.width = v.videoWidth; cap.height = v.videoHeight;
+  cap.getContext('2d').drawImage(v, 0, 0);
+  const img = new Image();
+  img.onload = () => {
+    S.photo = img;
+    const fitS = Math.min(
+      (canvas.width  * 0.8) / img.width,
+      (canvas.height * 0.8) / img.height
+    );
+    S.photoScale = fitS;
+    document.getElementById('photoScaleSlider').value = Math.round(fitS * 100);
+    document.getElementById('photoScaleVal').textContent = Math.round(fitS * 100) + '%';
+    S.dispX.fill(0); S.dispY.fill(0);
+    S.warpCanvas = null; S.srcCanvas = null; S.srcImageData = null;
+    closeCamera();
+    render();
+  };
+  img.src = cap.toDataURL('image/jpeg', 0.92);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORT
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Export current canvas (with mask overlay) */
+function exportFinal() {
+  if (!S.photo) { alert('Carica prima una foto.'); return; }
+  const link = document.createElement('a');
+  link.download = `maschera_aurea_${Date.now()}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+/** Export only the warped photo (no mask overlay) */
+function exportClean() {
+  if (!S.photo) { alert('Carica prima una foto.'); return; }
+
+  const exp = document.createElement('canvas');
+  exp.width = canvas.width; exp.height = canvas.height;
+  const eCtx = exp.getContext('2d');
+  eCtx.fillStyle = '#050403';
+  eCtx.fillRect(0, 0, exp.width, exp.height);
+
+  if (S.warpCanvas) {
+    eCtx.drawImage(S.warpCanvas, 0, 0);
+  } else {
+    drawPhoto(eCtx);
+  }
+
+  const link = document.createElement('a');
+  link.download = `volto_morphed_${Date.now()}.png`;
+  link.href = exp.toDataURL('image/png');
+  link.click();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Responsive canvas sizing
+function resizeCanvas() {
+  const area = document.querySelector('.canvas-scroll');
+  const maxW = area.clientWidth  - 20;
+  const maxH = area.clientHeight - 20;
+  const scale = Math.min(maxW / 640, maxH / 580);
+  canvas.style.width  = Math.round(640 * scale) + 'px';
+  canvas.style.height = Math.round(580 * scale) + 'px';
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Initial render (shows the placeholder)
+canvas.style.cursor = 'grab';
+render();
+</script>
+</body>
+</html>
