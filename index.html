@@ -3,259 +3,220 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GI-FORGE | HUD GLASS CENTER</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>TERMINAL HUB | FULL TACTICAL INTERFACE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --accent-blue: #00d2ff;
-            --accent-glow: rgba(0, 210, 255, 0.3);
-            --text-main: #e0e6ed;
+            --bg-deep: #05070a;
+            --panel-bg: rgba(10, 15, 20, 0.9);
+            --neon-cyan: #00f2ff;
+            --neon-yellow: #f0ff00;
+            --neon-red: #ff003c;
+            --neon-green: #43e97b;
+            --border-dim: rgba(0, 242, 255, 0.15);
+            --font-main: 'Rajdhani', sans-serif;
+            --font-hud: 'Orbitron', sans-serif;
         }
+
+        * { box-sizing: border-box; cursor: crosshair; }
 
         body {
+            background-color: var(--bg-deep);
+            color: var(--neon-cyan);
+            font-family: var(--font-main);
             margin: 0;
-            padding: 0;
-            background: radial-gradient(circle at center, #101b29 0%, #050a0f 100%);
-            background-attachment: fixed;
-            color: var(--text-main);
-            font-family: 'Rajdhani', sans-serif;
             min-height: 100vh;
-            overflow-x: hidden;
+            text-transform: uppercase;
+            background-image: 
+                linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
         }
 
-        /* Effetto particelle di sfondo (opzionale) */
+        /* Overlay Scanline Animato */
         body::before {
             content: "";
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-            opacity: 0.1;
-            z-index: -1;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+            z-index: 100;
         }
 
         header {
-            text-align: center;
-            padding: 30px 0;
-            background: linear-gradient(to bottom, rgba(0, 210, 255, 0.1), transparent);
-        }
-
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2rem;
-            letter-spacing: 6px;
-            margin: 0;
-            background: linear-gradient(to bottom, #fff, var(--accent-blue));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px var(--accent-glow));
-        }
-
-        .hud-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 25px;
-            padding: 20px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .widget {
-            background: var(--glass-bg);
-            backdrop-filter: blur(15px) saturate(180%);
-            -webkit-backdrop-filter: blur(15px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
-            transition: transform 0.3s ease;
-        }
-
-        .widget:hover {
-            border-color: rgba(0, 210, 255, 0.4);
-            box-shadow: 0 8px 32px 0 var(--accent-glow);
-        }
-
-        .widget-header {
-            padding: 15px 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid var(--glass-border);
+            padding: 20px 40px;
+            background: rgba(0, 242, 255, 0.05);
+            border-bottom: 2px solid var(--neon-cyan);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.85rem;
-            color: var(--accent-blue);
+            clip-path: polygon(0 0, 100% 0, 98% 100%, 2% 100%);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
         }
 
-        .widget-content {
+        .hud-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            padding: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            max-width: 1800px;
+            margin: 0 auto;
         }
 
-        .hud-button {
-            text-decoration: none;
-            color: white;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 15px 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            transition: all 0.2s ease;
-            gap: 10px;
+        .tactical-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-dim);
+            position: relative;
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+            backdrop-filter: blur(10px);
         }
 
-        .hud-button:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-3px);
-            border-color: var(--accent-blue);
-        }
-
-        /* Icone Speciali Colorate */
-        .icon-box {
-            font-size: 1.8rem;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .hud-button:hover .icon-box {
-            transform: scale(1.2);
-        }
-
-        .app-label {
+        .panel-header {
+            background: rgba(0, 242, 255, 0.1);
+            padding: 12px 20px;
+            font-family: var(--font-hud);
             font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #bdc3c7;
+            border-bottom: 1px solid var(--border-dim);
+            display: flex;
+            justify-content: space-between;
         }
 
-        .hud-button:hover .app-label {
-            color: var(--accent-blue);
+        .panel-content {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
         }
 
-        /* Colori Icone */
-        .c-blue   { color: #4facfe; }
-        .c-green  { color: #43e97b; }
-        .c-orange { color: #fa709a; }
-        .c-gold   { color: #fccb90; }
-        .c-purple { color: #a485ff; }
-
-        @media (max-width: 400px) {
-            .widget-content { grid-template-columns: 1fr; }
+        .combat-btn {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(0, 242, 255, 0.1);
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.2s ease;
+            position: relative;
         }
+
+        .combat-btn:hover {
+            background: rgba(0, 242, 255, 0.15);
+            border-color: var(--neon-cyan);
+            transform: scale(1.02);
+            z-index: 2;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+
+        .app-icon {
+            font-size: 1.4rem;
+            margin-right: 15px;
+            width: 30px;
+            text-align: center;
+            filter: drop-shadow(0 0 5px currentColor);
+        }
+
+        .label-wrap { display: flex; flex-direction: column; }
+        .m-lab { font-weight: 700; font-size: 0.85rem; letter-spacing: 1px; }
+        .s-lab { font-size: 0.6rem; color: var(--neon-cyan); opacity: 0.6; font-family: var(--font-hud); }
+
+        /* Colori per Tipo Task */
+        .c-sys { color: var(--neon-cyan); }
+        .c-sec { color: var(--neon-red); }
+        .c-util { color: var(--neon-yellow); }
+        .c-log { color: var(--neon-green); }
+
+        footer {
+            position: fixed;
+            bottom: 0; width: 100%;
+            background: rgba(0,0,0,0.8);
+            border-top: 1px solid var(--neon-cyan);
+            padding: 5px 20px;
+            display: flex;
+            font-size: 0.7rem;
+            justify-content: space-between;
+        }
+
+        @media (max-width: 768px) { .hud-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>SYSTEM OPERATIVE CENTER</h1>
-    <p style="font-size: 0.8rem; letter-spacing: 2px; color: var(--accent-blue); opacity: 0.7;">GI-FORGE | ENCRYPTED CONNECTION ESTABLISHED</p>
+    <div><i class="fas fa-satellite-dish"></i> SAT_LINK: ACTIVE</div>
+    <h1 style="font-family: var(--font-hud); font-size: 1.2rem; letter-spacing: 4px;">SYSTEM OPERATIVE CENTER</h1>
+    <div>V. 4.2 // GI-FORGE</div>
 </header>
 
-<div class="hud-container">
+<div class="hud-grid">
 
-    <div class="widget">
-        <div class="widget-header">
-            <span><i class="fas fa-project-diagram"></i> GESTIONE E PROGETTI</span>
-            <i class="fas fa-circle" style="font-size: 0.5rem; color: var(--accent-blue);"></i>
-        </div>
-        <div class="widget-content">
-            <a href="WEB_OS_MULTI_DESKTOP.html" class="hud-button">
-                <span class="icon-box c-blue">🖥️</span>
-                <span class="app-label">Multi Desktop</span>
-            </a>
-            <a href="WEB_OS.html" class="hud-button">
-                <span class="icon-box c-blue">💻</span>
-                <span class="app-label">Web OS</span>
-            </a>
-            <a href="LUXURY_AGENDA.html" class="hud-button">
-                <span class="icon-box c-green">📅</span>
-                <span class="app-label">Agenda</span>
-            </a>
-            <a href="WORK_GANTT_PROJECT.html" class="hud-button">
-                <span class="icon-box c-green">📊</span>
-                <span class="app-label">Gantt Plan</span>
-            </a>
-            <a href="WEB_OFFICE_WORD.html" class="hud-button">
-                <span class="icon-box c-blue">📝</span>
-                <span class="app-label">Office Word</span>
-            </a>
-            <a href="PASSWORD_MANAGER.html" class="hud-button">
-                <span class="icon-box c-gold">🔐</span>
-                <span class="app-label">Passwords</span>
-            </a>
+    <div class="tactical-panel">
+        <div class="panel-header"><span>01 // CORE SYSTEMS</span><i class="fas fa-microchip"></i></div>
+        <div class="panel-content">
+            <a href="index.html" class="combat-btn"><span class="app-icon c-sys">🏠</span><div class="label-wrap"><span class="m-lab">HOME TERMINAL</span><span class="s-lab">INDEX.HTML</span></div></a>
+            <a href="WEB_OS_MULTI_DESKTOP.html" class="combat-btn"><span class="app-icon c-sys">🔳</span><div class="label-wrap"><span class="m-lab">MULTI DESKTOP</span><span class="s-lab">WEB_OS_MULTI.HTML</span></div></a>
+            <a href="WEB_OS.html" class="combat-btn"><span class="app-icon c-sys">🔲</span><div class="label-wrap"><span class="m-lab">WEB OS</span><span class="s-lab">WEB_OS.HTML</span></div></a>
+            <a href="NIGHT_FILTERS.html" class="combat-btn"><span class="app-icon c-sys">🌘</span><div class="label-wrap"><span class="m-lab">NIGHT FILTERS</span><span class="s-lab">VISUAL_PROTECT.HTML</span></div></a>
         </div>
     </div>
 
-    <div class="widget">
-        <div class="widget-header">
-            <span><i class="fas fa-microchip"></i> STRUMENTI UTILI</span>
-            <i class="fas fa-circle" style="font-size: 0.5rem; color: var(--accent-blue);"></i>
-        </div>
-        <div class="widget-content">
-            <a href="PHOTO_VAULT.html" class="hud-button">
-                <span class="icon-box">🖼️</span>
-                <span class="app-label">Photo Vault</span>
-            </a>
-            <a href="CLOCK_NIGHT_DAY.html" class="hud-button">
-                <span class="icon-box c-purple">🕰️</span>
-                <span class="app-label">Weather Clock</span>
-            </a>
-            <a href="CAM_SCANNER.html" class="hud-button">
-                <span class="icon-box">🖨️</span>
-                <span class="app-label">Cam Scanner</span>
-            </a>
-            <a href="IMG_TO_TEXT.html" class="hud-button">
-                <span class="icon-box">🔍</span>
-                <span class="app-label">OCR Extract</span>
-            </a>
-            <a href="STOCK_CARD.html" class="hud-button">
-                <span class="icon-box">💳</span>
-                <span class="app-label">Cards Wallet</span>
-            </a>
-            <a href="METRIC_TOOLS.html" class="hud-button">
-                <span class="icon-box">📏</span>
-                <span class="app-label">Metric Tools</span>
-            </a>
+    <div class="tactical-panel">
+        <div class="panel-header"><span>02 // INTEL & TOOLS</span><i class="fas fa-eye"></i></div>
+        <div class="panel-content">
+            <a href="PHOTO_VAULT.html" class="combat-btn"><span class="app-icon c-util">🖼️</span><div class="label-wrap"><span class="m-lab">PHOTO VAULT</span><span class="s-lab">MEDIA_SECURE.HTML</span></div></a>
+            <a href="CAM_SCANNER.html" class="combat-btn"><span class="app-icon c-util">📸</span><div class="label-wrap"><span class="m-lab">CAM SCANNER</span><span class="s-lab">INTEL_CAPTURE.HTML</span></div></a>
+            <a href="IMG_TO_TEXT.html" class="combat-btn"><span class="app-icon c-util">🔍</span><div class="label-wrap"><span class="m-lab">OCR EXTRACTOR</span><span class="s-lab">TEXT_RECOGNITION.HTML</span></div></a>
+            <a href="FOTO_TESSERA.html" class="combat-btn"><span class="app-icon c-util">🆔</span><div class="label-wrap"><span class="m-lab">ID PHOTO GEN</span><span class="s-lab">FOTO_TESSERA.HTML</span></div></a>
+            <a href="CLOCK_NIGHT_DAY.html" class="combat-btn"><span class="app-icon c-util">🕰️</span><div class="label-wrap"><span class="m-lab">METEO CLOCK</span><span class="s-lab">ENVIRONMENTAL_DATA.HTML</span></div></a>
+            <a href="METRIC_TOOLS.html" class="combat-btn"><span class="app-icon c-util">📏</span><div class="label-wrap"><span class="m-lab">METRIC TOOLS</span><span class="s-lab">SPATIAL_CALIBRATOR.HTML</span></div></a>
+            <a href="MASCHERA_AUREA.html" class="combat-btn"><span class="app-icon c-util">🎭</span><div class="label-wrap"><span class="m-lab">GOLDEN MASK</span><span class="s-lab">PROPORTION_ANALYSIS.HTML</span></div></a>
         </div>
     </div>
 
-    <div class="widget">
-        <div class="widget-header">
-            <span><i class="fas fa-gamepad"></i> ENTERTAINMENT</span>
-            <i class="fas fa-circle" style="font-size: 0.5rem; color: var(--accent-blue);"></i>
+    <div class="tactical-panel" style="border-color: var(--neon-red);">
+        <div class="panel-header" style="background: rgba(255,0,0,0.1); color: var(--neon-red);"><span>03 // CRYPTO OPS</span><i class="fas fa-user-secret"></i></div>
+        <div class="panel-content">
+            <a href="PASSWORD_MANAGER.html" class="combat-btn"><span class="app-icon c-sec">🔐</span><div class="label-wrap"><span class="m-lab">PWD MANAGER</span><span class="s-lab">KEY_VAULT.HTML</span></div></a>
+            <a href="DICEWARE_ULTRA_PRO_PASS.html" class="combat-btn"><span class="app-icon c-sec">🎲</span><div class="label-wrap"><span class="m-lab">DICEWARE GEN</span><span class="s-lab">PASS_GENERATOR.HTML</span></div></a>
+            <a href="HASH.html" class="combat-btn"><span class="app-icon c-sec">🔑</span><div class="label-wrap"><span class="m-lab">HASH CALCULATOR</span><span class="s-lab">DATA_INTEGRITY.HTML</span></div></a>
+            <a href="STOCK_CARD.html" class="combat-btn"><span class="app-icon c-sec">💳</span><div class="label-wrap"><span class="m-lab">STOCK CARD</span><span class="s-lab">WALLET_ENCRYPT.HTML</span></div></a>
         </div>
-        <div class="widget-content">
-            <a href="GAME_TETRIS.html" class="hud-button">
-                <span class="icon-box">🧱</span>
-                <span class="app-label">Tetris</span>
-            </a>
-            <a href="GAME_SPACE_INVADERS.html" class="hud-button">
-                <span class="icon-box">🚀</span>
-                <span class="app-label">Space Inv.</span>
-            </a>
-            <a href="DICEWARE_ULTRA_PRO_PASS.html" class="hud-button">
-                <span class="icon-box">🎲</span>
-                <span class="app-label">Diceware</span>
-            </a>
-            <a href="EBOOK_READER.html" class="hud-button">
-                <span class="icon-box">📖</span>
-                <span class="app-label">E-Reader</span>
-            </a>
+    </div>
+
+    <div class="tactical-panel" style="border-color: var(--neon-green);">
+        <div class="panel-header" style="background: rgba(0,255,0,0.1); color: var(--neon-green);"><span>04 // LOGISTICS</span><i class="fas fa-file-invoice"></i></div>
+        <div class="panel-content">
+            <a href="LUXURY_AGENDA.html" class="combat-btn"><span class="app-icon c-log">📅</span><div class="label-wrap"><span class="m-lab">LUXURY AGENDA</span><span class="s-lab">MISSION_LOG.HTML</span></div></a>
+            <a href="WORK_GANTT_PROJECT.html" class="combat-btn"><span class="app-icon c-log">📊</span><div class="label-wrap"><span class="m-lab">GANTT PROJECT</span><span class="s-lab">PLANNING_ARRAY.HTML</span></div></a>
+            <a href="WEB_OFFICE_WORD.html" class="combat-btn"><span class="app-icon c-log">📄</span><div class="label-wrap"><span class="m-lab">OFFICE WORD</span><span class="s-lab">DOC_EDITOR.HTML</span></div></a>
+            <a href="EBOOK_READER.html" class="combat-btn"><span class="app-icon c-log">📖</span><div class="label-wrap"><span class="m-lab">EBOOK READER</span><span class="s-lab">DATA_READ.HTML</span></div></a>
+            <a href="GAME_TETRIS.html" class="combat-btn"><span class="app-icon">🧱</span><div class="label-wrap"><span class="m-lab">NEURAL SORTER</span><span class="s-lab">GAME_TETRIS.HTML</span></div></a>
+            <a href="GAME_SPACE_INVADERS.html" class="combat-btn"><span class="app-icon">🚀</span><div class="label-wrap"><span class="m-lab">SPACE COMBAT</span><span class="s-lab">GAME_INVADERS.HTML</span></div></a>
         </div>
     </div>
 
 </div>
+
+<footer>
+    <span>SYSTEM_RESOURCES: STABLE</span>
+    <span>ENCRYPTION_LEVEL: AES-256</span>
+    <span id="timer">UPTIME: 00:00:00</span>
+</footer>
+
+<script>
+    let startTime = Date.now();
+    setInterval(() => {
+        let diff = Math.floor((Date.now() - startTime) / 1000);
+        let h = Math.floor(diff / 3600).toString().padStart(2, '0');
+        let m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+        let s = (diff % 60).toString().padStart(2, '0');
+        document.getElementById('timer').innerText = `UPTIME: ${h}:${m}:${s}`;
+    }, 1000);
+</script>
 
 </body>
 </html>
