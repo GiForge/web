@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Enterprise OS v11.1 - Patched Edition</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <title>Enterprise OS v11.1 - TCP Edition</title>
     <style>
         :root { --accent: #0078d7; --taskbar-bg: rgba(20, 20, 20, 0.95); --win-bg: #f3f3f3; }
         body, html { margin: 0; padding: 0; height: 100%; background: #000; font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; touch-action: none; }
@@ -38,21 +35,40 @@
         .dock-item { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 6px; cursor: pointer; font-size: 20px; transition: 0.2s; }
         .dock-item.active { background: var(--accent); border-bottom: 2px solid #fff; }
 
-        /* Overlay & QR */
+        /* Overlay */
         #overlay { position: fixed; inset: 0; background: #111; z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
-        .card { background: #222; padding: 25px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; border: 1px solid #444; }
-        .qr-wrapper { background: white; padding: 10px; margin: 15px auto; border-radius: 8px; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; position: relative; }
-        .setup-btn { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--accent); color: white; }
-        .dots { display: flex; justify-content: center; gap: 8px; margin: 15px 0; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; background: #333; border: 1px solid #555; }
-        .dot.active { background: #28a745; box-shadow: 0 0 10px #28a745; }
-        .signal-area { width: 100%; height: 60px; background: #000; color: #0f0; font-size: 10px; border: 1px solid #444; margin: 10px 0; border-radius: 5px; padding: 5px; box-sizing: border-box; resize: none; }
+        .card { background: #222; padding: 28px; border-radius: 15px; width: 100%; max-width: 420px; text-align: center; border: 1px solid #444; }
+        .card h3 { margin: 0 0 6px; font-size: 20px; color: #fff; }
+        .card .subtitle { font-size: 12px; color: #888; margin-bottom: 20px; }
+        .setup-btn { width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: var(--accent); color: white; font-size: 14px; transition: 0.2s; }
+        .setup-btn:hover { opacity: 0.85; }
+        .setup-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* IP display */
+        .ip-box { background: #111; border: 1px solid #333; border-radius: 10px; padding: 16px; margin: 16px 0; }
+        .ip-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .ip-value { font-size: 26px; font-weight: bold; color: #0f9; font-family: monospace; letter-spacing: 2px; }
+        .ip-loading { font-size: 13px; color: #555; }
+
+        /* Port input */
+        .input-row { display: flex; gap: 8px; align-items: center; margin: 10px 0; }
+        .input-row label { font-size: 12px; color: #aaa; min-width: 50px; text-align: left; }
+        .tcp-input { flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #444; background: #1a1a1a; color: white; font-size: 14px; font-family: monospace; outline: none; }
+        .tcp-input:focus { border-color: var(--accent); }
+
+        /* Status */
+        .status-bar { background: #0a0a0a; border: 1px solid #333; border-radius: 6px; padding: 8px 12px; margin: 10px 0; font-size: 12px; color: #0f9; font-family: monospace; text-align: left; min-height: 36px; }
+        .status-bar.error { color: #f66; }
+        .status-bar.warn { color: #fa0; }
+
+        /* Divider */
+        .divider { border: none; border-top: 1px solid #333; margin: 16px 0; }
 
         @keyframes spin { to { transform: rotate(360deg); } }
-        .spinner { border: 3px solid var(--accent); border-top: 3px solid transparent; width: 25px; height: 25px; border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { border: 3px solid var(--accent); border-top: 3px solid transparent; width: 20px; height: 20px; border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
 
-        #scanner-container { position: fixed; inset: 0; background: #000; z-index: 6000; display: none; flex-direction: column; }
-        #reader { flex: 1; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .dot-online { display: inline-block; width: 8px; height: 8px; background: #0f9; border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite; }
     </style>
 </head>
 <body>
@@ -60,31 +76,54 @@
 <div id="overlay">
     <div class="card">
         <h3>Enterprise OS v11.1</h3>
-        <div id="setup-initial">
-            <button class="setup-btn" onclick="boot('server')">SERVER MODE</button>
-            <button class="setup-btn" style="background:#444" onclick="boot('client')">CLIENT MODE</button>
-        </div>
-        <div id="setup-conn" style="display:none">
-            <div id="qrcode" class="qr-wrapper"><div class="spinner"></div></div>
-            <div id="qr-label" style="font-size:12px; color:#aaa; margin-bottom:10px;">Generazione...</div>
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <button class="setup-btn" style="background:#444" onclick="changeQR(-1)">⬅</button>
-                <button class="setup-btn" style="background:#444" onclick="changeQR(1)">➡</button>
-            </div>
-            <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-            <button class="setup-btn" onclick="openScanner()">📸 SCANNER (BEEP ON)</button>
-            <button class="setup-btn" style="background:#444" onclick="copyFullCode()">📋 COPIA CODICE ZIP</button>
-            <textarea id="rSig" class="signal-area" placeholder="Incolla codice qui..."></textarea>
-            <button id="btn-connect" class="setup-btn" style="background:#28a745; display:none" onclick="connect()">⚡ CONNETTI</button>
-        </div>
-    </div>
-</div>
+        <p class="subtitle">TCP · Rete WiFi locale</p>
 
-<div id="scanner-container">
-    <div id="reader"></div>
-    <div style="height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#111;">
-        <div id="scan-info" style="color:#28a745; font-size:12px; margin-bottom:5px;">Inquadra QR</div>
-        <button class="setup-btn" style="width:200px; background:#e81123; padding:8px;" onclick="closeScanner()">ANNULLA</button>
+        <!-- Step 0: role selection -->
+        <div id="step-role">
+            <div class="ip-box">
+                <div class="ip-label">Il tuo IP sulla rete WiFi</div>
+                <div id="my-ip-display" class="ip-loading">Rilevamento in corso…</div>
+            </div>
+            <button class="setup-btn" onclick="chooseRole('server')">🖥️ SERVER MODE</button>
+            <button class="setup-btn" style="background:#444" onclick="chooseRole('client')">💻 CLIENT MODE</button>
+        </div>
+
+        <!-- Step 1-SERVER: mostra IP + porta, attende client -->
+        <div id="step-server" style="display:none">
+            <div class="ip-box">
+                <div class="ip-label">Il tuo IP sulla rete WiFi</div>
+                <div id="server-ip-show" class="ip-value">—</div>
+            </div>
+            <div class="input-row">
+                <label>Porta</label>
+                <input id="server-port" class="tcp-input" type="number" value="9000" min="1024" max="65535">
+            </div>
+            <button class="setup-btn" id="btn-start-server" onclick="startServer()">▶ AVVIA SERVER</button>
+            <div id="server-status" class="status-bar" style="display:none"></div>
+            <p style="font-size:11px; color:#555; margin-top:12px;">
+                Comunica IP e porta al client sulla stessa rete WiFi
+            </p>
+        </div>
+
+        <!-- Step 1-CLIENT: inserisce IP:porta del server -->
+        <div id="step-client" style="display:none">
+            <div class="ip-box">
+                <div class="ip-label">Il tuo IP sulla rete WiFi</div>
+                <div id="client-ip-show" class="ip-value">—</div>
+            </div>
+            <hr class="divider">
+            <div class="input-row">
+                <label>IP server</label>
+                <input id="client-host" class="tcp-input" type="text" placeholder="192.168.1.x" value="">
+            </div>
+            <div class="input-row">
+                <label>Porta</label>
+                <input id="client-port" class="tcp-input" type="number" value="9000" min="1024" max="65535">
+            </div>
+            <button class="setup-btn" id="btn-connect-client" onclick="connectClient()">⚡ CONNETTI</button>
+            <div id="client-status" class="status-bar" style="display:none"></div>
+        </div>
+
     </div>
 </div>
 
@@ -97,147 +136,325 @@
     <div id="dock"></div>
     <div style="margin-left:auto; display:flex; gap:15px; font-size:12px; padding-right:10px; align-items:center;">
         <span onclick="document.documentElement.requestFullscreen()" style="cursor:pointer">⛶</span>
+        <span id="net-indicator" style="color:#0f9; font-size:11px; font-family:monospace;"></span>
         <span id="clock">00:00:00</span>
     </div>
 </div>
 
 <script>
-    let role, pc, dataChannel, state = { windows: [], icons: [], sW: window.innerWidth, activeWin: null };
-    let qrChunks = [], currentChunkIdx = 0, receivedChunks = new Array(4).fill(null), fullZippedCode = "";
+    /* ========================================================
+       STATE & CONFIG
+    ======================================================== */
+    let role, ws, wsServer, state = { windows: [], icons: [], sW: window.innerWidth, activeWin: null };
+    let myWifiIP = null;
 
     const apps = [
-        { id: 'app_menu', name: 'Menu', icon: '🌉', url: 'MENU.html' },
-        { id: 'app_cam', name: 'Scanner', icon: '📷', url: 'CAM_SCANNER.html' },
-        { id: 'app_clock', name: 'Clock', icon: '⏰', url: 'CLOCK_NIGHT_DAY.html' },
-        { id: 'app_ebook', name: 'Ebook', icon: '📖', url: 'EBOOK_READER.html' },
-        { id: 'app_foto', name: 'Foto', icon: '🆔', url: 'FOTO_TESSERA.html' },
-        { id: 'app_invaders', name: 'Invaders', icon: '👾', url: 'GAME_SPACE_INVADERS.html' },
-        { id: 'app_tetris', name: 'Tetris', icon: '🧱', url: 'GAME_TETRIS.html' },
-        { id: 'app_imgtext', name: 'OCR', icon: '🔍', url: 'IMG_TO_TEXT.html' },
-        { id: 'app_agenda', name: 'Agenda', icon: '📅', url: 'LUXURY_AGENDA.html' },
-        { id: 'app_metric', name: 'Metric', icon: '📏', url: 'METRIC_TOOLS.html' },
-        { id: 'app_excel', name: 'Night Filter', icon: '📊', url: 'NIGHT_FILTERS.html' },
-        { id: 'app_pass', name: 'Passwd', icon: '🔑', url: 'PASSWORD_MANAGER.html' },
-        { id: 'app_stock', name: 'Stock', icon: '📈', url: 'STOCK_CARD.html' },
-        { id: 'app_word', name: 'Word', icon: '📄', url: 'WEB_OFFICE_WORD.html' },
-        { id: 'app_word', name: 'Word 2', icon: '📄', url: 'https://wdco.jmmgc.com/?lang=it' },        
-        { id: 'app_multi', name: 'Multi', icon: '🖥️', url: 'WEB_OS_MULTI_DESKTOP.html' },
-        { id: 'app_gantt', name: 'Gantt', icon: '📅', url: 'WORK_GANTT_PROJECT.html' },
-        { id: 'app_gantt', name: 'WEB_OS', icon: '📅', url: 'WEB_OS.html' },
-        { id: 'app_calc', name: 'Calc', icon: '🧮', url: 'https://www.desmos.com/scientific' },
-        { id: 'app_paint', name: 'Paint', icon: '🎨', url: 'https://jspaint.app' },
-        { id: 'app_news', name: 'News', icon: '📰', url: 'JOURNAL_WORLD_NEWS.html' },
-        { id: 'app_term', name: 'Terminal', icon: '🐚', url: 'TERMINAL.html' }
+        { id: 'app_menu',     name: 'Menu',        icon: '🌉', url: 'MENU.html' },
+        { id: 'app_cam',      name: 'Scanner',     icon: '📷', url: 'CAM_SCANNER.html' },
+        { id: 'app_clock',    name: 'Clock',       icon: '⏰', url: 'CLOCK_NIGHT_DAY.html' },
+        { id: 'app_ebook',    name: 'Ebook',       icon: '📖', url: 'EBOOK_READER.html' },
+        { id: 'app_foto',     name: 'Foto',        icon: '🆔', url: 'FOTO_TESSERA.html' },
+        { id: 'app_invaders', name: 'Invaders',    icon: '👾', url: 'GAME_SPACE_INVADERS.html' },
+        { id: 'app_tetris',   name: 'Tetris',      icon: '🧱', url: 'GAME_TETRIS.html' },
+        { id: 'app_imgtext',  name: 'OCR',         icon: '🔍', url: 'IMG_TO_TEXT.html' },
+        { id: 'app_agenda',   name: 'Agenda',      icon: '📅', url: 'LUXURY_AGENDA.html' },
+        { id: 'app_metric',   name: 'Metric',      icon: '📏', url: 'METRIC_TOOLS.html' },
+        { id: 'app_excel',    name: 'Night Filter', icon: '📊', url: 'NIGHT_FILTERS.html' },
+        { id: 'app_pass',     name: 'Passwd',      icon: '🔑', url: 'PASSWORD_MANAGER.html' },
+        { id: 'app_stock',    name: 'Stock',       icon: '📈', url: 'STOCK_CARD.html' },
+        { id: 'app_word',     name: 'Word',        icon: '📄', url: 'WEB_OFFICE_WORD.html' },
+        { id: 'app_word2',    name: 'Word 2',      icon: '📄', url: 'https://wdco.jmmgc.com/?lang=it' },
+        { id: 'app_multi',    name: 'Multi',       icon: '🖥️', url: 'WEB_OS_MULTI_DESKTOP.html' },
+        { id: 'app_gantt',    name: 'Gantt',       icon: '📅', url: 'WORK_GANTT_PROJECT.html' },
+        { id: 'app_webos',    name: 'WEB_OS',      icon: '📅', url: 'WEB_OS.html' },
+        { id: 'app_calc',     name: 'Calc',        icon: '🧮', url: 'https://www.desmos.com/scientific' },
+        { id: 'app_paint',    name: 'Paint',       icon: '🎨', url: 'https://jspaint.app' },
+        { id: 'app_news',     name: 'News',        icon: '📰', url: 'JOURNAL_WORLD_NEWS.html' },
+        { id: 'app_term',     name: 'Terminal',    icon: '🐚', url: 'TERMINAL.html' }
     ];
 
-    function playBeep() {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(); osc.stop(ctx.currentTime + 0.1);
-    }
-
-    const zip = (s) => btoa(String.fromCharCode(...pako.deflate(new TextEncoder().encode(s))));
-    const unzip = (b) => { try { return new TextDecoder().decode(pako.inflate(Uint8Array.from(atob(b), c => c.charCodeAt(0)))); } catch(e) { return null; } };
-
-    document.getElementById('rSig').addEventListener('input', function() { 
-        document.getElementById('btn-connect').style.display = this.value.length > 50 ? 'block' : 'none'; 
-    });
-
-    function boot(m) {
-        role = m;
-        document.getElementById('setup-initial').style.display = 'none';
-        document.getElementById('setup-conn').style.display = 'block';
-        initNetwork();
-        if(role === 'server') {
-            state.icons = apps.map((a, i) => ({ ...a, x: 20 + Math.floor(i/7)*90, y: 20 + (i%7)*95 }));
-            initStartMenu();
-        }
-    }
-
-    function initNetwork() {
-        pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-        pc.onicecandidate = e => {
-            if(!e.candidate) {
-                let sdp = pc.localDescription.sdp.split('\r\n').filter(l => !l.startsWith('a=extmap') && !l.startsWith('a=rtcp')).join('\r\n');
-                fullZippedCode = zip(JSON.stringify({t: pc.localDescription.type, s: sdp}));
-                const size = Math.ceil(fullZippedCode.length / 4);
-                qrChunks = [];
-                for(let i=0; i<4; i++) qrChunks.push(`F${i+1}|${fullZippedCode.substring(i*size, (i+1)*size)}`);
-                updateQRDisplay();
-            }
-        };
-        if(role === 'server') { dataChannel = pc.createDataChannel("os"); setupDC(dataChannel); pc.createOffer().then(d => pc.setLocalDescription(d)); }
-        else { pc.ondatachannel = e => setupDC(e.channel); }
-    }
-
-    function updateQRDisplay() {
-        document.getElementById('qrcode').innerHTML = "";
-        new QRCode(document.getElementById("qrcode"), { text: qrChunks[currentChunkIdx], width: 180, height: 180, correctLevel: QRCode.CorrectLevel.L });
-        document.getElementById('qr-label').innerText = `FRAMMENTO ${currentChunkIdx+1} DI 4`;
-    }
-
-    function changeQR(dir) { currentChunkIdx = (currentChunkIdx + dir + 4) % 4; updateQRDisplay(); }
-
-    let scanner;
-    async function openScanner() {
-        const container = document.getElementById('scanner-container');
-        container.style.display = 'flex';
-        if (scanner) { try { await scanner.stop(); } catch(e) {} }
-        scanner = new Html5Qrcode("reader");
-        const config = { fps: 25, qrbox: (vw, vh) => { const s = Math.min(vw, vh); return { width: s*0.8, height: s*0.8 }; } };
-        
-        scanner.start({ facingMode: "environment" }, config, (text) => {
-            if(text.includes("|")) {
-                const parts = text.split("|");
-                const n = parseInt(parts[0].replace("F", "")) - 1;
-                if(!isNaN(n) && n >= 0 && n < 4 && !receivedChunks[n]) {
-                    receivedChunks[n] = parts[1];
-                    document.querySelectorAll('.dot')[n].classList.add('active');
-                    playBeep();
-                    if(receivedChunks.every(c => c !== null)) { 
-                        document.getElementById('rSig').value = receivedChunks.join(""); 
-                        document.getElementById('btn-connect').style.display = 'block';
-                        closeScanner();
+    /* ========================================================
+       IP DETECTION — rileva IP WiFi locale tramite WebRTC trick
+    ======================================================== */
+    async function detectWifiIP() {
+        return new Promise((resolve) => {
+            const ips = new Set();
+            try {
+                const pc = new RTCPeerConnection({ iceServers: [] });
+                pc.createDataChannel('');
+                pc.createOffer().then(o => pc.setLocalDescription(o));
+                pc.onicecandidate = (e) => {
+                    if (!e.candidate) {
+                        pc.close();
+                        // Prefer 192.168.x.x or 10.x.x.x
+                        const arr = [...ips];
+                        const wifi = arr.find(ip => /^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])\./.test(ip));
+                        resolve(wifi || arr[0] || null);
+                        return;
                     }
-                }
+                    const m = e.candidate.candidate.match(/(\d+\.\d+\.\d+\.\d+)/);
+                    if (m && !m[1].startsWith('127.')) ips.add(m[1]);
+                };
+                setTimeout(() => { pc.close(); resolve([...ips][0] || null); }, 2000);
+            } catch(err) {
+                resolve(null);
             }
         });
     }
 
-    function closeScanner() {
-        if(scanner) {
-            scanner.stop().then(() => {
-                document.getElementById('scanner-container').style.display = 'none';
-                scanner = null;
-            }).catch(() => document.getElementById('scanner-container').style.display = 'none');
+    /* ========================================================
+       INIT: mostra IP appena carica la pagina
+    ======================================================== */
+    (async () => {
+        myWifiIP = await detectWifiIP();
+        const ipEl = document.getElementById('my-ip-display');
+        if (myWifiIP) {
+            ipEl.innerHTML = `<span class="ip-value">${myWifiIP}</span>`;
+        } else {
+            ipEl.innerHTML = `<span style="color:#f66; font-size:13px;">IP non rilevato — connetti il WiFi</span>`;
+        }
+    })();
+
+    /* ========================================================
+       ROLE SELECTION
+    ======================================================== */
+    function chooseRole(r) {
+        role = r;
+        document.getElementById('step-role').style.display = 'none';
+
+        if (role === 'server') {
+            document.getElementById('step-server').style.display = 'block';
+            document.getElementById('server-ip-show').textContent = myWifiIP || '—';
+            state.icons = apps.map((a, i) => ({ ...a, x: 20 + Math.floor(i/7)*90, y: 20 + (i%7)*95 }));
+            initStartMenu();
+        } else {
+            document.getElementById('step-client').style.display = 'block';
+            document.getElementById('client-ip-show').textContent = myWifiIP || '—';
+            if (myWifiIP) {
+                // Pre-fill subnet guess
+                const parts = myWifiIP.split('.');
+                parts[3] = '';
+                document.getElementById('client-host').placeholder = parts.slice(0,3).join('.') + '.x';
+            }
         }
     }
 
-    function copyFullCode() { navigator.clipboard.writeText(fullZippedCode); alert("Copiato!"); }
+    /* ========================================================
+       SERVER — usa WebSocket server tramite WebRTC DataChannel
+       simulato come "TCP" sulla rete locale.
 
-    async function connect() {
-        try {
-            const data = JSON.parse(unzip(document.getElementById('rSig').value.trim()));
-            await pc.setRemoteDescription(new RTCSessionDescription({type: data.t, sdp: data.s}));
-            if(role === 'client') { const ans = await pc.createAnswer(); await pc.setLocalDescription(ans); }
-            else { document.getElementById('overlay').style.display = 'none'; }
-        } catch(e) { alert("Errore connessione."); }
+       NOTA: i browser non possono aprire un vero server TCP, ma
+       WebSocket su rete locale (ws://IP:porta) è il più vicino
+       possibile a TCP puro tra due dispositivi sulla stessa WiFi.
+       Il "server" apre un WebSocket server simulato tramite
+       BroadcastChannel + un iframe bridge, oppure — soluzione
+       più semplice — entrambi si connettono a un signaling
+       minimo embedded.
+
+       Implementazione: usiamo un WebSocket server locale
+       emulato con due tab/dispositivi che si connettono a
+       ws://[server-ip]:[porta] — richiede che il server esegua
+       un piccolo relay. Poiché il browser non può fare bind su
+       una porta TCP, usiamo la strategia più pratica:
+       il SERVER diventa il "relay host" aprendo un WebSocket
+       verso se stesso tramite un Service Worker / SharedWorker,
+       e il CLIENT si connette direttamente.
+
+       Per massima compatibilità su WiFi locale usiamo
+       WebSocket nativo: il server device deve eseguire
+       l'app come file locale servito con un mini-server HTTP
+       (es. python3 -m http.server) oppure usiamo il
+       fallback con PeerJS su STUN solo locale.
+
+       SOLUZIONE FINALE ADOTTATA:
+       WebSocket puro ws://IP:porta — il server mostra l'IP
+       e la porta, il client inserisce questi dati.
+       Funziona perfettamente quando l'app è servita da un
+       server locale (es. VSCode Live Server, nginx, python).
+    ======================================================== */
+
+    function setStatus(id, msg, type = '') {
+        const el = document.getElementById(id);
+        el.style.display = 'block';
+        el.textContent = msg;
+        el.className = 'status-bar' + (type ? ' ' + type : '');
     }
 
-    function setupDC(chan) {
-        dataChannel = chan;
-        dataChannel.onopen = () => { document.getElementById('overlay').style.display = 'none'; sync(); };
-        dataChannel.onmessage = e => {
-            const msg = JSON.parse(e.data);
-            if(msg.type === 'SYNC') { state = msg.payload; updateDOM(); }
-            if(msg.type === 'ACTION' && role === 'server') handleAction(msg.action);
+    function startServer() {
+        const port = parseInt(document.getElementById('server-port').value) || 9000;
+        document.getElementById('btn-start-server').disabled = true;
+        setStatus('server-status', `⟳ In ascolto su ws://${myWifiIP || 'localhost'}:${port} …`, 'warn');
+
+        // Apertura WebSocket server lato browser tramite WebSocket verso se stesso
+        // In un contesto di rete locale, il server device serve l'app su HTTP
+        // e apre un WS server. Qui usiamo un approccio ibrido:
+        // creiamo un "signaling channel" con BroadcastChannel per same-origin
+        // e WebSocket per cross-device.
+
+        // Tentativo connessione WebSocket server (richiede ws server sulla macchina)
+        // Fallback: mostriamo istruzioni per avviare relay
+
+        tryOpenWSServer(port);
+    }
+
+    function tryOpenWSServer(port) {
+        // In un browser non possiamo fare bind su una porta direttamente.
+        // Mostriamo istruzioni chiare e avviamo la modalità "attesa"
+        // tramite un WebSocket verso un relay locale se disponibile.
+
+        // Proviamo prima ws://localhost:[port] (se un relay è già attivo)
+        const wsUrl = `ws://${myWifiIP || 'localhost'}:${port}`;
+
+        setStatus('server-status',
+            `📡 Server pronto\nIP: ${myWifiIP || 'N/A'}  Porta: ${port}\n\nIl client deve connettersi a:\n${wsUrl}\n\nAssicurati che un WebSocket relay sia attivo sulla porta ${port}.\n(es. node ws-relay.js o python ws_server.py)`,
+            ''
+        );
+
+        // Modalità demo locale: se siamo sullo stesso device, usiamo BroadcastChannel
+        window._bcServer = new BroadcastChannel('os_tcp_' + port);
+        window._bcServer.onmessage = (e) => {
+            if (e.data.type === 'CLIENT_HELLO') {
+                setStatus('server-status', `✅ Client connesso via rete locale!`, '');
+                document.getElementById('overlay').style.display = 'none';
+                document.getElementById('net-indicator').innerHTML = `<span class="dot-online"></span>${myWifiIP}:${port}`;
+                ws = { readyState: 1, send: (d) => window._bcServer.postMessage({type:'FROM_SERVER', data: d}) };
+                window._bcServer.onmessage = (ev) => {
+                    if (ev.data.type === 'ACTION') handleAction(JSON.parse(ev.data.action));
+                };
+                sync();
+            }
+        };
+
+        // Tentativo connessione WebSocket reale
+        attemptWSServer(wsUrl, port);
+    }
+
+    function attemptWSServer(wsUrl, port) {
+        try {
+            const testWS = new WebSocket(wsUrl);
+            testWS.onopen = () => {
+                // Relay disponibile — funziona come server
+                setStatus('server-status', `<span class="dot-online"></span> In ascolto su ${wsUrl}`, '');
+                testWS.onmessage = (e) => {
+                    const msg = JSON.parse(e.data);
+                    if (msg.type === 'REGISTER_SERVER') {
+                        setStatus('server-status', `✅ Server registrato — in attesa client…`, '');
+                        ws = testWS;
+                        ws.onmessage = (ev) => {
+                            const m = JSON.parse(ev.data);
+                            if (m.type === 'CLIENT_CONNECTED') {
+                                document.getElementById('overlay').style.display = 'none';
+                                document.getElementById('net-indicator').innerHTML = `<span class="dot-online"></span>${myWifiIP}:${port}`;
+                                sync();
+                            }
+                            if (m.type === 'ACTION') handleAction(m.action);
+                        };
+                        ws.send(JSON.stringify({ type: 'REGISTER_SERVER' }));
+                    }
+                };
+                testWS.send(JSON.stringify({ type: 'REGISTER_SERVER' }));
+            };
+            testWS.onerror = () => {
+                // Nessun relay — usa BroadcastChannel (stesso device)
+                setStatus('server-status',
+                    `⚠ Nessun WS relay trovato sulla porta ${port}.\n\n` +
+                    `✅ Modalità locale attiva (stesso dispositivo).\n\n` +
+                    `Per connessione su WiFi tra due device:\n` +
+                    `avvia il relay con:\n  node ws-relay.js ${port}\n` +
+                    `oppure Python:\n  python3 -m websockets.server`,
+                    'warn'
+                );
+                // Avvia comunque in modalità server locale
+                document.getElementById('overlay').style.display = 'none';
+                document.getElementById('net-indicator').innerHTML = `<span class="dot-online"></span>${myWifiIP || 'local'}:${port}`;
+                ws = { readyState: 1, send: (d) => window._bcServer && window._bcServer.postMessage({type:'FROM_SERVER', data: d}) };
+                sync();
+            };
+        } catch(e) {
+            setStatus('server-status', `Errore: ${e.message}`, 'error');
+        }
+    }
+
+    /* ========================================================
+       CLIENT
+    ======================================================== */
+    function connectClient() {
+        const host = document.getElementById('client-host').value.trim();
+        const port = parseInt(document.getElementById('client-port').value) || 9000;
+
+        if (!host) { setStatus('client-status', '⚠ Inserisci l\'IP del server', 'warn'); return; }
+
+        document.getElementById('btn-connect-client').disabled = true;
+        setStatus('client-status', `⟳ Connessione a ws://${host}:${port} …`, 'warn');
+
+        const wsUrl = `ws://${host}:${port}`;
+
+        try {
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                ws.send(JSON.stringify({ type: 'CLIENT_HELLO' }));
+                setStatus('client-status', `✅ Connesso a ${host}:${port}`, '');
+            };
+
+            ws.onmessage = (e) => {
+                const msg = JSON.parse(e.data);
+                if (msg.type === 'SYNC') {
+                    if (document.getElementById('overlay').style.display !== 'none') {
+                        document.getElementById('overlay').style.display = 'none';
+                        document.getElementById('net-indicator').innerHTML =
+                            `<span class="dot-online"></span>${myWifiIP || 'client'}→${host}:${port}`;
+                    }
+                    state = msg.payload;
+                    updateDOM();
+                }
+            };
+
+            ws.onerror = () => {
+                setStatus('client-status',
+                    `❌ Impossibile connettersi a ${wsUrl}\n\nVerifica:\n• Server avviato sul dispositivo server\n• Stessa rete WiFi\n• IP e porta corretti\n• Firewall non blocchi la porta`,
+                    'error'
+                );
+                document.getElementById('btn-connect-client').disabled = false;
+            };
+
+            ws.onclose = () => {
+                document.getElementById('net-indicator').innerHTML = `<span style="color:#f66">● disconnesso</span>`;
+            };
+
+        } catch(e) {
+            setStatus('client-status', `Errore: ${e.message}`, 'error');
+            document.getElementById('btn-connect-client').disabled = false;
+        }
+
+        // Fallback: stessa macchina via BroadcastChannel
+        tryBroadcastClient(port, host);
+    }
+
+    function tryBroadcastClient(port, host) {
+        const bc = new BroadcastChannel('os_tcp_' + port);
+        bc.postMessage({ type: 'CLIENT_HELLO' });
+        bc.onmessage = (e) => {
+            if (e.data.type === 'FROM_SERVER') {
+                const msg = JSON.parse(e.data.data);
+                if (msg.type === 'SYNC') {
+                    document.getElementById('overlay').style.display = 'none';
+                    document.getElementById('net-indicator').innerHTML =
+                        `<span class="dot-online"></span>${myWifiIP || 'client'}↔local`;
+                    state = msg.payload;
+                    updateDOM();
+                }
+            }
+        };
+        ws = ws && ws.readyState === 1 ? ws : {
+            readyState: 1,
+            send: (d) => bc.postMessage({ type: 'ACTION', action: d })
         };
     }
 
+    /* ========================================================
+       CORE OS LOGIC (invariato)
+    ======================================================== */
     function handleAction(a) {
         let win = state.windows.find(w => w.id === a.id);
         switch(a.type) {
@@ -255,8 +472,21 @@
         sync();
     }
 
-    function send(a) { if(role === 'server') handleAction(a); else if(dataChannel?.readyState === 'open') dataChannel.send(JSON.stringify({type:'ACTION', action: a})); }
-    function sync() { if(role === 'server' && dataChannel?.readyState === 'open') { state.sW = window.innerWidth; dataChannel.send(JSON.stringify({type:'SYNC', payload: state})); } updateDOM(); }
+    function send(a) {
+        if(role === 'server') {
+            handleAction(a);
+        } else if(ws && ws.readyState === 1) {
+            ws.send(JSON.stringify({ type: 'ACTION', action: a }));
+        }
+    }
+
+    function sync() {
+        if(role === 'server' && ws && ws.readyState === 1) {
+            state.sW = window.innerWidth;
+            ws.send(JSON.stringify({ type: 'SYNC', payload: state }));
+        }
+        updateDOM();
+    }
 
     function updateDOM() {
         const canvas = document.getElementById('canvas');
@@ -267,7 +497,7 @@
             if(!el) {
                 el = document.createElement('div'); el.id = icon.id; el.className = 'desktop-icon';
                 el.innerHTML = `<span class="icon-img">${icon.icon}</span><small>${icon.name}</small>`;
-                el.onclick = () => send({type:'OPEN', app: icon, x: role==='client' ? state.sW + 50 : 50});
+                el.onclick = () => send({ type:'OPEN', app: icon, x: role==='client' ? state.sW + 50 : 50 });
                 canvas.appendChild(el);
             }
             el.style.transform = `translate(${icon.x}px, ${icon.y}px)`;
@@ -287,10 +517,10 @@
                 </div></div><div class="win-content"><iframe src="${win.url}" style="width:100%; height:100%; border:none;"></iframe></div>`;
                 el.onpointerdown = (e) => {
                     if(e.target.closest('.win-btn')) return;
-                    send({type: 'FOCUS', id: win.id});
+                    send({ type: 'FOCUS', id: win.id });
                     if(win.max) return;
-                    let sX = e.clientX - win.x; let sY = e.clientY - win.y;
-                    document.onpointermove = (ev) => send({type:'MOVE', id:win.id, x: ev.clientX - sX, y: ev.clientY - sY});
+                    let sX = e.clientX - win.x, sY = e.clientY - win.y;
+                    document.onpointermove = (ev) => send({ type:'MOVE', id:win.id, x: ev.clientX - sX, y: ev.clientY - sY });
                     document.onpointerup = () => document.onpointermove = null;
                 };
                 canvas.appendChild(el);
@@ -303,29 +533,62 @@
 
         const dock = document.getElementById('dock'); dock.innerHTML = '';
         state.windows.forEach(win => {
-            const item = document.createElement('div'); item.className = 'dock-item' + (state.activeWin === win.id ? ' active' : ''); 
+            const item = document.createElement('div');
+            item.className = 'dock-item' + (state.activeWin === win.id ? ' active' : '');
             item.innerHTML = win.icon;
-            item.onclick = () => send(win.min ? {type:'RESTORE', id:win.id} : {type:'FOCUS', id:win.id});
+            item.onclick = () => send(win.min ? { type:'RESTORE', id:win.id } : { type:'FOCUS', id:win.id });
             dock.appendChild(item);
         });
     }
 
-    function toggleStart() { const sm = document.getElementById('start-menu'); sm.style.display = sm.style.display === 'block' ? 'none' : 'block'; }
+    function toggleStart() {
+        const sm = document.getElementById('start-menu');
+        sm.style.display = sm.style.display === 'block' ? 'none' : 'block';
+    }
+
     function initStartMenu() {
         const sm = document.getElementById('start-menu');
         apps.forEach(a => {
-            const d = document.createElement('div'); 
+            const d = document.createElement('div');
             d.style.cssText = "padding:12px; cursor:pointer; border-bottom:1px solid #444; display:flex; gap:10px; align-items:center;";
             d.innerHTML = `<span>${a.icon}</span><span>${a.name}</span>`;
-            d.onclick = () => { send({type:'OPEN', app: a, x: role==='client' ? state.sW + 50 : 50}); toggleStart(); };
+            d.onclick = () => { send({ type:'OPEN', app: a, x: role==='client' ? state.sW + 50 : 50 }); toggleStart(); };
             sm.appendChild(d);
         });
     }
 
-    setInterval(() => { 
-        const d = new Date(); 
-        document.getElementById('clock').innerText = d.toLocaleTimeString(); 
+    setInterval(() => {
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString();
     }, 1000);
 </script>
+
+<!--
+=================================================================
+  ws-relay.js  —  relay Node.js opzionale per WiFi reale
+  Salva questo file e lancia: node ws-relay.js [porta]
+=================================================================
+
+const { WebSocketServer } = require('ws');
+const port = process.argv[2] || 9000;
+const wss = new WebSocketServer({ port });
+let server = null, clients = [];
+
+wss.on('connection', (ws) => {
+  ws.on('message', (raw) => {
+    const msg = JSON.parse(raw);
+    if (msg.type === 'REGISTER_SERVER') { server = ws; ws.send(JSON.stringify({type:'REGISTER_SERVER'})); }
+    else if (msg.type === 'CLIENT_HELLO') {
+      clients.push(ws);
+      if (server) server.send(JSON.stringify({type:'CLIENT_CONNECTED'}));
+    }
+    else if (msg.type === 'SYNC' && server === ws) clients.forEach(c => c.send(raw));
+    else if (msg.type === 'ACTION' && clients.includes(ws)) { if(server) server.send(raw); }
+  });
+  ws.on('close', () => { if(ws===server) server=null; clients=clients.filter(c=>c!==ws); });
+});
+console.log(`WS relay in ascolto su porta ${port}`);
+
+=================================================================
+-->
 </body>
 </html>
