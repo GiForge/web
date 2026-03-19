@@ -3,600 +3,670 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Aether Station Pro - Color Custom</title>
+    <title>AETHER-9 // TACTICAL METEO STATION</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=JetBrains+Mono:wght@700&display=swap');
-
         :root {
-            --bg-deep: #0f172a;
-            --accent-pink: #ff3366;
-            --accent-blue: #38bdf8;
-            --glass: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.1);
-            --night-bg: #000000;
+            --bg-deep:    #05070a;
+            --panel-bg:   rgba(10,15,20,0.88);
+            --cyan:       #00f2ff;
+            --cyan-dim:   rgba(0,242,255,0.15);
+            --cyan-glow:  0 0 8px #00f2ff, 0 0 20px rgba(0,242,255,0.35);
+            --magenta:    #ff2d78;
+            --mag-glow:   0 0 8px #ff2d78, 0 0 20px rgba(255,45,120,0.35);
+            --border:     rgba(0,242,255,0.22);
+            --font-hud:   'Orbitron', sans-serif;
+            --font-main:  'Rajdhani', sans-serif;
+            --font-mono:  'Share Tech Mono', monospace;
+            /* night mode */
+            --night-bg:   #000;
             --night-text: #ff0000;
-            --night-glow: 0 0 20px rgba(255, 0, 0, 0.8);
-
-            /* Responsive font scale */
-            --clock-size: clamp(48px, 18vw, 220px);
-            --date-size: clamp(10px, 3.5vw, 40px);
-            --label-size: clamp(10px, 2.5vw, 22px);
-            --icon-size: clamp(28px, 7vw, 90px);
-            --forecast-icon: clamp(18px, 4vw, 44px);
-            --card-pad: clamp(6px, 2vw, 18px);
+            --night-glow: 0 0 20px rgba(255,0,0,0.8);
+            --accent-blue: #00f2ff;
+            --accent-pink: #ff2d78;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        html, body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; width: 100%; overflow: hidden; }
 
         body {
             background-color: var(--bg-deep);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Inter', sans-serif;
-            color: #e2e8f0;
-            position: fixed;
-            inset: 0;
-            transition: background 0.5s ease;
+            color: var(--cyan);
+            font-family: var(--font-main);
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            text-transform: uppercase;
+            transition: background .5s;
         }
 
-        /* NIGHT MODE */
+        /* ── DIGITAL PIXEL BG CANVAS ── */
+        #bgCanvas {
+            position: fixed; inset: 0;
+            width: 100%; height: 100%;
+            z-index: 0; display: block;
+            opacity: 0.22;
+        }
+        /* vignette over canvas */
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse 65% 60% at 50% 50%,
+                rgba(0,0,0,0) 0%,
+                rgba(0,0,0,0.6) 55%,
+                rgba(0,0,0,0.97) 100%);
+            pointer-events: none; z-index: 1;
+        }
+
+        /* ── NIGHT MODE ── */
         body.night { background-color: var(--night-bg) !important; color: var(--night-text) !important; }
-        body.night * {
-            color: var(--night-text) !important;
-            border-color: var(--night-text) !important;
-            text-shadow: var(--night-glow);
-            background-color: transparent !important;
-        }
-        body.night .v-line { background-color: var(--night-text) !important; opacity: 0.5; }
-        body.night .main-station { background: transparent; backdrop-filter: none; }
-        body.night .hud-btn, body.night #fullscreenBtn { border: 2px solid var(--night-text) !important; }
+        body.night * { color: var(--night-text) !important; border-color: var(--night-text) !important;
+            text-shadow: var(--night-glow) !important; background-color: transparent !important; }
+        body.night #bgCanvas { display: none; }
+        body.night .corner, body.night .main-border { display: none; }
 
-        /* MAIN CONTAINER */
-        .main-station {
-            background: var(--glass);
-            backdrop-filter: blur(30px);
-            border: 1px solid var(--border);
-            border-radius: clamp(16px, 4vw, 40px);
-            padding: clamp(8px, 2vw, 24px) clamp(8px, 2vw, 24px);
-            width: 97vw;
-            height: 96dvh;
+        /* ── EVERYTHING ABOVE CANVAS ── */
+        header, .main-wrapper, footer, .hud-vertical, #fullscreenBtn, .config-panel { position: relative; z-index: 2; }
+
+        /* ══════════════════════════════════════════
+           HEADER
+        ══════════════════════════════════════════ */
+        header {
+            flex-shrink: 0;
+            padding: clamp(6px,1.2vh,14px) clamp(12px,3vw,40px);
+            background: rgba(0,242,255,0.04);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            clip-path: polygon(0 0, 100% 0, 98.5% 100%, 1.5% 100%);
+            box-shadow: 0 0 18px rgba(0,242,255,0.12);
+        }
+        .header-side {
+            font-family: var(--font-hud);
+            font-size: clamp(7px,1.4vw,11px);
+            letter-spacing: .15em;
+            opacity: .7;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .header-side .dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--cyan);
+            box-shadow: var(--cyan-glow);
+            animation: blink 2s ease-in-out infinite;
+        }
+        .header-title {
+            font-family: var(--font-hud);
+            font-size: clamp(10px,2.2vw,18px);
+            letter-spacing: .3em;
+            text-shadow: var(--cyan-glow);
+            text-align: center;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.15} }
+
+        /* ══════════════════════════════════════════
+           MAIN WRAPPER
+        ══════════════════════════════════════════ */
+        .main-wrapper {
+            flex: 1 1 0;
+            min-height: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            gap: clamp(4px, 1vh, 12px);
+            padding: clamp(6px,1.2vh,16px) clamp(10px,2vw,24px);
+            gap: clamp(4px,.8vh,10px);
             overflow: hidden;
+            /* tactical frame border */
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
         }
 
-        /* HUD BUTTONS */
-        .hud-vertical {
-            position: fixed;
-            top: clamp(8px, 2vw, 25px);
-            left: clamp(8px, 2vw, 25px);
-            display: flex;
-            flex-direction: column;
-            gap: clamp(6px, 1.5vw, 15px);
-            z-index: 6000;
+        /* ── LOCATION BAR ── */
+        .location-bar {
+            flex-shrink: 0; width: 100%;
+            display: flex; align-items: center; justify-content: center;
+            gap: clamp(8px,2vw,20px);
         }
-
-        .hud-btn, #fullscreenBtn {
-            background: #1e293b;
-            border: 2px solid var(--accent-blue);
-            color: white;
-            border-radius: 50%;
-            width: clamp(36px, 7vw, 55px);
-            height: clamp(36px, 7vw, 55px);
-            cursor: pointer;
-            font-size: clamp(14px, 3vw, 22px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0.8;
-            transition: 0.3s;
-            flex-shrink: 0;
+        .loc-tag {
+            font-family: var(--font-hud);
+            font-size: clamp(7px,1.5vw,11px);
+            letter-spacing: .18em; opacity: .5;
+            display: flex; align-items: center; gap: 5px;
         }
-        .hud-btn:hover, #fullscreenBtn:hover { opacity: 1; background: var(--accent-blue); color: #000; }
-        #fullscreenBtn {
-            position: fixed;
-            right: clamp(8px, 2vw, 25px);
-            top: clamp(8px, 2vw, 25px);
-            z-index: 6000;
-        }
-
-        /* CONFIG PANEL */
-        .config-panel {
-            position: fixed;
-            top: clamp(8px, 2vw, 25px);
-            left: calc(clamp(36px, 7vw, 55px) + clamp(8px, 2vw, 25px) + 10px);
-            z-index: 5000;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-            background: rgba(30, 41, 59, 0.97);
-            padding: clamp(10px, 2vw, 15px);
-            border-radius: 15px;
-            border: 2px solid var(--accent-blue);
-            transform: translateX(-30px);
-            opacity: 0;
-            pointer-events: none;
-            transition: 0.3s;
-            max-width: calc(100vw - clamp(36px, 7vw, 55px) - clamp(8px, 2vw, 25px) * 3 - clamp(36px, 7vw, 55px));
-        }
-        .config-panel.open { transform: translateX(0); opacity: 1; pointer-events: all; }
-        .config-row { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between; }
-        .config-panel label { font-size: clamp(8px, 2vw, 10px); font-weight: 800; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
-        .color-picker { background: transparent; border: none; width: 30px; height: 20px; cursor: pointer; flex-shrink: 0; }
-
-        #update-rate {
-            background: transparent; color: white; border: none;
-            font-family: 'Inter'; font-weight: 700; cursor: pointer;
-            outline: none; font-size: clamp(10px, 2vw, 12px);
-        }
-        #update-rate option { background: #1e293b; }
-
-        /* LOCATION */
-        .location-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: clamp(3px, 0.8vw, 6px);
-            z-index: 3000;
-            flex-shrink: 0;
-            width: 100%;
-        }
-        #location-name {
-            font-size: clamp(8px, 2vw, 13px);
-            opacity: 0.5;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-        }
+        .loc-tag::before { content: '◈'; color: var(--cyan); }
+        #location-name { color: var(--cyan); text-shadow: var(--cyan-glow); }
         #city-selector {
-            background: #1e293b;
-            color: var(--accent-blue);
-            border: 2px solid var(--accent-blue);
-            border-radius: 8px;
-            padding: clamp(4px, 1vw, 8px) clamp(8px, 2vw, 15px);
-            font-size: clamp(11px, 2.8vw, 16px);
-            cursor: pointer;
-            outline: none;
-            max-width: 90vw;
-        }
-
-        /* CLOCK */
-        .time-display {
-            font-family: Verdana, Geneva, sans-serif;
-            font-size: var(--clock-size);
-            font-weight: 700;
-            line-height: 0.85;
-            letter-spacing: -0.03em;
-            font-variant-numeric: tabular-nums;
-            -moz-font-feature-settings: "tnum";
-            -webkit-font-feature-settings: "tnum";
-            pointer-events: none;
-            user-select: none;
-            flex-shrink: 0;
-            white-space: nowrap;
-        }
-        .sec-module {
-            font-size: 0.25em;
-            color: var(--accent-pink);
-            margin-left: 0.05em;
-            vertical-align: super;
-        }
-
-        /* DATE */
-        #date {
-            font-size: var(--date-size);
-            font-weight: 300;
-            text-transform: uppercase;
-            letter-spacing: 0.3em;
-            color: var(--accent-blue);
-            flex-shrink: 0;
-            text-align: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 95vw;
-        }
-
-        /* MID SECTION */
-        .mid-section {
-            display: flex;
-            width: 100%;
-            justify-content: center;
-            align-items: center;
-            gap: clamp(8px, 3vw, 40px);
-            background: rgba(255,255,255,0.02);
-            padding: clamp(6px, 1.5vh, 18px) clamp(8px, 2vw, 28px);
-            border-radius: clamp(12px, 3vw, 30px);
+            background: rgba(0,242,255,.05);
+            color: var(--cyan);
             border: 1px solid var(--border);
-            flex-shrink: 0;
-            width: 100%;
+            padding: clamp(3px,.6vw,7px) clamp(7px,1.6vw,14px);
+            font-family: var(--font-hud); font-size: clamp(9px,1.8vw,12px);
+            cursor: pointer; outline: none; max-width: 55vw;
+            letter-spacing: .08em;
+            clip-path: polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,0 100%);
+        }
+        #city-selector option { background: #05070a; }
+
+        /* ── CLOCK WRAPPER ── */
+        .clock-wrapper {
+            flex: 1 1 0; min-height: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            width: 100%; overflow: hidden; position: relative;
+        }
+        /* bracket flanks */
+        .bracket { position: absolute; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; justify-content: space-between;
+            gap: 5px; opacity: .3; pointer-events: none; }
+        .bracket.left  { left: 0;  align-items: flex-start; }
+        .bracket.right { right: 0; align-items: flex-end; }
+        .bseg { height: 2px; background: var(--cyan); box-shadow: var(--cyan-glow); }
+        .bseg:nth-child(1){width:100%} .bseg:nth-child(2){width:60%} .bseg:nth-child(3){width:80%}
+
+        /* clock digits */
+        .time-display {
+            font-family: var(--font-hud); font-weight: 900;
+            line-height: .88; letter-spacing: -.02em;
+            font-variant-numeric: tabular-nums;
+            pointer-events: none; user-select: none; white-space: nowrap;
+            color: #fff;
+            text-shadow: 0 0 14px var(--cyan), 0 0 40px rgba(0,242,255,.45), 0 0 70px rgba(0,242,255,.18);
+            display: block;
+            animation: flicker 11s infinite;
+        }
+        @keyframes flicker { 0%,100%{opacity:1} 91%{opacity:.97} 93%{opacity:.88} 96%{opacity:1} }
+
+        .time-display.glitch { animation: glitch .12s steps(2) forwards; }
+        @keyframes glitch {
+            0%  { clip-path:inset(20% 0 55% 0); transform:translateX(-3px); }
+            33% { clip-path:inset(55% 0 10% 0); transform:translateX(3px); }
+            66% { clip-path:inset(35% 0 30% 0); transform:translateX(-2px); }
+            100%{ clip-path:none; transform:translateX(0); }
+        }
+
+        .sec-module {
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
+            display: inline-block; min-width: 2.1ch; text-align: left;
+            vertical-align: super;
+            color: var(--magenta);
+            text-shadow: var(--mag-glow);
+        }
+        #date {
+            font-family: var(--font-hud); font-weight: 400;
+            text-transform: uppercase; color: var(--cyan);
+            text-align: center; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+            max-width: 95vw; letter-spacing: .32em;
+            text-shadow: var(--cyan-glow); opacity: .8; display: block;
+        }
+
+        /* ── STATUS BAR (luna + meteo) ── */
+        .status-bar {
+            flex-shrink: 0; width: 100%;
+            display: flex; align-items: stretch;
+            background: rgba(0,242,255,.03);
+            border: 1px solid var(--border);
+            clip-path: polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
         }
         .info-block {
-            display: flex;
-            align-items: center;
-            gap: clamp(6px, 2vw, 20px);
-            flex: 1;
-            justify-content: center;
-            min-width: 0;
+            flex: 1; display: flex; align-items: center;
+            gap: clamp(5px,1.5vw,16px);
+            padding: clamp(5px,1vh,13px) clamp(8px,2vw,22px);
+            min-width: 0; position: relative;
         }
-        .v-line {
+        .info-block + .info-block::before {
+            content: ''; position: absolute; left: 0; top: 15%; bottom: 15%;
             width: 1px;
-            height: clamp(40px, 8vh, 80px);
-            background: var(--border);
-            flex-shrink: 0;
+            background: linear-gradient(180deg, transparent, var(--cyan), transparent);
         }
         #moon-emoji, #weather-icon {
-            font-size: var(--icon-size);
-            line-height: 1;
-            flex-shrink: 0;
+            font-size: clamp(22px,4.5vw,58px); line-height: 1; flex-shrink: 0;
         }
         .info-text { min-width: 0; overflow: hidden; }
         .info-label {
-            font-weight: 700;
-            color: var(--accent-blue);
-            font-size: var(--label-size);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-family: var(--font-hud); font-weight: 700;
+            color: var(--cyan); font-size: clamp(9px,1.9vw,19px);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            text-shadow: var(--cyan-glow); letter-spacing: .05em;
         }
-        #moonIllumination, #today-minmax {
-            opacity: 0.7;
-            font-size: clamp(9px, 2vw, 16px);
-            white-space: nowrap;
+        .info-sub {
+            opacity: .6; font-size: clamp(8px,1.5vw,12px);
+            white-space: nowrap; font-family: var(--font-mono);
+            color: var(--cyan); letter-spacing: .05em;
+        }
+        .sdot {
+            display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+            background: var(--cyan); margin-right: 4px;
+            box-shadow: var(--cyan-glow);
+            animation: blink 2s ease-in-out infinite;
         }
 
-        /* FORECAST GRID */
+        /* ── FORECAST ── */
+        .forecast-section { flex-shrink: 0; width: 100%; display: flex; flex-direction: column; gap: clamp(3px,.5vh,5px); }
+        .forecast-label {
+            font-family: var(--font-hud); font-size: clamp(7px,1.3vw,10px);
+            letter-spacing: .3em; opacity: .4; padding-left: 3px;
+        }
         .forecast-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: clamp(4px, 1vw, 15px);
-            width: 100%;
-            flex-shrink: 0;
+            display: grid; grid-template-columns: repeat(6,1fr);
+            gap: clamp(3px,.8vw,10px); width: 100%;
         }
         .day-card {
-            background: var(--glass);
+            background: rgba(0,242,255,.03);
+            border: 1px solid rgba(0,242,255,.18);
+            padding: clamp(4px,1.2vw,12px) clamp(3px,.8vw,8px);
+            text-align: center; min-width: 0; position: relative; overflow: hidden;
+            clip-path: polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%);
+            transition: .2s;
+        }
+        .day-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            opacity: .5;
+        }
+        .day-card:hover { background: rgba(0,242,255,.1); border-color: var(--cyan); box-shadow: inset 0 0 12px rgba(0,242,255,.1); }
+        .day-name { font-family: var(--font-hud); font-size: clamp(7px,1.5vw,12px); color: var(--cyan); font-weight: 700; white-space: nowrap; letter-spacing: .06em; text-shadow: var(--cyan-glow); }
+        .day-icon { font-size: clamp(13px,2.7vw,30px); margin: clamp(2px,.4vh,5px) 0; line-height: 1.1; }
+        .t-max { font-family: var(--font-mono); font-weight: 700; color: #fff; font-size: clamp(8px,1.7vw,15px); text-shadow: 0 0 6px #fff; }
+        .t-min { font-family: var(--font-mono); opacity: .4; margin-left: 2px; font-size: clamp(7px,1.3vw,11px); color: var(--cyan); }
+
+        /* ── FOOTER ── */
+        footer {
+            flex-shrink: 0;
+            background: rgba(0,0,0,.8);
+            border-top: 1px solid var(--border);
+            padding: clamp(3px,.5vh,6px) clamp(12px,3vw,24px);
+            display: flex; justify-content: space-between; align-items: center;
+            font-family: var(--font-hud);
+            font-size: clamp(7px,1.3vw,10px);
+            letter-spacing: .12em; opacity: .55;
+        }
+
+        /* ══════════════════════════════════════════
+           HUD OVERLAY BUTTONS
+        ══════════════════════════════════════════ */
+        .hud-vertical {
+            position: fixed;
+            top: clamp(50px,9vh,80px);
+            left: clamp(8px,2vw,20px);
+            display: flex; flex-direction: column;
+            gap: clamp(5px,1.2vw,10px); z-index: 6000;
+        }
+        .hud-btn, #fullscreenBtn {
+            background: rgba(0,242,255,.06);
             border: 1px solid var(--border);
-            border-radius: clamp(8px, 2vw, 25px);
-            padding: var(--card-pad);
-            text-align: center;
-            min-width: 0;
+            color: var(--cyan);
+            width: clamp(30px,5vw,44px); height: clamp(30px,5vw,44px);
+            cursor: pointer; font-size: clamp(11px,2.2vw,17px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: .65; transition: .25s; flex-shrink: 0;
+            font-family: var(--font-hud);
+            clip-path: polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px));
+            text-shadow: var(--cyan-glow);
         }
-        .day-name {
-            font-size: clamp(8px, 2vw, 14px);
-            color: var(--accent-blue);
-            font-weight: 700;
-            white-space: nowrap;
+        .hud-btn:hover, #fullscreenBtn:hover {
+            opacity: 1; background: rgba(0,242,255,.18);
+            box-shadow: var(--cyan-glow);
         }
-        .day-icon {
-            font-size: var(--forecast-icon);
-            margin: clamp(3px, 0.8vh, 8px) 0;
-            line-height: 1.1;
-        }
-        .t-max {
-            font-weight: 700;
-            color: #fff;
-            font-size: clamp(9px, 2.2vw, 18px);
-        }
-        .t-min {
-            font-weight: 400;
-            opacity: 0.5;
-            margin-left: 2px;
-            font-size: clamp(8px, 1.8vw, 14px);
+        #fullscreenBtn { position: fixed; right: clamp(8px,2vw,20px); top: clamp(50px,9vh,80px); z-index: 6000; }
+
+        /* ── NIGHT TIME INPUTS ── */
+        .auto-night { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .auto-night span { font-family: var(--font-hud); font-size: clamp(6px,1.3vw,8px) !important; color: var(--cyan); letter-spacing: 1px; }
+        .auto-night input {
+            padding: 2px 4px; border: 1px solid var(--border);
+            background: rgba(0,242,255,.05); color: var(--cyan);
+            width: clamp(48px,8.5vw,62px); font-family: var(--font-mono);
+            font-size: clamp(8px,1.6vw,10px); text-align: center; outline: none;
+            clip-path: polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%);
         }
 
-        /* AUTO NIGHT CONTROLS */
-        .auto-night-ctrl {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
+        /* ── CONFIG PANEL ── */
+        .config-panel {
+            position: fixed;
+            top: clamp(50px,9vh,80px);
+            left: calc(clamp(30px,5vw,44px) + clamp(8px,2vw,20px) + 8px);
+            z-index: 5000;
+            display: flex; flex-direction: column; gap: 10px;
+            background: rgba(5,7,10,.97);
+            padding: clamp(10px,2vw,14px);
+            border: 1px solid var(--border);
+            clip-path: polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
+            transform: translateX(-20px); opacity: 0; pointer-events: none; transition: .3s;
         }
-        .auto-night-ctrl span {
-            font-size: clamp(7px, 1.5vw, 9px) !important;
-            color: var(--accent-blue);
-            font-weight: bold;
-        }
-        .auto-night-ctrl input {
-            padding: 3px;
-            border-radius: 5px;
-            border: 2px solid var(--accent-blue);
-            background: #1e293b;
-            color: white;
-            width: clamp(54px, 10vw, 65px);
-            font-family: 'Inter';
-            font-size: clamp(8px, 2vw, 10px);
-            text-align: center;
-        }
-
-        /* ── PORTRAIT PHONE  ≤ 480 px wide ── */
-        @media (max-width: 480px) {
-            :root {
-                --clock-size: clamp(52px, 22vw, 110px);
-                --date-size: clamp(9px, 3.8vw, 18px);
-                --label-size: clamp(10px, 3.5vw, 16px);
-                --icon-size: clamp(26px, 10vw, 52px);
-                --forecast-icon: clamp(14px, 5.5vw, 28px);
-                --card-pad: clamp(4px, 2vw, 10px);
-            }
-            .main-station {
-                border-radius: 18px;
-                padding: 6px 6px;
-                justify-content: space-evenly;
-            }
-            #date { letter-spacing: 0.12em; }
-            .mid-section { gap: 6px; padding: 6px 8px; border-radius: 12px; }
-            .info-text .info-label { font-size: clamp(10px, 3.5vw, 15px); }
-            #moonIllumination, #today-minmax { font-size: clamp(8px, 2.8vw, 12px); }
-            .forecast-grid { gap: 4px; }
-            .day-card { border-radius: 10px; }
-        }
-
-        /* ── LANDSCAPE PHONE  height ≤ 420 px ── */
-        @media (max-height: 420px) {
-            :root {
-                --clock-size: clamp(40px, 16vh, 90px);
-                --date-size: clamp(8px, 3vh, 16px);
-                --label-size: clamp(9px, 2.8vh, 15px);
-                --icon-size: clamp(22px, 8vh, 46px);
-                --forecast-icon: clamp(12px, 4.5vh, 24px);
-                --card-pad: clamp(4px, 1.5vh, 9px);
-            }
-            .main-station { gap: 2px; padding: 4px 8px; }
-            .v-line { height: clamp(28px, 7vh, 50px); }
-            .mid-section { padding: 4px 10px; border-radius: 10px; }
-        }
-
-        /* ── MEDIUM TABLET  481–768 px ── */
-        @media (min-width: 481px) and (max-width: 768px) {
-            :root {
-                --clock-size: clamp(70px, 19vw, 160px);
-                --date-size: clamp(12px, 3.2vw, 28px);
-                --label-size: clamp(11px, 2.8vw, 20px);
-                --icon-size: clamp(36px, 8vw, 68px);
-                --forecast-icon: clamp(18px, 4.5vw, 34px);
-            }
-        }
+        .config-panel.open { transform: translateX(0); opacity: 1; pointer-events: all; }
+        .cfg-title { font-family: var(--font-hud); font-size: 9px; letter-spacing: 3px; color: var(--cyan); opacity: .5; text-align: center; }
+        .cfg-row { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+        .cfg-row label { font-family: var(--font-hud); font-size: clamp(7px,1.6vw,9px); color: var(--cyan); letter-spacing: 1px; white-space: nowrap; }
+        .color-picker { background: transparent; border: none; width: 26px; height: 18px; cursor: pointer; flex-shrink: 0; }
+        #update-rate { background: transparent; color: var(--cyan); border: none; font-family: var(--font-mono); font-weight: 700; cursor: pointer; outline: none; font-size: clamp(9px,1.8vw,11px); }
+        #update-rate option { background: #05070a; }
+        .cfg-hr { border: 0; border-top: 1px solid rgba(0,242,255,.12); width: 100%; }
     </style>
 </head>
 <body>
 
-    <button id="fullscreenBtn" onclick="toggleFS()">⛶</button>
+<canvas id="bgCanvas"></canvas>
 
-    <div class="hud-vertical">
-        <button class="hud-btn" onclick="toggleConfig()" title="Configurazione">⚙️</button>
-        <button class="hud-btn" onclick="document.body.classList.toggle('night')" title="Notte Manuale">🌙</button>
-        <div class="auto-night-ctrl">
-            <span>🌙 START</span>
-            <input type="time" id="nightStartTime" value="21:00">
-        </div>
-        <div class="auto-night-ctrl">
-            <span>☀️ START</span>
-            <input type="time" id="dayStartTime" value="07:00">
-        </div>
+<!-- HEADER -->
+<header>
+    <div class="header-side"><div class="dot"></div> SAT_LINK: ACTIVE</div>
+    <div class="header-title">AETHER-9 // METEO TACTICAL</div>
+    <div class="header-side">V.9.0 // GI-FORGE <div class="dot" style="animation-delay:.8s"></div></div>
+</header>
+
+<!-- HUD CONTROLS -->
+<div class="hud-vertical">
+    <button class="hud-btn" onclick="toggleConfig()" title="Config">⚙</button>
+    <button class="hud-btn" onclick="document.body.classList.toggle('night')" title="Night Mode">◐</button>
+    <div class="auto-night"><span>◑ NIGHT</span><input type="time" id="nightStartTime" value="21:00"></div>
+    <div class="auto-night"><span>◐ DAY</span><input type="time" id="dayStartTime" value="07:00"></div>
+</div>
+<button id="fullscreenBtn" onclick="toggleFS()" title="Fullscreen">⛶</button>
+
+<!-- CONFIG PANEL -->
+<div class="config-panel" id="gui-panel">
+    <div class="cfg-title">▸ SYS CONFIG ◂</div>
+    <div class="cfg-row">
+        <label>▸ UPDATE</label>
+        <select id="update-rate" onchange="changeUpdateInterval(this.value)">
+            <option value="1">01 MIN</option>
+            <option value="5">05 MIN</option>
+            <option value="15">15 MIN</option>
+            <option value="30" selected>30 MIN</option>
+            <option value="60">60 MIN</option>
+        </select>
+    </div>
+    <hr class="cfg-hr">
+    <div class="cfg-row"><label>ACCENT-A</label><input type="color" class="color-picker" id="colorDay" value="#00f2ff" oninput="updateColors()"></div>
+    <div class="cfg-row"><label>ACCENT-B</label><input type="color" class="color-picker" id="colorSec" value="#ff2d78" oninput="updateColors()"></div>
+    <div class="cfg-row"><label>NIGHT-COL</label><input type="color" class="color-picker" id="colorNight" value="#ff0000" oninput="updateColors()"></div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-wrapper">
+
+    <!-- LOCATION -->
+    <div class="location-bar">
+        <div class="loc-tag"><span id="location-name">ACQUIRING...</span></div>
+        <select id="city-selector">
+            <option value="" disabled selected>▸ SELECT ZONE</option>
+            <option value="41.89,12.51">ROMA</option>
+            <option value="45.46,9.19">MILANO</option>
+            <option value="40.85,14.26">NAPOLI</option>
+            <option value="45.07,7.68">TORINO</option>
+            <option value="38.11,13.36">PALERMO</option>
+            <option value="45.43,12.31">VENEZIA</option>
+            <option value="43.76,11.25">FIRENZE</option>
+            <option value="41.11,16.87">BARI</option>
+            <option value="39.22,9.12">CAGLIARI</option>
+            <option value="44.49,11.34">BOLOGNA</option>
+        </select>
     </div>
 
-    <div class="config-panel" id="gui-panel">
-        <div class="config-row">
-            <label>Update:</label>
-            <select id="update-rate" onchange="changeUpdateInterval(this.value)">
-                <option value="1">1 Min</option>
-                <option value="5">5 Min</option>
-                <option value="15">15 Min</option>
-                <option value="30" selected>30 Min</option>
-                <option value="60">1 Ora</option>
-            </select>
+    <!-- CLOCK -->
+    <div class="clock-wrapper" id="clockWrapper">
+        <div class="bracket left">
+            <div class="bseg" style="width:28px"></div>
+            <div class="bseg" style="width:17px"></div>
+            <div class="bseg" style="width:22px"></div>
         </div>
-        <hr style="width:100%; border:0; border-top:1px solid rgba(255,255,255,0.1)">
-        <div class="config-row">
-            <label>Giorno (Blue):</label>
-            <input type="color" class="color-picker" id="colorDay" value="#38bdf8" oninput="updateColors()">
+        <div class="bracket right">
+            <div class="bseg" style="width:28px"></div>
+            <div class="bseg" style="width:17px"></div>
+            <div class="bseg" style="width:22px"></div>
         </div>
-        <div class="config-row">
-            <label>Giorno (Pink):</label>
-            <input type="color" class="color-picker" id="colorSec" value="#ff3366" oninput="updateColors()">
-        </div>
-        <div class="config-row">
-            <label>Notte (Color):</label>
-            <input type="color" class="color-picker" id="colorNight" value="#ff0000" oninput="updateColors()">
-        </div>
-    </div>
-
-    <div class="main-station">
-        <div class="location-wrapper">
-            <div id="location-name" style="font-size:clamp(8px,2vw,12px); opacity:0.5; text-transform:uppercase; letter-spacing:0.2em;">STAZIONE ATTIVA</div>
-            <select id="city-selector">
-                <option value="" disabled selected>Cambia Località...</option>
-                <option value="41.89,12.51">Roma</option>
-                <option value="45.46,9.19">Milano</option>
-                <option value="40.85,14.26">Napoli</option>
-                <option value="45.07,7.68">Torino</option>
-                <option value="38.11,13.36">Palermo</option>
-                <option value="45.43,12.31">Venezia</option>
-                <option value="43.76,11.25">Firenze</option>
-                <option value="41.11,16.87">Bari</option>
-                <option value="39.22,9.12">Cagliari</option>
-                <option value="44.49,11.34">Bologna</option>
-            </select>
-        </div>
-
-        <div class="time-display">
+        <div class="time-display" id="timeDisplay">
             <span id="hours">00</span>:<span id="minutes">00</span><span class="sec-module" id="seconds">00</span>
         </div>
+        <div id="date">-- --- ----</div>
+    </div>
 
-        <div id="date">-- --- --</div>
-
-        <div class="mid-section">
-            <div class="info-block">
-                <div id="moon-emoji">🌑</div>
-                <div class="info-text">
-                    <div class="info-label" id="moonPhaseName">--</div>
-                    <div id="moonIllumination">--% ILLUM.</div>
-                </div>
-            </div>
-            <div class="v-line"></div>
-            <div class="info-block">
-                <div id="weather-icon">⏳</div>
-                <div class="info-text">
-                    <div class="info-label" id="weather-temp">--°C</div>
-                    <div id="today-minmax">-- / --</div>
-                </div>
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+        <div class="info-block">
+            <div id="moon-emoji">🌑</div>
+            <div class="info-text">
+                <div class="info-label" id="moonPhaseName">SYNC...</div>
+                <div class="info-sub" id="moonIllumination"><span class="sdot"></span>--% ILLUM.</div>
             </div>
         </div>
+        <div class="info-block">
+            <div id="weather-icon">⏳</div>
+            <div class="info-text">
+                <div class="info-label" id="weather-temp">--°C</div>
+                <div class="info-sub" id="today-minmax"><span class="sdot"></span>-- / --</div>
+            </div>
+        </div>
+    </div>
 
+    <!-- FORECAST -->
+    <div class="forecast-section">
+        <div class="forecast-label">◈ FORECAST // T+6 DAYS</div>
         <div class="forecast-grid" id="forecast"></div>
     </div>
 
-    <script>
-        let lastLat, lastLon, lastCityName;
-        let updateTimer;
+</div>
 
-        function updateColors() {
-            const dayColor = document.getElementById('colorDay').value;
-            const secColor = document.getElementById('colorSec').value;
-            const nightColor = document.getElementById('colorNight').value;
-            document.documentElement.style.setProperty('--accent-blue', dayColor);
-            document.documentElement.style.setProperty('--accent-pink', secColor);
-            document.documentElement.style.setProperty('--night-text', nightColor);
-            document.documentElement.style.setProperty('--night-glow', `0 0 20px ${nightColor}cc`);
+<!-- FOOTER -->
+<footer>
+    <span>◈ AETHER-9 TACTICAL METEO</span>
+    <span id="sysStatus"><span class="sdot"></span>ONLINE</span>
+    <span>SYS: NOMINAL</span>
+</footer>
+
+<script>
+    let lastLat, lastLon, lastCityName, updateTimer;
+
+    /* ── MONOCHROME PIXEL GRID ─────────────────────────────────────── */
+    (function(){
+        const cv  = document.getElementById('bgCanvas');
+        const ctx = cv.getContext('2d', {alpha:false});
+        const CELL=6, GAP=1, STEP=7;
+        let cols,rows,grid,tgt,wav;
+
+        function resize(){
+            cv.width=window.innerWidth; cv.height=window.innerHeight;
+            ctx.fillStyle='#000'; ctx.fillRect(0,0,cv.width,cv.height);
+            cols=Math.ceil(cv.width/STEP)+1; rows=Math.ceil(cv.height/STEP)+1;
+            const n=cols*rows;
+            grid=new Float32Array(n); tgt=new Float32Array(n); wav=new Float32Array(n);
+            for(let i=0;i<n;i++) grid[i]=tgt[i]=Math.random()<.1?Math.random()*.15:0;
         }
-
-        function updateClock() {
-            const now = new Date();
-            const h = String(now.getHours()).padStart(2, "0");
-            const m = String(now.getMinutes()).padStart(2, "0");
-            const currentTimeStr = `${h}:${m}`;
-
-            document.getElementById("hours").textContent = h;
-            document.getElementById("minutes").textContent = m;
-            document.getElementById("seconds").textContent = String(now.getSeconds()).padStart(2, "0");
-
-            document.getElementById("date").textContent = now.toLocaleDateString("it-IT", {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'long'
-            }).toUpperCase();
-
-            if (now.getSeconds() === 0) {
-                if (currentTimeStr === document.getElementById("nightStartTime").value) {
-                    document.body.classList.add('night');
-                } else if (currentTimeStr === document.getElementById("dayStartTime").value) {
-                    document.body.classList.remove('night');
+        let tick=0;
+        function frame(){
+            tick++;
+            if(tick%3===0){
+                const n=cols*rows, k=Math.floor(n*.004);
+                for(let j=0;j<k;j++){
+                    const i=Math.floor(Math.random()*n);
+                    tgt[i]=Math.random()<.14 ? .07+Math.random()*.2 : 0;
+                }
+                if(Math.random()<.04){
+                    const i=Math.floor(Math.random()*n);
+                    tgt[i]=.5+Math.random()*.3;
+                }
+                if(tick%240===0){
+                    const row=Math.floor(Math.random()*rows);
+                    for(let c=0;c<cols;c++){
+                        const i=row*cols+c;
+                        wav[i]=.3+Math.random()*.2;
+                    }
+                }
+                for(let i=0;i<n;i++){
+                    if(wav[i]>0){ tgt[i]=Math.max(tgt[i],wav[i]); wav[i]*=.82; if(wav[i]<.01)wav[i]=0; }
                 }
             }
-        }
-        setInterval(updateClock, 1000);
-
-        async function loadWeather(lat, lon, cityName = null) {
-            lastLat = lat; lastLon = lon; lastCityName = cityName;
-            try {
-                if (!cityName) {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-                    const data = await res.json();
-                    cityName = data.address.city || data.address.town || data.address.village || "Meteo Locale";
-                    lastCityName = cityName;
+            ctx.save();
+            ctx.shadowBlur=0; ctx.shadowColor='transparent';
+            ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+            ctx.fillStyle='#000';
+            ctx.fillRect(0,0,cv.width,cv.height);
+            for(let r=0;r<rows;r++){
+                for(let c=0;c<cols;c++){
+                    const i=r*cols+c;
+                    grid[i]+=(tgt[i]-grid[i])*.18;
+                    const v=grid[i];
+                    if(v<.005) continue;
+                    const lum=Math.round(v*255);
+                    ctx.fillStyle=`rgb(${lum},${lum},${lum})`;
+                    ctx.fillRect(c*STEP, r*STEP, CELL, CELL);
                 }
-                document.getElementById("location-name").textContent = cityName;
-                const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`);
-                const wData = await wRes.json();
-
-                document.getElementById("weather-temp").textContent = `${Math.round(wData.current.temperature_2m)}°C`;
-                document.getElementById("weather-icon").textContent = getWeatherIcon(wData.current.weathercode);
-                document.getElementById("today-minmax").textContent = `${Math.round(wData.daily.temperature_2m_max[0])}° / ${Math.round(wData.daily.temperature_2m_min[0])}°`;
-
-                const grid = document.getElementById("forecast");
-                grid.innerHTML = wData.daily.time.slice(1, 7).map((t, i) => `
-                    <div class="day-card">
-                        <div class="day-name">${new Date(t).toLocaleDateString("it-IT", {weekday:"short"}).toUpperCase()}</div>
-                        <div class="day-icon">${getWeatherIcon(wData.daily.weathercode[i+1])}</div>
-                        <div>
-                            <span class="t-max">${Math.round(wData.daily.temperature_2m_max[i+1])}°</span>
-                            <span class="t-min">${Math.round(wData.daily.temperature_2m_min[i+1])}°</span>
-                        </div>
-                    </div>`).join("");
-
-                updateMoon();
-            } catch (e) { console.error("Errore meteo:", e); }
+            }
+            ctx.restore();
         }
+        resize();
+        window.addEventListener('resize',resize);
+        setInterval(frame,40);
+    })();
 
-        function getWeatherIcon(code) {
-            const icons = {
-                0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️", 45: "🌫️", 48: "🌫️*",
-                51: "🌦️-", 53: "🌦️", 55: "🌦️+", 56: "🌧️*", 57: "🌧️**",
-                61: "🌧️-", 63: "🌧️", 65: "🌧️+", 66: "🌧️", 67: "🌧️+",
-                71: "❄-️", 73: "❄️", 75: "❄+️", 77: "❄..️",
-                80: "🌦️-", 81: "🌦️", 82: "🌧️+", 85: "🌨️", 86: "🌨️+",
-                95: "⛈️", 96: "⛈️*", 99: "⛈*+️"
-            };
-            return icons[code] || "❓";
+    /* ── FIT CLOCK ─────────────────────────────────────────────────── */
+    function fitClock(){
+        const wrapper=document.getElementById('clockWrapper');
+        const display=document.getElementById('timeDisplay');
+        const dateEl=document.getElementById('date');
+        const secEl=document.getElementById('seconds');
+        const W=wrapper.clientWidth, H=wrapper.clientHeight;
+        if(!W||!H) return;
+        const maxH=H*.81;
+        let lo=6,hi=W*2,best=6;
+        for(let i=0;i<24;i++){
+            const mid=(lo+hi)/2;
+            display.style.fontSize=mid+'px';
+            if(display.scrollWidth<=W*.90&&display.scrollHeight<=maxH){best=mid;lo=mid;}
+            else hi=mid;
         }
+        display.style.fontSize=best+'px';
+        secEl.style.fontSize=(best*.25)+'px';
+        const dp=Math.max(8,best*.19);
+        dateEl.style.fontSize=dp+'px';
+        dateEl.style.marginTop=(best*.035)+'px';
+        document.querySelectorAll('.bracket').forEach(b=>{ b.style.height=(best*.88)+'px'; });
+    }
+    new ResizeObserver(()=>fitClock()).observe(document.getElementById('clockWrapper'));
 
-        function updateMoon() {
-            const now = new Date();
-            const synapticMonth = 29.530588853;
-            const referenceNewMoon = new Date('2000-01-06T18:14:00Z');
-            const diffDays = (now.getTime() - referenceNewMoon.getTime()) / (1000 * 60 * 60 * 24);
-            const phase = (diffDays / synapticMonth) % 1;
-            const normalizedPhase = phase < 0 ? phase + 1 : phase;
-            const illumination = (1 - Math.cos(2 * Math.PI * normalizedPhase)) / 2 * 100;
-            const phases = [
-                {n: "Luna Nuova", e: "🌑", r: [0, 0.03]}, {n: "Crescente", e: "🌒", r: [0.03, 0.22]},
-                {n: "Primo Quarto", e: "🌓", r: [0.22, 0.28]}, {n: "Gibbosa Cres.", e: "🌔", r: [0.28, 0.47]},
-                {n: "Luna Piena", e: "🌕", r: [0.47, 0.53]}, {n: "Gibbosa Cal.", e: "🌖", r: [0.53, 0.72]},
-                {n: "Ultimo Quarto", e: "🌗", r: [0.72, 0.78]}, {n: "Luna Calante", e: "🌘", r: [0.78, 0.97]},
-                {n: "Luna Nuova", e: "🌑", r: [0.97, 1]}
-            ];
-            const current = phases.find(p => normalizedPhase >= p.r[0] && normalizedPhase < p.r[1]);
-            document.getElementById("moon-emoji").textContent = current.e;
-            document.getElementById("moonPhaseName").textContent = current.n;
-            document.getElementById("moonIllumination").textContent = `${Math.round(illumination)}% ILLUM.`;
+    /* ── COLORS ─────────────────────────────────────────────────────── */
+    function updateColors(){
+        const d=document.getElementById('colorDay').value;
+        const s=document.getElementById('colorSec').value;
+        const n=document.getElementById('colorNight').value;
+        document.documentElement.style.setProperty('--cyan',d);
+        document.documentElement.style.setProperty('--accent-blue',d);
+        document.documentElement.style.setProperty('--magenta',s);
+        document.documentElement.style.setProperty('--accent-pink',s);
+        document.documentElement.style.setProperty('--night-text',n);
+        document.documentElement.style.setProperty('--night-glow',`0 0 20px ${n}cc`);
+        document.documentElement.style.setProperty('--cyan-glow',`0 0 8px ${d}, 0 0 20px ${d}55`);
+        document.documentElement.style.setProperty('--mag-glow', `0 0 8px ${s}, 0 0 20px ${s}55`);
+    }
+
+    /* ── CLOCK TICK ─────────────────────────────────────────────────── */
+    function updateClock(){
+        const now=new Date();
+        const h=String(now.getHours()).padStart(2,'0');
+        const m=String(now.getMinutes()).padStart(2,'0');
+        document.getElementById('hours').textContent=h;
+        document.getElementById('minutes').textContent=m;
+        document.getElementById('seconds').textContent=String(now.getSeconds()).padStart(2,'0');
+        document.getElementById('date').textContent=
+            now.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'long'}).toUpperCase();
+        if(now.getSeconds()===0){
+            const cur=`${h}:${m}`;
+            const display=document.getElementById('timeDisplay');
+            display.classList.add('glitch');
+            setTimeout(()=>display.classList.remove('glitch'),180);
+            if(cur===document.getElementById('nightStartTime').value) document.body.classList.add('night');
+            else if(cur===document.getElementById('dayStartTime').value) document.body.classList.remove('night');
         }
+    }
+    setInterval(updateClock,1000);
 
-        function toggleConfig() {
-            document.getElementById('gui-panel').classList.toggle('open');
+    /* ── WEATHER ─────────────────────────────────────────────────────── */
+    async function loadWeather(lat,lon,cityName=null){
+        lastLat=lat; lastLon=lon; lastCityName=cityName;
+        try{
+            if(!cityName){
+                const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+                const d=await r.json();
+                cityName=d.address.city||d.address.town||d.address.village||'UNKNOWN';
+                lastCityName=cityName;
+            }
+            document.getElementById('location-name').textContent=cityName.toUpperCase();
+            const wr=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`);
+            const wd=await wr.json();
+            document.getElementById('weather-temp').textContent=`${Math.round(wd.current.temperature_2m)}°C`;
+            document.getElementById('weather-icon').textContent=wi(wd.current.weathercode);
+            document.getElementById('today-minmax').innerHTML=`<span class="sdot"></span>${Math.round(wd.daily.temperature_2m_max[0])}° / ${Math.round(wd.daily.temperature_2m_min[0])}°`;
+            document.getElementById('forecast').innerHTML=wd.daily.time.slice(1,7).map((t,i)=>`
+                <div class="day-card">
+                    <div class="day-name">${new Date(t).toLocaleDateString('it-IT',{weekday:'short'}).toUpperCase()}</div>
+                    <div class="day-icon">${wi(wd.daily.weathercode[i+1])}</div>
+                    <div><span class="t-max">${Math.round(wd.daily.temperature_2m_max[i+1])}°</span>
+                    <span class="t-min">${Math.round(wd.daily.temperature_2m_min[i+1])}°</span></div>
+                </div>`).join('');
+            document.getElementById('sysStatus').innerHTML='<span class="sdot"></span>SYNC OK';
+            updateMoon();
+            requestAnimationFrame(fitClock);
+        }catch(e){
+            console.error(e);
+            document.getElementById('sysStatus').textContent='▲ DATA ERR';
         }
+    }
 
-        function changeUpdateInterval(minutes) {
-            clearInterval(updateTimer);
-            updateTimer = setInterval(() => {
-                if (lastLat) loadWeather(lastLat, lastLon, lastCityName);
-            }, minutes * 60 * 1000);
-        }
+    function wi(c){
+        const m={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌦️',56:'🌧️',57:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',66:'🌧️',67:'🌧️',71:'❄️',73:'❄️',75:'❄️',77:'❄️',80:'🌦️',81:'🌦️',82:'🌧️',85:'🌨️',86:'🌨️',95:'⛈️',96:'⛈️',99:'⛈️'};
+        return m[c]||'❓';
+    }
 
-        changeUpdateInterval(30);
+    /* ── MOON ─────────────────────────────────────────────────────────── */
+    function updateMoon(){
+        const now=new Date();
+        const ph=((( now-new Date('2000-01-06T18:14:00Z'))/86400000/29.530588853)%1+1)%1;
+        const ill=(1-Math.cos(2*Math.PI*ph))/2*100;
+        const phases=[
+            {n:'LUNA NUOVA',e:'🌑',r:[0,.03]},{n:'CRESCENTE',e:'🌒',r:[.03,.22]},
+            {n:'PRIMO QUARTO',e:'🌓',r:[.22,.28]},{n:'GIBBOSA CRE.',e:'🌔',r:[.28,.47]},
+            {n:'LUNA PIENA',e:'🌕',r:[.47,.53]},{n:'GIBBOSA CAL.',e:'🌖',r:[.53,.72]},
+            {n:'ULT. QUARTO',e:'🌗',r:[.72,.78]},{n:'CALANTE',e:'🌘',r:[.78,.97]},
+            {n:'LUNA NUOVA',e:'🌑',r:[.97,1]}
+        ];
+        const cur=phases.find(p=>ph>=p.r[0]&&ph<p.r[1]);
+        document.getElementById('moon-emoji').textContent=cur.e;
+        document.getElementById('moonPhaseName').textContent=cur.n;
+        document.getElementById('moonIllumination').innerHTML=`<span class="sdot"></span>${Math.round(ill)}% ILLUM.`;
+    }
 
-        document.getElementById("city-selector").addEventListener('change', (e) => {
-            const [lat, lon] = e.target.value.split(",");
-            const name = e.target.options[e.target.selectedIndex].text;
-            loadWeather(lat, lon, name);
-        });
+    /* ── CONFIG ───────────────────────────────────────────────────────── */
+    function toggleConfig(){ document.getElementById('gui-panel').classList.toggle('open'); }
+    function changeUpdateInterval(min){
+        clearInterval(updateTimer);
+        updateTimer=setInterval(()=>{ if(lastLat) loadWeather(lastLat,lastLon,lastCityName); },min*60000);
+    }
+    changeUpdateInterval(30);
+    document.getElementById('city-selector').addEventListener('change',e=>{
+        const[lat,lon]=e.target.value.split(',');
+        loadWeather(lat,lon,e.target.options[e.target.selectedIndex].text);
+    });
 
-        navigator.geolocation.getCurrentPosition(
-            pos => loadWeather(pos.coords.latitude, pos.coords.longitude),
-            async () => {
-                try {
-                    const res = await fetch('https://ipapi.co/json/');
-                    const data = await res.json();
-                    loadWeather(data.latitude, data.longitude, data.city);
-                } catch (e) { loadWeather(41.89, 12.51, "Roma"); }
-            }, { timeout: 4000 }
-        );
+    /* ── GEO ──────────────────────────────────────────────────────────── */
+    navigator.geolocation.getCurrentPosition(
+        p=>loadWeather(p.coords.latitude,p.coords.longitude),
+        async()=>{
+            try{ const r=await fetch('https://ipapi.co/json/'); const d=await r.json(); loadWeather(d.latitude,d.longitude,d.city); }
+            catch{ loadWeather(41.89,12.51,'Roma'); }
+        },{ timeout:4000 }
+    );
 
-        function toggleFS() {
-            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-            else document.exitFullscreen();
-        }
+    /* ── FULLSCREEN ───────────────────────────────────────────────────── */
+    function toggleFS(){
+        if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+    }
 
-        updateClock();
-    </script>
+    /* ── INIT ─────────────────────────────────────────────────────────── */
+    updateClock();
+    requestAnimationFrame(()=>requestAnimationFrame(fitClock));
+</script>
 </body>
 </html>
