@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Integrity Checker</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; max-width: 600px; margin: auto; }
+        .box { border: 2px dashed #ccc; padding: 20px; text-align: center; cursor: pointer; }
+        .result { margin-top: 20px; font-family: monospace; word-break: break-all; padding: 10px; border-radius: 5px; }
+        .match { background: #d4edda; color: #155724; }
+        .mismatch { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h2>Verifica Integrità Diceware</h2>
+    <p>Trascina qui il file <b>diceware.html</b> per verificare che non sia stato manipolato.</p>
+    
+    <div class="box" id="dropzone">Trascina il file qui o clicca per selezionarlo</div>
+    <input type="file" id="fileInput" style="display:none">
+
+    <div id="output" class="result"></div>
+
+    <script>
+        const OFFICIAL_HASH = "97A78850263AE3D7DAF7F633E1A2FCA52948BF5AA88254118BE62BC7EFC1A734"; // Incolla qui l'hash del file originale
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropzone.onclick = () => fileInput.click();
+        
+        fileInput.onchange = e => handleFile(e.target.files[0]);
+        dropzone.ondragover = e => { e.preventDefault(); dropzone.style.borderColor = '#1a73e8'; };
+        dropzone.ondrop = e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); };
+
+async function handleFile(file) {
+    if (!file) return;
+    
+    // 1. Calcolo dell'hash dal file caricato
+    const arrayBuffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    
+    // Genera la stringa esadecimale (sempre minuscola per standard)
+    const fileHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    // 2. Pulizia dell'hash ufficiale (quello che incollerai tu)
+    // .toLowerCase() risolve il problema del maiuscolo
+    // .trim() toglie spazi o invii accidentali
+    const officialClean = OFFICIAL_HASH.toLowerCase().trim();
+    
+    const isMatch = fileHash === officialClean;
+
+    // 3. Output a video
+    const outputDiv = document.getElementById('output');
+    outputDiv.innerHTML = `
+        <div style="text-align:left; font-size: 0.9rem;">
+            <b>Impronta digitale (SHA-256):</b><br>
+            <code style="word-break:break-all;">${fileHash}</code>
+        </div>
+        <br>
+        <div class="result ${isMatch ? 'match' : 'mismatch'}" style="padding:15px; border-radius:8px; font-weight:bold;">
+            ${isMatch ? "✅ FILE AUTENTICO: Corrisponde all'originale." : "❌ ALLERTA: Il file non è integro o l'hash ufficiale è errato."}
+        </div>`;
+}
+    </script>
+</body>
+</html>
