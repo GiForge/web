@@ -891,15 +891,19 @@
             };
             reader.readAsArrayBuffer(file);
         }
+        
+function exportTXT() {
+    // Estrai solo il testo, rimuovi i tag HTML
+    const html = getAllContent();
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    const text = tempDiv.textContent || tempDiv.innerText || '';
+    
+    const blob = new Blob([text], { type: 'text/plain' });
+    saveAs(blob, currentFileName.replace('.docx', '.txt'));
+    showAlert('File TXT esportato con successo!');
+}
 
-        function exportTXT()
-        {
-             const text = getAllContent()
-
-            const blob = new Blob([text], { type: 'text/html' });
-            saveAs(blob, currentFileName.replace('.docx', '.html'));
-            showAlert('File HTML esportato con successo!');
-        }
         function exportHTML() {
             const htmlContent = `<!DOCTYPE html>
 <html>
