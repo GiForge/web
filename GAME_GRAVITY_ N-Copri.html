@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Universe Sandbox - Nomi e Orbite Persistenti</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #010103; font-family: 'Segoe UI', sans-serif; color: white; display: flex; }
+        canvas { flex-grow: 1; cursor: crosshair; }
+        
+        #sidebar {
+            width: 320px; background: rgba(10, 10, 20, 0.95);
+            border-left: 1px solid #334; padding: 15px;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.8); z-index: 10;
+            overflow-y: auto; height: 100vh;
+        }
+
+        .section { margin-bottom: 15px; border-bottom: 1px solid #223; padding-bottom: 10px; }
+        h3 { color: #00ffcc; font-size: 0.95em; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .preset-btn {
+            background: #161625; border: 1px solid #334; color: #ccc;
+            padding: 8px 4px; border-radius: 4px; cursor: pointer; font-size: 0.75em;
+            transition: all 0.2s; text-align: center;
+        }
+        .preset-btn:hover { border-color: #00ffcc; background: #1f1f35; color: white; }
+        .preset-btn.active { background: #005544; border-color: #00ffcc; font-weight: bold; color: white; }
+
+        .control-group { margin: 10px 0; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px; }
+        label { display: block; font-size: 0.75em; color: #889; margin-bottom: 4px; }
+        .val-display { float: right; color: #00ffcc; font-family: monospace; }
+        input[type=range] { width: 100%; cursor: pointer; accent-color: #00ffcc; margin: 5px 0; }
+
+        .action-btn {
+            width: 100%; padding: 10px; margin-top: 8px;
+            color: white; border: none; border-radius: 4px; 
+            cursor: pointer; font-weight: bold; font-size: 0.85em;
+        }
+        
+        .btn-solar { background: linear-gradient(45deg, #ff8800, #ffcc00); color: #000; }
+        .btn-galaxy { background: #6633ff; }
+        .btn-reset { background: #cc3333; margin-top: 20px; }
+
+        #ui-top { position: absolute; top: 15px; left: 15px; pointer-events: none; }
+        .stat-card { background: rgba(0,0,0,0.6); padding: 5px 12px; border-radius: 15px; margin-bottom: 5px; font-size: 0.8em; font-family: monospace; border: 1px solid #223; }
+    </style>
+</head>
+<body>
+
+<div id="ui-top">
+    <div class="stat-card" id="camStatus">Visuale: Libera</div>
+    <div class="stat-card" id="bodyCount">Entità: 0</div>
+</div>
+
+<canvas id="simCanvas"></canvas>
+
+<div id="sidebar">
+    <div class="section">
+        <h3>Corpi Celesti</h3>
+        <div class="preset-grid" id="presetMenu">
+            <button class="preset-btn active" data-type="custom">🛠 Manuale</button>
+            <button class="preset-btn" data-type="sun">Sole</button>
+            <button class="preset-btn" data-type="mercury">Mercurio</button>
+            <button class="preset-btn" data-type="venus">Venere</button>
+            <button class="preset-btn" data-type="earth">Terra</button>
+            <button class="preset-btn" data-type="mars">Marte</button>
+            <button class="preset-btn" data-type="jupiter">Giove</button>
+            <button class="preset-btn" data-type="saturn">Saturno</button>
+            <button class="preset-btn" data-type="uranus">Urano</button>
+            <button class="preset-btn" data-type="neptune">Nettuno</button>
+            <button class="preset-btn" data-type="blackhole">Buco Nero</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Proprietà Attuali</h3>
+        <div class="control-group">
+            <label>Massa: <span class="val-display" id="massVal">1000</span></label>
+            <input type="range" id="massRange" min="0.1" max="500000" step="0.1" value="1000">
+        </div>
+        <div class="control-group">
+            <label>Raggio: <span class="val-display" id="radiusVal">10</span></label>
+            <input type="range" id="radiusRange" min="1" max="200" value="10">
+        </div>
+        <div class="control-group">
+            <label>Colore</label>
+            <input type="color" id="colorPicker" value="#00ffcc" style="width:100%; height:25px; cursor:pointer; border:none;">
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Generatori</h3>
+        <button class="action-btn btn-solar" onclick="spawnSolarSystem()">Sistema Solare Reale</button>
+        <button class="action-btn btn-galaxy" onclick="spawnGalaxy()">Galassia a Spirale</button>
+        <button class="action-btn btn-reset" onclick="resetSim()">Pulisci Tutto</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const mRange = document.getElementById('massRange');
+    const rRange = document.getElementById('radiusRange');
+    const mVal = document.getElementById('massVal');
+    const rVal = document.getElementById('radiusVal');
+    const cPicker = document.getElementById('colorPicker');
+
+    const DATA = {
+        custom:    { name: "Oggetto", mass: 1000, radius: 10, color: '#00ffcc' },
+        sun:       { name: "Sole", mass: 333000, radius: 50, color: '#ffcc00' },
+        mercury:   { name: "Mercurio", mass: 0.33, radius: 3, color: '#aaaaaa' },
+        venus:     { name: "Venere", mass: 4.87, radius: 6, color: '#e3bb76' },
+        earth:     { name: "Terra", mass: 5.97, radius: 6.5, color: '#22aaff' },
+        mars:      { name: "Marte", mass: 0.64, radius: 4, color: '#ff5522' },
+        jupiter:   { name: "Giove", mass: 1898, radius: 22, color: '#ffccaa' },
+        saturn:    { name: "Saturno", mass: 568, radius: 19, color: '#eebb88' },
+        uranus:    { name: "Urano", mass: 86.8, radius: 13, color: '#b2d8d8' },
+        neptune:   { name: "Nettuno", mass: 102, radius: 13, color: '#3f54ba' },
+        blackhole: { name: "Buco Nero", mass: 2000000, radius: 6, color: '#000000' }
+    };
+
+    let selectedType = 'custom';
+    let bodies = [];
+    const G = 1.5; 
+    let zoom = 1.0, offsetX = 0, offsetY = 0, trackedBody = null;
+    let isCreating = false, isPanning = false;
+    let startMouse = {x:0, y:0}, currentMouse = {x:0, y:0};
+
+    function resize() {
+        canvas.width = window.innerWidth - 320;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    mRange.addEventListener('input', () => mVal.innerText = mRange.value);
+    rRange.addEventListener('input', () => rVal.innerText = rRange.value);
+
+    document.getElementById('presetMenu').addEventListener('click', (e) => {
+        const btn = e.target.closest('.preset-btn');
+        if(!btn) return;
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedType = btn.dataset.type;
+        const d = DATA[selectedType];
+        mRange.value = d.mass; rRange.value = d.radius;
+        cPicker.value = d.color.startsWith('#') ? d.color : '#ffffff';
+        mVal.innerText = d.mass; rVal.innerText = d.radius;
+    });
+
+    class Body {
+        constructor(x, y, vx, vy, mass, radius, color, name) {
+            this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+            this.mass = mass; this.radius = radius;
+            this.color = color; this.name = name;
+            this.trail = []; this.exists = true;
+        }
+        draw() {
+            // DISEGNO ORBITA (Trail)
+            if (this.trail.length > 2) {
+                ctx.beginPath();
+                ctx.strokeStyle = this.color;
+                ctx.globalAlpha = 0.2;
+                // LOGICA RICHIESTA: Spessore minimo orbitale
+                ctx.lineWidth = Math.max(0.5, 1 / zoom); 
+                this.trail.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+                ctx.lineWidth = 1; // Reset
+            }
+
+            // DISEGNO CORPO
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.shadowBlur = this.radius * 0.5; ctx.shadowColor = this.color;
+            ctx.fill(); ctx.shadowBlur = 0;
+
+            // DISEGNO NOME
+            // Il testo appare solo se l'oggetto è visibilmente rilevante o se siamo vicini
+            if (this.name && (this.radius * zoom > 2 || trackedBody === this)) {
+                ctx.fillStyle = "white";
+                ctx.font = `${Math.max(10, 14 / zoom)}px Segoe UI`;
+                ctx.textAlign = "left";
+                // Offset dinamico del testo per non sovrapporsi al pianeta
+                ctx.fillText(this.name, this.x + this.radius + (5/zoom), this.y + (5/zoom));
+            }
+        }
+        update() {
+            this.trail.push({x: this.x, y: this.y});
+            if (this.trail.length > 60) this.trail.shift();
+            this.x += this.vx; this.y += this.vy;
+        }
+    }
+
+    function physics() {
+        for (let i = 0; i < bodies.length; i++) {
+            for (let j = i + 1; j < bodies.length; j++) {
+                let b1 = bodies[i], b2 = bodies[j];
+                let dx = b2.x - b1.x, dy = b2.y - b1.y;
+                let d2 = dx*dx + dy*dy, d = Math.sqrt(d2);
+                if (d < (b1.radius + b2.radius) * 0.85) {
+                    let winner = b1.mass >= b2.mass ? b1 : b2, loser = b1 === winner ? b2 : b1;
+                    winner.vx = (b1.vx*b1.mass + b2.vx*b2.mass) / (b1.mass + b2.mass);
+                    winner.vy = (b1.vy*b1.mass + b2.vy*b2.mass) / (b1.mass + b2.mass);
+                    winner.mass += loser.mass;
+                    winner.radius = Math.pow(Math.pow(b1.radius, 3) + Math.pow(b2.radius, 3), 1/3);
+                    if(trackedBody === loser) trackedBody = winner;
+                    loser.exists = false; continue;
+                }
+                let f = (G * b1.mass * b2.mass) / d2;
+                b1.vx += f * (dx/d) / b1.mass; b1.vy += f * (dy/d) / b1.mass;
+                b2.vx -= f * (dx/d) / b2.mass; b2.vy -= f * (dy/d) / b2.mass;
+            }
+        }
+        bodies = bodies.filter(b => b.exists);
+    }
+
+    function loop() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = '#010103'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (trackedBody) { offsetX = -trackedBody.x; offsetY = -trackedBody.y; }
+        ctx.translate(canvas.width/2, canvas.height/2);
+        ctx.scale(zoom, zoom);
+        ctx.translate(offsetX, offsetY);
+        physics();
+        bodies.forEach(b => { b.update(); b.draw(); });
+        if (isCreating) {
+            const wS = screenToWorld(startMouse.x, startMouse.y);
+            const wC = screenToWorld(currentMouse.x, currentMouse.y);
+            ctx.beginPath(); ctx.moveTo(wS.x, wS.y); ctx.lineTo(wC.x, wC.y);
+            ctx.strokeStyle = "#00ffcc"; ctx.lineWidth = 1/zoom; ctx.stroke();
+        }
+        document.getElementById('bodyCount').innerText = `Entità: ${bodies.length}`;
+        requestAnimationFrame(loop);
+    }
+
+    function screenToWorld(sx, sy) {
+        return { x: (sx - canvas.width / 2) / zoom - offsetX, y: (sy - canvas.height / 2) / zoom - offsetY };
+    }
+
+    canvas.addEventListener('mousedown', e => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const w = screenToWorld(mx, my);
+        if(e.button === 0) {
+            let target = bodies.find(b => Math.hypot(w.x - b.x, w.y - b.y) < (b.radius + 15/zoom));
+            if(target) trackedBody = target;
+            else { isCreating = true; startMouse = {x: mx, y: my}; currentMouse = {...startMouse}; }
+        } else { isPanning = true; trackedBody = null; startMouse = {x: mx, y: my}; }
+    });
+
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        currentMouse = {x: e.clientX - rect.left, y: e.clientY - rect.top};
+        if(isPanning) { 
+            offsetX += (currentMouse.x - startMouse.x) / zoom;
+            offsetY += (currentMouse.y - startMouse.y) / zoom;
+            startMouse = {...currentMouse};
+        }
+    });
+
+    window.addEventListener('mouseup', e => {
+        if(isCreating && e.button === 0) {
+            const wS = screenToWorld(startMouse.x, startMouse.y);
+            const wE = screenToWorld(currentMouse.x, currentMouse.y);
+            const d = DATA[selectedType];
+            bodies.push(new Body(wS.x, wS.y, (wE.x-wS.x)*0.05, (wE.y-wS.y)*0.05, parseFloat(mRange.value), parseFloat(rRange.value), cPicker.value, d.name));
+        }
+        isCreating = isPanning = false;
+    });
+
+    canvas.addEventListener('wheel', e => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const before = screenToWorld(mx, my);
+        zoom *= e.deltaY > 0 ? 0.9 : 1.1;
+        const after = screenToWorld(mx, my);
+        offsetX += (after.x - before.x); offsetY += (after.y - before.y);
+        e.preventDefault();
+    }, {passive:false});
+
+    function spawnSolarSystem() {
+        resetSim(); zoom = 0.15;
+        const sun = new Body(0, 0, 0, 0, DATA.sun.mass, DATA.sun.radius, DATA.sun.color, "Sole");
+        bodies.push(sun);
+        const config = [
+            { t: 'mercury', d: 110 }, { t: 'venus', d: 180 }, { t: 'earth', d: 260 },
+            { t: 'mars', d: 340 }, { t: 'jupiter', d: 580 }, { t: 'saturn', d: 820 },
+            { t: 'uranus', d: 1050 }, { t: 'neptune', d: 1250 }
+        ];
+        config.forEach(c => {
+            const p = DATA[c.t];
+            const v = Math.sqrt(G * sun.mass / c.d);
+            bodies.push(new Body(c.d, 0, 0, v, p.mass, p.radius, p.color, p.name));
+        });
+        trackedBody = sun;
+    }
+
+    function spawnGalaxy() {
+        resetSim(); zoom = 0.05;
+        const core = new Body(0, 0, 0, 0, 2000000, 8, "#000", "Centro Galattico");
+        bodies.push(core);
+        for(let i=0; i<300; i++){
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 300 + Math.random() * 2000;
+            const v = Math.sqrt(G * core.mass / dist);
+            bodies.push(new Body(Math.cos(angle)*dist, Math.sin(angle)*dist, -Math.sin(angle)*v, Math.cos(angle)*v, 10, 1.5, `hsl(${angle*60},70%,80%)`, ""));
+        }
+    }
+
+    function resetSim() { bodies = []; trackedBody = null; offsetX = 0; offsetY = 0; zoom = 1; }
+    canvas.oncontextmenu = e => e.preventDefault();
+    loop();
+</script>
+</body>
+</html>

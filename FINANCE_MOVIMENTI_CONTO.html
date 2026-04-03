@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BankFlow — Analisi Movimenti</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3d;
+    --accent-green: #00e5a0;
+    --accent-red: #ff4d6d;
+    --accent-blue: #4d9fff;
+    --accent-yellow: #ffd166;
+    --text: #e8e8f0;
+    --text-muted: #6b6b8a;
+    --text-dim: #3a3a55;
+    --radius: 12px;
+    --radius-lg: 20px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── GRID NOISE BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, var(--border) 39px, var(--border) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, var(--border) 39px, var(--border) 40px);
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative; z-index: 10;
+    padding: 2rem 3rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: baseline; gap: 1.5rem;
+    background: linear-gradient(180deg, rgba(0,229,160,0.04) 0%, transparent 100%);
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem; letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  header h1 span { color: var(--accent-green); font-style: italic; }
+  header p { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ── UPLOAD ZONE ── */
+  #upload-section {
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: calc(100vh - 80px);
+    padding: 3rem;
+    animation: fadeIn 0.6s ease;
+  }
+  .upload-card {
+    background: var(--surface);
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-lg);
+    padding: 4rem 5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    max-width: 520px; width: 100%;
+    position: relative; overflow: hidden;
+  }
+  .upload-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(0,229,160,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .upload-card:hover, .upload-card.drag-over {
+    border-color: var(--accent-green);
+    background: var(--surface2);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 60px rgba(0,229,160,0.1);
+  }
+  .upload-icon {
+    font-size: 3rem; margin-bottom: 1.5rem;
+    filter: drop-shadow(0 0 20px rgba(0,229,160,0.4));
+  }
+  .upload-card h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem; color: var(--text);
+    margin-bottom: 0.75rem;
+  }
+  .upload-card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; }
+  .upload-card p strong { color: var(--accent-green); font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+  #file-input { display: none; }
+  .upload-btn {
+    display: inline-block; margin-top: 2rem;
+    padding: 0.8rem 2rem;
+    background: var(--accent-green); color: #0a0a0f;
+    border-radius: 8px; font-weight: 600; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.2s;
+    border: none; font-family: 'DM Sans', sans-serif;
+  }
+  .upload-btn:hover { background: #00ffb3; box-shadow: 0 0 30px rgba(0,229,160,0.4); }
+
+  /* ── DASHBOARD ── */
+  #dashboard {
+    display: none; position: relative; z-index: 10;
+    padding: 2rem 3rem; animation: fadeIn 0.5s ease;
+  }
+
+  /* ── CONTROLS BAR ── */
+  .controls-bar {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    margin-bottom: 2rem;
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .controls-bar label {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em;
+    margin-right: 0.25rem;
+  }
+  .control-group { display: flex; align-items: center; gap: 0.5rem; }
+  select, input[type="date"], input[type="month"] {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 0.45rem 0.8rem;
+    border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 0.8rem;
+    cursor: pointer; outline: none; transition: border-color 0.2s;
+  }
+  select:hover, input[type="date"]:hover, input[type="month"]:hover,
+  select:focus, input[type="date"]:focus, input[type="month"]:focus {
+    border-color: var(--accent-green);
+  }
+  .btn-reset {
+    margin-left: auto; padding: 0.45rem 1.2rem;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted); border-radius: 8px; cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 0.75rem;
+    transition: all 0.2s;
+  }
+  .btn-reset:hover { border-color: var(--accent-red); color: var(--accent-red); }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    position: relative; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+  .kpi-card::after {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+  }
+  .kpi-card.green::after { background: var(--accent-green); }
+  .kpi-card.red::after { background: var(--accent-red); }
+  .kpi-card.blue::after { background: var(--accent-blue); }
+  .kpi-card.yellow::after { background: var(--accent-yellow); }
+  .kpi-label {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--text-muted); margin-bottom: 0.75rem;
+  }
+  .kpi-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem; letter-spacing: -0.02em;
+  }
+  .kpi-card.green .kpi-value { color: var(--accent-green); }
+  .kpi-card.red .kpi-value { color: var(--accent-red); }
+  .kpi-card.blue .kpi-value { color: var(--accent-blue); }
+  .kpi-card.yellow .kpi-value { color: var(--accent-yellow); }
+  .kpi-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem; font-family: 'DM Mono', monospace; }
+
+  /* ── CHARTS GRID ── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem; margin-bottom: 2rem;
+  }
+  .chart-wide { grid-column: 1 / -1; }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .chart-card h3 {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-muted); margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .chart-card h3 .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent-green);
+  }
+  .chart-wrapper { position: relative; }
+
+  /* ── TRANSACTIONS TABLE ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .table-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;
+  }
+  .table-header h3 {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-muted);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .search-input {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 0.45rem 1rem;
+    border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 0.8rem;
+    outline: none; width: 260px; transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent-green); }
+  .search-input::placeholder { color: var(--text-dim); }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  th {
+    padding: 0.6rem 1rem; text-align: left;
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-muted); white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 1px solid rgba(42,42,61,0.5);
+    transition: background 0.15s;
+    cursor: default;
+  }
+  tbody tr:hover { background: var(--surface2); }
+  td { padding: 0.7rem 1rem; vertical-align: middle; }
+  td.date { font-family: 'DM Mono', monospace; font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
+  td.amount { font-family: 'DM Mono', monospace; font-weight: 500; white-space: nowrap; }
+  td.amount.in { color: var(--accent-green); }
+  td.amount.out { color: var(--accent-red); }
+  td.causale { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--text-muted); }
+  td.desc { color: var(--text); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge {
+    display: inline-block; padding: 0.2rem 0.6rem;
+    border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    letter-spacing: 0.06em;
+  }
+  .badge-in { background: rgba(0,229,160,0.12); color: var(--accent-green); }
+  .badge-out { background: rgba(255,77,109,0.12); color: var(--accent-red); }
+
+  /* ── PAGINATION ── */
+  .pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 1.5rem; padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--text-muted);
+  }
+  .page-btns { display: flex; gap: 0.4rem; }
+  .page-btn {
+    padding: 0.35rem 0.7rem; border-radius: 6px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text-muted); cursor: pointer; font-family: 'DM Mono', monospace;
+    font-size: 0.75rem; transition: all 0.15s;
+  }
+  .page-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+  .page-btn.active { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; }
+
+  /* ── CONSUNTIVO ── */
+  .consuntivo-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .consuntivo-card h3 {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-muted); margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .consuntivo-controls {
+    display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;
+  }
+  .period-btn {
+    padding: 0.5rem 1.2rem; border-radius: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text-muted); cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 0.78rem;
+    transition: all 0.2s;
+  }
+  .period-btn.active { background: rgba(77,159,255,0.15); border-color: var(--accent-blue); color: var(--accent-blue); }
+  .consuntivo-table { width: 100%; border-collapse: collapse; }
+  .consuntivo-table th {
+    padding: 0.5rem 0.8rem;
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); text-align: right; border-bottom: 1px solid var(--border);
+  }
+  .consuntivo-table th:first-child { text-align: left; }
+  .consuntivo-table td {
+    padding: 0.55rem 0.8rem; font-family: 'DM Mono', monospace; font-size: 0.82rem;
+    text-align: right; border-bottom: 1px solid rgba(42,42,61,0.4);
+  }
+  .consuntivo-table td:first-child { text-align: left; color: var(--text); }
+  .consuntivo-table .total-row td { border-top: 1px solid var(--border); color: var(--text); font-weight: 500; padding-top: 0.8rem; }
+  .c-in { color: var(--accent-green); }
+  .c-out { color: var(--accent-red); }
+  .c-bal.pos { color: var(--accent-green); }
+  .c-bal.neg { color: var(--accent-red); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    header, #dashboard { padding: 1.5rem; }
+    .charts-grid { grid-template-columns: 1fr; }
+    .chart-wide { grid-column: 1; }
+  }
+  @media (max-width: 600px) {
+    header h1 { font-size: 1.4rem; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .search-input { width: 100%; }
+  }
+  .empty { text-align: center; padding: 3rem; color: var(--text-muted); font-family: 'DM Mono', monospace; font-size: 0.85rem; }
+  /* ── DESC LEGEND TABLE ── */
+  #desc-legend-table table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  #desc-legend-table th {
+    padding: 0.4rem 0.7rem; font-family: 'DM Mono', monospace; font-size: 0.62rem;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);
+    border-bottom: 1px solid var(--border); text-align: right;
+  }
+  #desc-legend-table th:first-child { text-align: left; }
+  #desc-legend-table td {
+    padding: 0.45rem 0.7rem; border-bottom: 1px solid rgba(42,42,61,0.35);
+    font-family: 'DM Mono', monospace; font-size: 0.75rem; text-align: right;
+    white-space: nowrap;
+  }
+  #desc-legend-table td:first-child { text-align: left; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
+  .color-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  #desc-legend-table .pct { color: var(--text-muted); }
+  .pill-filter { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .pill {
+    padding: 0.3rem 0.9rem; border-radius: 20px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text-muted); cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    transition: all 0.15s;
+  }
+  .pill.active-in { background: rgba(0,229,160,0.12); border-color: var(--accent-green); color: var(--accent-green); }
+  .pill.active-out { background: rgba(255,77,109,0.12); border-color: var(--accent-red); color: var(--accent-red); }
+  .pill:hover { border-color: var(--text-dim); color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- UPLOAD SECTION -->
+<header>
+  <h1>Bank<span>Flow</span></h1>
+  <p>Analisi Movimenti Bancari</p>
+</header>
+
+<section id="upload-section">
+  <div class="upload-card" id="drop-zone">
+    <div class="upload-icon">📊</div>
+    <h2>Carica il tuo estratto conto</h2>
+    <p>Trascina qui il file Excel oppure clicca per selezionarlo<br><br>
+      Colonne attese: <strong>DATA CONTABILE · DATA VALUTA · USCITE · ENTRATE · CAUSALE · DESCRIZIONE OPERAZIONE</strong>
+    </p>
+    <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
+    <label for="file-input" class="upload-btn">Seleziona File Excel</label>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+
+  <!-- CONTROLS -->
+  <div class="controls-bar">
+    <div class="control-group">
+      <label>Da</label>
+      <input type="date" id="date-from">
+    </div>
+    <div class="control-group">
+      <label>A</label>
+      <input type="date" id="date-to">
+    </div>
+    <div class="control-group">
+      <label>Causale</label>
+      <select id="filter-causale"><option value="">Tutte</option></select>
+    </div>
+    <button class="btn-reset" id="btn-reset">✕ Reset filtri</button>
+    <label for="file-input2" class="upload-btn" style="margin-left:auto; padding: 0.45rem 1.2rem; font-size:0.8rem;">↑ Carica nuovo file</label>
+    <input type="file" id="file-input2" accept=".xlsx,.xls,.csv" style="display:none">
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card green">
+      <div class="kpi-label">Entrate Totali</div>
+      <div class="kpi-value" id="kpi-in">—</div>
+      <div class="kpi-sub" id="kpi-in-count">0 movimenti</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Uscite Totali</div>
+      <div class="kpi-value" id="kpi-out">—</div>
+      <div class="kpi-sub" id="kpi-out-count">0 movimenti</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Saldo Netto</div>
+      <div class="kpi-value" id="kpi-bal">—</div>
+      <div class="kpi-sub" id="kpi-period">periodo selezionato</div>
+    </div>
+    <div class="kpi-card yellow">
+      <div class="kpi-label">Movimenti Totali</div>
+      <div class="kpi-value" id="kpi-count">—</div>
+      <div class="kpi-sub" id="kpi-avg">media giornaliera —</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-grid">
+    <div class="chart-card chart-wide">
+      <h3><span class="dot" style="background:var(--accent-blue)"></span>Andamento Entrate / Uscite nel Tempo</h3>
+      <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+        <button class="period-btn active" data-period="monthly" onclick="setChartPeriod('monthly',this)">Mensile</button>
+        <button class="period-btn" data-period="weekly" onclick="setChartPeriod('weekly',this)">Settimanale</button>
+        <button class="period-btn" data-period="daily" onclick="setChartPeriod('daily',this)">Giornaliero</button>
+      </div>
+      <div class="chart-wrapper" style="height:280px">
+        <canvas id="chart-timeline"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3><span class="dot" style="background:var(--accent-yellow)"></span>Tipologia Uscite (Causale)</h3>
+      <div class="chart-wrapper" style="height:260px">
+        <canvas id="chart-causale"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3><span class="dot" style="background:var(--accent-red)"></span>Distribuzione Mensile</h3>
+      <div class="chart-wrapper" style="height:260px">
+        <canvas id="chart-monthly-bar"></canvas>
+      </div>
+    </div>
+    <div class="chart-card chart-wide">
+      <h3><span class="dot" style="background:var(--accent-blue)"></span>Voci di Spesa — Estratte dalla Descrizione</h3>
+      <p style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--text-muted);margin-bottom:1.2rem;line-height:1.6;">
+        Parole chiave riconosciute: <span style="color:var(--accent-blue)">presso · a favore di · Ordinante · Addebito · Estratto conto · Recupero</span>
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start;">
+        <div class="chart-wrapper" style="height:340px">
+          <canvas id="chart-desc-pie"></canvas>
+        </div>
+        <div id="desc-legend-table" style="overflow-y:auto;max-height:340px;"></div>
+      </div>
+      <!-- DEBUG PANEL -->
+      <details style="margin-top:1.5rem;">
+        <summary style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--text-muted);cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;">
+          🔍 Mostra campione descrizioni "presso" rilevate
+        </summary>
+        <div id="presso-debug" style="margin-top:1rem;font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text-muted);line-height:2;max-height:260px;overflow-y:auto;"></div>
+      </details>
+    </div>
+  </div>
+
+  <!-- CONSUNTIVO -->
+  <div class="consuntivo-card">
+    <h3><span class="dot" style="background:var(--accent-yellow)"></span>Consuntivo Personalizzabile</h3>
+    <div class="consuntivo-controls">
+      <button class="period-btn active" onclick="setConsuntivoPeriod('monthly',this)">Mensile</button>
+      <button class="period-btn" onclick="setConsuntivoPeriod('weekly',this)">Settimanale</button>
+      <button class="period-btn" onclick="setConsuntivoPeriod('daily',this)">Giornaliero</button>
+    </div>
+    <div id="consuntivo-container" class="table-scroll"></div>
+  </div>
+
+  <!-- TRANSACTIONS TABLE -->
+  <div class="table-card">
+    <div class="table-header">
+      <h3><span class="dot" style="background:var(--accent-green)"></span>Movimenti</h3>
+      <input type="text" class="search-input" id="search" placeholder="Cerca descrizione, causale…">
+    </div>
+    <div class="pill-filter" id="pill-filter">
+      <span class="pill" data-type="all" onclick="filterType('all',this)">Tutti</span>
+      <span class="pill" data-type="in" onclick="filterType('in',this)">Entrate</span>
+      <span class="pill" data-type="out" onclick="filterType('out',this)">Uscite</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Importo</th>
+            <th>Causale</th>
+            <th>Descrizione</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span id="page-info">— di —</span>
+      <div class="page-btns" id="page-btns"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let allData = [];
+let filtered = [];
+let currentPage = 1;
+const PAGE_SIZE = 20;
+let chartTimeline, chartCausale, chartBar, chartDescPie;
+let currentChartPeriod = 'monthly';
+let currentConsuntivoPeriod = 'monthly';
+let typeFilter = 'all';
+
+// ─── FILE LOADING ─────────────────────────────────────────
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      parseData(raw);
+    } catch(err) {
+      alert('Errore nella lettura del file: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function normalizeKey(k) { return k.trim().toUpperCase().replace(/\s+/g, ' '); }
+
+function parseData(raw) {
+  allData = [];
+  raw.forEach((row, i) => {
+    // Normalize keys
+    const norm = {};
+    Object.keys(row).forEach(k => norm[normalizeKey(k)] = row[k]);
+
+    const dateCols = ['DATA CONTABILE','DATA VALUTA'];
+    let dateVal = null;
+    for (const dc of dateCols) {
+      if (norm[dc]) { dateVal = norm[dc]; break; }
+    }
+
+    let date = null;
+    if (dateVal instanceof Date) {
+      date = dateVal;
+    } else if (typeof dateVal === 'string' && dateVal.trim()) {
+      const parts = dateVal.trim().split(/[\/\-\.]/);
+      if (parts.length === 3) {
+        // dd/mm/yyyy or yyyy-mm-dd
+        if (parts[0].length === 4) date = new Date(parts[0], parts[1]-1, parts[2]);
+        else date = new Date(parts[2], parts[1]-1, parts[0]);
+      }
+    } else if (typeof dateVal === 'number') {
+      date = new Date((dateVal - 25569) * 86400 * 1000);
+    }
+
+    const parseAmt = v => {
+      if (!v && v !== 0) return 0;
+      if (typeof v === 'number') return Math.abs(v);
+      // Handle Italian format: period = thousands separator, comma = decimal
+      // e.g. "1.234,56" → 1234.56  or  "1234,56" → 1234.56  or  "1234.56" → 1234.56
+      let s = String(v).replace(/\s/g,'');
+      // If both . and , present: determine which is decimal
+      if (s.includes('.') && s.includes(',')) {
+        const dotPos = s.lastIndexOf('.');
+        const commaPos = s.lastIndexOf(',');
+        if (commaPos > dotPos) {
+          // comma is decimal separator: "1.234,56"
+          s = s.replace(/\./g,'').replace(',','.');
+        } else {
+          // dot is decimal separator: "1,234.56"
+          s = s.replace(/,/g,'');
+        }
+      } else if (s.includes(',')) {
+        // Only comma: could be thousands ("1,234") or decimal ("1,56")
+        const parts = s.split(',');
+        if (parts.length === 2 && parts[1].length <= 2) {
+          // treat as decimal: "1234,56" → 1234.56
+          s = s.replace(',','.');
+        } else {
+          // treat as thousands separator: "1,234" → 1234
+          s = s.replace(/,/g,'');
+        }
+      }
+      // else only dots or plain number — parseFloat handles it
+      const n = parseFloat(s);
+      return isNaN(n) ? 0 : Math.abs(n);
+    };
+
+    const uscita = parseAmt(norm['USCITE']);
+    const entrata = parseAmt(norm['ENTRATE']);
+    const causale = String(norm['CAUSALE'] || norm['CAUSALE OPERAZIONE'] || '').trim();
+    const desc = String(norm['DESCRIZIONE OPERAZIONE'] || norm['DESCRIZIONE'] || '').trim();
+
+    if (!date || isNaN(date.getTime())) return;
+    if (uscita === 0 && entrata === 0) return;
+
+    allData.push({ date, uscita, entrata, causale, desc });
+  });
+
+  allData.sort((a,b) => b.date - a.date);
+
+  if (allData.length === 0) {
+    alert('Nessun movimento trovato. Verifica i nomi delle colonne nel file.');
+    return;
+  }
+
+  populateCausaleFilter();
+  setDateRange();
+  document.getElementById('upload-section').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  applyFilters();
+}
+
+function populateCausaleFilter() {
+  const sel = document.getElementById('filter-causale');
+  sel.innerHTML = '<option value="">Tutte</option>';
+  const causali = [...new Set(allData.map(d => d.causale).filter(Boolean))].sort();
+  causali.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    sel.appendChild(o);
+  });
+}
+
+function setDateRange() {
+  const dates = allData.map(d => d.date);
+  const minD = new Date(Math.min(...dates));
+  const maxD = new Date(Math.max(...dates));
+  const fmt = d => d.toISOString().split('T')[0];
+  document.getElementById('date-from').value = fmt(minD);
+  document.getElementById('date-to').value = fmt(maxD);
+}
+
+// ─── FILTERS ──────────────────────────────────────────────
+function applyFilters() {
+  const from = document.getElementById('date-from').value;
+  const to = document.getElementById('date-to').value;
+  const causale = document.getElementById('filter-causale').value;
+  const search = document.getElementById('search').value.toLowerCase();
+
+  filtered = allData.filter(d => {
+    const ds = d.date.toISOString().split('T')[0];
+    if (from && ds < from) return false;
+    if (to && ds > to) return false;
+    if (causale && d.causale !== causale) return false;
+    if (typeFilter === 'in' && d.entrata === 0) return false;
+    if (typeFilter === 'out' && d.uscita === 0) return false;
+    if (search) {
+      const hay = (d.desc + ' ' + d.causale).toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  currentPage = 1;
+  updateKPIs();
+  renderTable();
+  renderCharts();
+  renderConsuntivo();
+}
+
+function filterType(type, el) {
+  typeFilter = type;
+  document.querySelectorAll('.pill').forEach(p => p.className = 'pill');
+  if (type === 'in') el.classList.add('active-in');
+  else if (type === 'out') el.classList.add('active-out');
+  applyFilters();
+}
+
+// ─── KPIs ─────────────────────────────────────────────────
+function fmt(n) {
+  return n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+
+function updateKPIs() {
+  const totalIn = filtered.reduce((s,d) => s + d.entrata, 0);
+  const totalOut = filtered.reduce((s,d) => s + d.uscita, 0);
+  const bal = totalIn - totalOut;
+  const nIn = filtered.filter(d => d.entrata > 0).length;
+  const nOut = filtered.filter(d => d.uscita > 0).length;
+
+  document.getElementById('kpi-in').textContent = fmt(totalIn);
+  document.getElementById('kpi-in-count').textContent = nIn + ' movimenti';
+  document.getElementById('kpi-out').textContent = fmt(totalOut);
+  document.getElementById('kpi-out-count').textContent = nOut + ' movimenti';
+  const balEl = document.getElementById('kpi-bal');
+  balEl.textContent = (bal >= 0 ? '+' : '') + fmt(bal);
+  balEl.style.color = bal >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  document.getElementById('kpi-count').textContent = filtered.length;
+
+  // avg per day
+  const days = new Set(filtered.map(d => d.date.toISOString().split('T')[0])).size;
+  const avg = days > 0 ? (totalOut / days) : 0;
+  document.getElementById('kpi-avg').textContent = 'media/giorno: ' + fmt(avg);
+}
+
+// ─── TABLE ────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  const start = (currentPage-1)*PAGE_SIZE;
+  const page = filtered.slice(start, start+PAGE_SIZE);
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Nessun movimento trovato</td></tr>';
+    document.getElementById('page-info').textContent = '0 movimenti';
+    document.getElementById('page-btns').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = page.map(d => {
+    const isIn = d.entrata > 0;
+    return `<tr>
+      <td class="date">${d.date.toLocaleDateString('it-IT')}</td>
+      <td><span class="badge ${isIn ? 'badge-in' : 'badge-out'}">${isIn ? 'ENTRATA' : 'USCITA'}</span></td>
+      <td class="amount ${isIn ? 'in' : 'out'}">${isIn ? '+' : '-'}${fmt(isIn ? d.entrata : d.uscita)}</td>
+      <td class="causale">${d.causale || '—'}</td>
+      <td class="desc" title="${d.desc}">${d.desc || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  document.getElementById('page-info').textContent = `${start+1}–${Math.min(start+PAGE_SIZE, filtered.length)} di ${filtered.length}`;
+
+  const btns = document.getElementById('page-btns');
+  btns.innerHTML = '';
+  const makeBtn = (label, pg, active) => {
+    const b = document.createElement('button');
+    b.className = 'page-btn' + (active ? ' active' : '');
+    b.textContent = label;
+    b.onclick = () => { currentPage = pg; renderTable(); };
+    btns.appendChild(b);
+  };
+  if (currentPage > 1) makeBtn('←', currentPage-1, false);
+  const range = [...new Set([1, currentPage-1, currentPage, currentPage+1, totalPages])].filter(p => p>=1 && p<=totalPages).sort((a,b)=>a-b);
+  let prev = null;
+  range.forEach(p => {
+    if (prev && p - prev > 1) {
+      const s = document.createElement('span');
+      s.className = 'page-btn'; s.textContent = '…'; s.style.cursor='default';
+      btns.appendChild(s);
+    }
+    makeBtn(p, p, p === currentPage);
+    prev = p;
+  });
+  if (currentPage < totalPages) makeBtn('→', currentPage+1, false);
+}
+
+// ─── CHART HELPERS ────────────────────────────────────────
+function groupBy(data, period) {
+  const groups = {};
+  data.forEach(d => {
+    let key;
+    if (period === 'monthly') key = `${d.date.getFullYear()}-${String(d.date.getMonth()+1).padStart(2,'0')}`;
+    else if (period === 'weekly') {
+      const tmp = new Date(d.date); tmp.setHours(0,0,0,0);
+      const day = tmp.getDay() || 7; tmp.setDate(tmp.getDate() - day + 1);
+      key = tmp.toISOString().split('T')[0];
+    } else key = d.date.toISOString().split('T')[0];
+    if (!groups[key]) groups[key] = { in: 0, out: 0 };
+    groups[key].in += d.entrata;
+    groups[key].out += d.uscita;
+  });
+  return groups;
+}
+
+const PALETTE = ['#00e5a0','#ff4d6d','#4d9fff','#ffd166','#c77dff','#ff9a3c','#00d4ff','#ff6b6b','#51cf66','#fab005'];
+
+Chart.defaults.color = '#6b6b8a';
+Chart.defaults.borderColor = '#2a2a3d';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+function destroyChart(c) { if (c) { try { c.destroy(); } catch(e){} } }
+
+// ─── CHARTS ───────────────────────────────────────────────
+function renderCharts() {
+  renderTimeline();
+  renderCausaleChart();
+  renderMonthlyBar();
+  renderDescPieChart();
+}
+
+function setChartPeriod(p, el) {
+  currentChartPeriod = p;
+  document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderTimeline();
+}
+
+function renderTimeline() {
+  destroyChart(chartTimeline);
+  const groups = groupBy(filtered, currentChartPeriod);
+  const labels = Object.keys(groups).sort();
+  const dataIn = labels.map(k => groups[k].in);
+  const dataOut = labels.map(k => groups[k].out);
+  const fmtLabel = l => {
+    if (currentChartPeriod === 'monthly') return l.slice(0,7);
+    if (currentChartPeriod === 'weekly') return 'W ' + l;
+    return l.slice(5);
+  };
+  chartTimeline = new Chart(document.getElementById('chart-timeline'), {
+    type: 'line',
+    data: {
+      labels: labels.map(fmtLabel),
+      datasets: [
+        { label: 'Entrate', data: dataIn, borderColor: '#00e5a0', backgroundColor: 'rgba(0,229,160,0.08)', tension: 0.4, fill: true, pointRadius: 3, pointHoverRadius: 6 },
+        { label: 'Uscite', data: dataOut, borderColor: '#ff4d6d', backgroundColor: 'rgba(255,77,109,0.08)', tension: 0.4, fill: true, pointRadius: 3, pointHoverRadius: 6 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#6b6b8a', usePointStyle: true, pointStyleWidth: 8 } },
+        tooltip: {
+          backgroundColor: '#1a1a26', borderColor: '#2a2a3d', borderWidth: 1,
+          titleColor: '#e8e8f0', bodyColor: '#6b6b8a',
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(42,42,61,0.5)' }, ticks: { maxTicksLimit: 12 } },
+        y: { grid: { color: 'rgba(42,42,61,0.5)' }, ticks: { callback: v => v.toLocaleString('it-IT') + '€' } }
+      }
+    }
+  });
+}
+
+function renderCausaleChart() {
+  destroyChart(chartCausale);
+  const uscite = filtered.filter(d => d.uscita > 0);
+  const byCausale = {};
+  uscite.forEach(d => {
+    const c = d.causale || 'Altro';
+    byCausale[c] = (byCausale[c] || 0) + d.uscita;
+  });
+  const sorted = Object.entries(byCausale).sort((a,b) => b[1]-a[1]).slice(0, 10);
+  chartCausale = new Chart(document.getElementById('chart-causale'), {
+    type: 'doughnut',
+    data: {
+      labels: sorted.map(e => e[0]),
+      datasets: [{ data: sorted.map(e => e[1]), backgroundColor: PALETTE, borderColor: '#12121a', borderWidth: 2, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#6b6b8a', usePointStyle: true, pointStyleWidth: 8, font: { size: 10 } } },
+        tooltip: {
+          backgroundColor: '#1a1a26', borderColor: '#2a2a3d', borderWidth: 1,
+          callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.parsed)}` }
+        }
+      }
+    }
+  });
+}
+
+function renderMonthlyBar() {
+  destroyChart(chartBar);
+  const groups = groupBy(filtered, 'monthly');
+  const labels = Object.keys(groups).sort().slice(-12);
+  const dataIn = labels.map(k => groups[k]?.in || 0);
+  const dataOut = labels.map(k => groups[k]?.out || 0);
+  chartBar = new Chart(document.getElementById('chart-monthly-bar'), {
+    type: 'bar',
+    data: {
+      labels: labels.map(l => l.slice(0,7)),
+      datasets: [
+        { label: 'Entrate', data: dataIn, backgroundColor: 'rgba(0,229,160,0.7)', borderRadius: 4, borderSkipped: false },
+        { label: 'Uscite', data: dataOut, backgroundColor: 'rgba(255,77,109,0.7)', borderRadius: 4, borderSkipped: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#6b6b8a', usePointStyle: true, pointStyleWidth: 8 } },
+        tooltip: {
+          backgroundColor: '#1a1a26', borderColor: '#2a2a3d', borderWidth: 1,
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { color: 'rgba(42,42,61,0.5)' }, ticks: { callback: v => v.toLocaleString('it-IT') + '€' } }
+      }
+    }
+  });
+}
+
+// ─── DESC PIE CHART ───────────────────────────────────────
+
+// Legal forms to strip
+const LEGAL_FORMS = /\s*\b(S\.?\s*P\.?\s*A\.?|S\.?\s*R\.?\s*L\.?|S\.?\s*N\.?\s*C\.?|S\.?\s*A\.?\s*S\.?|S\.?\s*C\.?|SARL|GMBH|LTD|LLC|INC|CORP|SPA|SRL|SNC|SAS|COOP|ONLUS|APS|ONG|ETS)\b\.?\s*/gi;
+
+// Street-type tokens to detect "Via Roma 12 TORINO" style noise
+const STREET_PREFIX = /\b(via|viale|piazza|corso|largo|vicolo|strada|localit[aà]|loc\.?|fraz\.?|s\.s\.?|ss\.?)\b.*/i;
+
+// Date patterns
+const DATE_PAT = /\b\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}\b/g;
+
+// Numbers ≥ 3 digits
+const NUM_PAT = /\b\d{3,}\b/g;
+
+// Known Italian/EU city/province noise at end (caps 2-3 chars = province codes)
+const PROVINCE_PAT = /\s+\b[A-Z]{2,3}\b\s*$/;
+
+function cleanPresso(raw) {
+  let s = raw.trim();
+
+  // 1. Cut at hard separators (spaced dash, pipe, slash with spaces, bullet)
+  s = s.split(/\s+[-–/|·•]\s+/)[0].trim();
+
+  // 2. Cut at street address (Via/Piazza/Corso etc.) — everything from there is address noise
+  const streetM = s.match(STREET_PREFIX);
+  if (streetM) s = s.slice(0, streetM.index).trim();
+
+  // 3. Remove dates
+  s = s.replace(DATE_PAT, '');
+
+  // 4. Remove legal forms
+  s = s.replace(LEGAL_FORMS, ' ');
+
+  // 5. Remove numbers ≥ 3 digits (POS IDs, branch codes, ZIP)
+  s = s.replace(NUM_PAT, '');
+
+  // 6. Remove trailing 2-3 char province/country codes (ALL CAPS)
+  s = s.replace(PROVINCE_PAT, '');
+
+  // 7. Collapse whitespace and strip edge punctuation
+  s = s.replace(/\s{2,}/g, ' ').trim();
+  s = s.replace(/^[\s\-–\/\.,;:*]+|[\s\-–\/\.,;:*]+$/g, '').trim();
+
+  if (!s) return null;
+
+  // 8. Title Case
+  s = s.split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
+  if (s.length > 42) s = s.slice(0, 42).trim() + '…';
+  return s;
+}
+
+// Generic cleaner for other keywords
+const GENERIC_STOP = /\s+(del|della|dello|degli|delle|di|da|in|con|su|per|tra|fra|il|lo|la|i|gli|le|un|uno|una|e|ed|al|dal|nel|sul|col)\b.*/i;
+
+function cleanGeneric(raw) {
+  let s = raw.trim();
+  s = s.split(/[\/\|–·•,;]/)[0].trim();
+  s = s.replace(GENERIC_STOP, '').trim();
+  s = s.replace(LEGAL_FORMS, ' ').trim();
+  s = s.replace(NUM_PAT, '').trim();
+  s = s.replace(/\s{2,}/g, ' ').trim();
+  if (!s) return null;
+  if (s.length > 42) s = s.slice(0, 42).trim() + '…';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function extractDescLabel(desc) {
+  if (!desc) return null;
+
+  // ── PRESSO: match case-insensitively, no \b needed (handles "Presso", "PRESSO", "presso")
+  // Also handles "in data … presso" patterns by finding the LAST occurrence
+  const pressoRe = /presso\s+/gi;
+  let mPresso = null, tmp;
+  while ((tmp = pressoRe.exec(desc)) !== null) mPresso = tmp; // take last match
+  if (mPresso) {
+    const after = desc.slice(mPresso.index + mPresso[0].length);
+    const cleaned = cleanPresso(after);
+    if (cleaned && cleaned.length > 1) return cleaned;
+  }
+
+  // ── Other keywords ──
+  const OTHER_KW = [
+    /a\s+favore\s+di\s+/i,
+    /ordinante\s*[:\-]?\s*/i,
+    /addebito\s+(diretto\s+|sepa\s+)?/i,
+    /estratto\s+conto\s*/i,
+    /recupero\s+/i,
+  ];
+  for (const kw of OTHER_KW) {
+    const m = desc.match(kw);
+    if (m) {
+      const after = desc.slice(m.index + m[0].length);
+      const cleaned = cleanGeneric(after);
+      if (cleaned && cleaned.length > 1) return cleaned;
+    }
+  }
+
+  return null;
+}
+
+const PALETTE_EXT = [
+  '#4d9fff','#00e5a0','#ffd166','#ff4d6d','#c77dff',
+  '#ff9a3c','#00d4ff','#ff6b6b','#51cf66','#fab005',
+  '#a29bfe','#fd79a8','#55efc4','#fdcb6e','#e17055',
+  '#74b9ff','#81ecec','#dfe6e9','#b2bec3','#636e72'
+];
+
+function renderDescPieChart() {
+  destroyChart(chartDescPie);
+  const uscite = filtered.filter(d => d.uscita > 0);
+
+  const byVoce = {};
+  uscite.forEach(d => {
+    const label = extractDescLabel(d.desc) || '— Altro —';
+    byVoce[label] = (byVoce[label] || 0) + d.uscita;
+  });
+
+  // Group tail into "Altro" if too many entries
+  let sorted = Object.entries(byVoce).sort((a,b) => b[1]-a[1]);
+  const MAX_SLICES = 16;
+  if (sorted.length > MAX_SLICES) {
+    const top = sorted.slice(0, MAX_SLICES - 1);
+    const altroVal = sorted.slice(MAX_SLICES - 1).reduce((s, e) => s + e[1], 0);
+    sorted = [...top, ['— Altro —', altroVal]];
+  }
+
+  if (sorted.length === 0) {
+    document.getElementById('desc-legend-table').innerHTML = '<div class="empty">Nessun dato disponibile</div>';
+    return;
+  }
+
+  const total = sorted.reduce((s,e) => s + e[1], 0);
+  const colors = sorted.map((_, i) => PALETTE_EXT[i % PALETTE_EXT.length]);
+
+  chartDescPie = new Chart(document.getElementById('chart-desc-pie'), {
+    type: 'pie',
+    data: {
+      labels: sorted.map(e => e[0]),
+      datasets: [{
+        data: sorted.map(e => e[1]),
+        backgroundColor: colors,
+        borderColor: '#0a0a0f',
+        borderWidth: 2,
+        hoverOffset: 10,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a26', borderColor: '#2a2a3d', borderWidth: 1,
+          titleColor: '#e8e8f0', bodyColor: '#6b6b8a',
+          callbacks: {
+            label: ctx => {
+              const pct = ((ctx.parsed / total) * 100).toFixed(1);
+              return ` ${fmt(ctx.parsed)}  (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Custom legend table
+  const rows = sorted.map((e, i) => {
+    const pct = ((e[1] / total) * 100).toFixed(1);
+    return `<tr>
+      <td><span class="color-dot" style="background:${colors[i]}"></span>${e[0]}</td>
+      <td>${fmt(e[1])}</td>
+      <td class="pct">${pct}%</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('desc-legend-table').innerHTML = `
+    <table>
+      <thead><tr><th>Voce</th><th>Totale</th><th>%</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ─── CONSUNTIVO ───────────────────────────────────────────
+function setConsuntivoPeriod(p, el) {
+  currentConsuntivoPeriod = p;
+  document.querySelectorAll('.consuntivo-controls .period-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderConsuntivo();
+}
+
+function renderConsuntivo() {
+  const container = document.getElementById('consuntivo-container');
+  const groups = groupBy(filtered, currentConsuntivoPeriod);
+  const keys = Object.keys(groups).sort().reverse();
+
+  if (keys.length === 0) { container.innerHTML = '<div class="empty">Nessun dato</div>'; return; }
+
+  const formatPeriodLabel = k => {
+    if (currentConsuntivoPeriod === 'monthly') {
+      const [y, m] = k.split('-');
+      const months = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+      return months[parseInt(m)-1] + ' ' + y;
+    }
+    if (currentConsuntivoPeriod === 'weekly') return 'Sett. ' + k;
+    return new Date(k).toLocaleDateString('it-IT');
+  };
+
+  let totalIn = 0, totalOut = 0;
+  const rows = keys.map(k => {
+    const g = groups[k];
+    const bal = g.in - g.out;
+    totalIn += g.in; totalOut += g.out;
+    return `<tr>
+      <td>${formatPeriodLabel(k)}</td>
+      <td class="c-in">${fmt(g.in)}</td>
+      <td class="c-out">${fmt(g.out)}</td>
+      <td class="c-bal ${bal >= 0 ? 'pos' : 'neg'}">${bal >= 0 ? '+' : ''}${fmt(bal)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalBal = totalIn - totalOut;
+  container.innerHTML = `
+    <table class="consuntivo-table">
+      <thead><tr><th>Periodo</th><th>Entrate</th><th>Uscite</th><th>Saldo</th></tr></thead>
+      <tbody>
+        ${rows}
+        <tr class="total-row">
+          <td><strong>TOTALE</strong></td>
+          <td class="c-in"><strong>${fmt(totalIn)}</strong></td>
+          <td class="c-out"><strong>${fmt(totalOut)}</strong></td>
+          <td class="c-bal ${totalBal>=0?'pos':'neg'}"><strong>${totalBal>=0?'+':''}${fmt(totalBal)}</strong></td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
+// ─── EVENT LISTENERS ──────────────────────────────────────
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+document.getElementById('file-input2').addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+document.getElementById('date-from').addEventListener('change', applyFilters);
+document.getElementById('date-to').addEventListener('change', applyFilters);
+document.getElementById('filter-causale').addEventListener('change', applyFilters);
+document.getElementById('search').addEventListener('input', applyFilters);
+document.getElementById('btn-reset').addEventListener('click', () => {
+  setDateRange();
+  document.getElementById('filter-causale').value = '';
+  document.getElementById('search').value = '';
+  typeFilter = 'all';
+  document.querySelectorAll('.pill').forEach(p => p.className = 'pill');
+  applyFilters();
+});
+</script>
+</body>
+</html>
