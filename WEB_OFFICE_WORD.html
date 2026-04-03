@@ -377,7 +377,21 @@
                 <option value="Verdana">Verdana</option>
                 <option value="Courier New">Courier New</option>
             </select>
-            <input type="number" id="fontSize" value="11" min="8" max="72" onchange="applyFormat('fontSize', this.value)">
+<div class="toolbar-group">
+    <button onclick="stepFontSize(-1)" title="Riduci font">A-</button>
+    
+    <select id="fontSizeSelect" onchange="applyFontSize(this.value)">
+        <option value="12">12 px</option>
+        <option value="14">14 px</option>
+        <option value="16">16 px</option>
+        <option value="18" selected>18 px</option>
+        <option value="24">24 px</option>
+        <option value="32">32 px</option>
+        <option value="48">48 px</option>
+    </select>
+
+    <button onclick="stepFontSize(1)" title="Aumenta font">A+</button>
+</div>
         </div>
 
         <div class="toolbar-group">
@@ -767,6 +781,44 @@ function showAlert(message, type = 'success') {
     setTimeout(() => el.classList.remove('show'), 3000);
 }
 
+// Funzione per applicare la dimensione precisa in pixel
+function applyFontSize(size) {
+    // Nota: execCommand 'fontSize' usa valori 1-7. 
+    // Per i pixel reali usiamo lo stile diretto sulla selezione.
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const span = document.createElement("span");
+    span.style.fontSize = size + "px";
+    
+    const range = selection.getRangeAt(0);
+    // Se non c'è testo selezionato, applichiamo al nodo corrente
+    if (range.collapsed) {
+        document.execCommand('fontSize', false, "3"); // dummy per creare un tag
+        // Opzionale: logica più complessa per iniettare lo span
+    } else {
+        // Applica lo stile alla selezione
+        span.textContent = selection.toString();
+        range.deleteContents();
+        range.insertNode(span);
+    }
+    
+    if (editor) editor.focus();
+}
+
+// Funzione per i pulsanti + e -
+function stepFontSize(delta) {
+    const select = document.getElementById('fontSizeSelect');
+    let currentIndex = select.selectedIndex;
+    
+    // Calcola il nuovo indice restando nei limiti
+    let newIndex = currentIndex + delta;
+    if (newIndex >= 0 && newIndex < select.options.length) {
+        select.selectedIndex = newIndex;
+        applyFontSize(select.value);
+    }
+}
+
 function applyFormat(command, value = null) {
     document.execCommand(command, false, value);
     if (editor) editor.focus();
@@ -840,6 +892,13 @@ function exportHTML() {
 <meta charset="UTF-8">
 <title>${currentFileName.replace(/\.docx$/i, '')}</title>
 <style>
+#fontSizeSelect {
+    width: 80px;
+    font-weight: bold;
+}
+.toolbar-group button {
+    min-width: 32px;
+}
   body { font-family: Calibri, Arial, sans-serif; max-width: 816px; margin: 40px auto; padding: 20px; line-height: 1.5; }
   table { border-collapse: collapse; width: 100%; margin: 10px 0; }
   table td, table th { border: 1px solid #000; padding: 8px; }
