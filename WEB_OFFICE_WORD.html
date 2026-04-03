@@ -389,6 +389,7 @@
             <button onclick="openDocument()">Apri .docx</button>
             <button onclick="saveAsDocx()">Salva .docx</button>
             <button onclick="exportHTML()">Esporta HTML</button>
+            <button onclick="exportTXT()">Esporta TXT</button>
             <button onclick="showPrintPreview()">Stampa</button>
         </div>
 
@@ -891,6 +892,14 @@
             reader.readAsArrayBuffer(file);
         }
 
+        function exportTXT()
+        {
+             const text = getAllContent()
+
+            const blob = new Blob([text], { type: 'text/html' });
+            saveAs(blob, currentFileName.replace('.docx', '.html'));
+            showAlert('File HTML esportato con successo!');
+        }
         function exportHTML() {
             const htmlContent = `<!DOCTYPE html>
 <html>
