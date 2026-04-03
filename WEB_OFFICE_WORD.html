@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editor Word - Completo</title>
     <style>
+        
         * {
             margin: 0;
             padding: 0;
@@ -51,6 +52,67 @@
             background: rgba(255,255,255,0.1);
         }
 
+/* Dropdown Menu Styles */
+.dropdown-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.dropdown-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border-radius: 4px;
+    z-index: 1000;
+    margin-top: 4px;
+}
+
+.dropdown-content button {
+    background: white;
+    border: none;
+    color: #333;
+    padding: 10px 16px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.dropdown-content button:first-child {
+    border-radius: 4px 4px 0 0;
+}
+
+.dropdown-content button:last-child {
+    border-radius: 0 0 4px 4px;
+}
+
+.dropdown-content button:hover {
+    background: #e8f0fe;
+    color: #2b579a;
+}
+
+.dropdown-menu.active .dropdown-content {
+    display: block;
+}        
         .toolbar {
             background: white;
             border-bottom: 1px solid #d1d1d1;
@@ -383,15 +445,24 @@
 </head>
 <body>
     <div class="container">
-        <div class="menu-bar">
-            <div class="title">📄 Editor Word Completo</div>
-            <button onclick="newDocument()">Nuovo</button>
-            <button onclick="openDocument()">Apri .docx</button>
-            <button onclick="saveAsDocx()">Salva .docx</button>
-            <button onclick="exportHTML()">Esporta HTML</button>
-            <button onclick="exportTXT()">Esporta TXT</button>
-            <button onclick="showPrintPreview()">Stampa</button>
+<div class="menu-bar">
+    <div class="title">📄 Editor Word Completo</div>
+    
+    <!-- Dropdown Menu File Management -->
+    <div class="dropdown-menu">
+        <button class="dropdown-btn">📁 File ▼</button>
+        <div class="dropdown-content">
+            <button onclick="newDocument()">📄 Nuovo</button>
+            <button onclick="openDocument()">📂 Apri .docx</button>
+            <button onclick="saveAsDocx()">💾 Salva .docx</button>
         </div>
+    </div>
+    
+    <!-- Other buttons stay the same -->
+    <button onclick="exportHTML()">Esporta HTML</button>
+    <button onclick="exportTXT()">Esporta TXT</button>
+    <button onclick="showPrintPreview()">Stampa</button>
+</div>
 
         <div class="toolbar">
             <div class="toolbar-group">
@@ -1527,6 +1598,35 @@ ${getAllContent()}
                 // stopRecording();
             }
         });
+
+// Dropdown menu functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdownMenu = document.querySelector('.dropdown-menu');
+    const dropdownBtn = document.querySelector('.dropdown-btn');
+    const dropdownContent = document.querySelector('.dropdown-content');
+    
+    // Toggle dropdown on button click
+    dropdownBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdownMenu.classList.toggle('active');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!dropdownMenu.contains(e.target)) {
+            dropdownMenu.classList.remove('active');
+        }
+    });
+    
+    // Close dropdown when selecting an option
+    const dropdownButtons = dropdownContent.querySelectorAll('button');
+    dropdownButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            dropdownMenu.classList.remove('active');
+        });
+    });
+});        
+        
     </script>
 </body>
 </html>
