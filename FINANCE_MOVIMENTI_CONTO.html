@@ -564,6 +564,82 @@ function handleFile(file) {
 function normalizeKey(k) { return k.trim().toUpperCase().replace(/\s+/g, ' '); }
 
 function parseData(raw) {
+	  allData = [];
+	  raw.forEach((row, i) => {
+	    // Normalize keys
+	    const norm = {};
+	    Object.keys(row).forEach(k => norm[normalizeKey(k)] = row[k]);
+
+	    const dateCols = ['DATA CONTABILE','DATA VALUTA'];
+	    let dateVal = null;
+	    for (const dc of dateCols) {
+	      if (norm[dc]) { dateVal = norm[dc]; break; }
+	    }
+
+	    let date = null;
+	    if (dateVal instanceof Date) {
+	      date = dateVal;
+	    } else if (typeof dateVal === 'string' && dateVal.trim()) {
+	      const parts = dateVal.trim().split(/[\/\-\.]/);
+	      if (parts.length === 3) {
+	        if (parts[0].length === 4) date = new Date(parts[0], parts[1]-1, parts[2]);
+	        else date = new Date(parts[2], parts[1]-1, parts[0]);
+	      }
+	    } else if (typeof dateVal === 'number') {
+	      date = new Date((dateVal - 25569) * 86400 * 1000);
+	    }
+
+	    const parseAmt = v => {
+	      if (!v && v !== 0) return 0;
+	      if (typeof v === 'number') return Math.abs(v);
+	      let s = String(v).replace(/\s/g,'');
+	      if (s.includes('.') && s.includes(',')) {
+	        const dotPos = s.lastIndexOf('.');
+	        const commaPos = s.lastIndexOf(',');
+	        if (commaPos > dotPos) { s = s.replace(/\./g,'').replace(',','.'); } 
+	        else { s = s.replace(/,/g,''); }
+	      } else if (s.includes(',')) {
+	        const parts = s.split(',');
+	        if (parts.length === 2 && parts[1].length <= 2) { s = s.replace(',','.'); } 
+	        else { s = s.replace(/,/g,''); }
+	      }
+	      const n = parseFloat(s);
+	      return isNaN(n) ? 0 : Math.abs(n);
+	    };
+
+	    const uscita = parseAmt(norm['USCITE']);
+	    const entrata = parseAmt(norm['ENTRATE']);
+	    const causale = String(norm['CAUSALE'] || norm['CAUSALE OPERAZIONE'] || '').trim();
+	    const desc = String(norm['DESCRIZIONE OPERAZIONE'] || norm['DESCRIZIONE'] || '').trim();
+
+	    // --- NUOVA LOGICA DI FILTRO ---
+	    // Creiamo una stringa che unisce causale e descrizione per il controllo
+	    const checkString = (causale + ' ' + desc).toLowerCase();
+	    if (checkString.includes("saldo iniziale") || checkString.includes("saldo finale")) {
+	      return; // Salta questa riga e passa alla successiva
+	    }
+	    // ------------------------------
+
+	    if (!date || isNaN(date.getTime())) return;
+	    if (uscita === 0 && entrata === 0) return;
+
+	    allData.push({ date, uscita, entrata, causale, desc });
+	  });
+
+	  allData.sort((a,b) => b.date - a.date);
+
+	  if (allData.length === 0) {
+	    alert('Nessun movimento trovato. Verifica i nomi delle colonne nel file.');
+	    return;
+	  }
+
+	  populateCausaleFilter();
+	  setDateRange();
+	  document.getElementById('upload-section').style.display = 'none';
+	  document.getElementById('dashboard').style.display = 'block';
+	  applyFilters();
+	}
+function parseData_old(raw) {
   allData = [];
   raw.forEach((row, i) => {
     // Normalize keys
