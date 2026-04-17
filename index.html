@@ -29,7 +29,6 @@
             background-image: radial-gradient(circle at 50% 50%, #0a1018 0%, #05070a 100%);
         }
 
-        /* Overlay Griglia */
         body::after {
             content: "";
             position: fixed;
@@ -99,9 +98,8 @@
             transform: translateX(5px);
         }
 
-        /* --- ICONE A COLORI --- */
         .app-icon {
-            font-size: 3rem; /* Raddoppiato */
+            font-size: 3rem;
             margin-right: 25px;
             width: 60px;
             height: 60px;
@@ -125,16 +123,13 @@
             justify-content: space-between;
             font-size: 0.7rem;
         }
-
-        /* Responsive */
-        @media (max-width: 768px) { .hud-grid { grid-template-columns: 1fr; } .app-icon { font-size: 2.5rem; } }
     </style>
 </head>
 <body>
 
 <header>
     <div><i class="fas fa-signal"></i> SECURE_CONNECTION: ON</div>
-    <h1 style="font-family: var(--font-hud); font-size: 1.2rem; letter-spacing: 4px;">OPERATIVE HUB V7</h1>
+    <h1 style="font-family: var(--font-hud); font-size: 1.2rem; letter-spacing: 4px;">OPERATIVE HUB V8</h1>
     <div id="clock">00:00:00</div>
 </header>
 
@@ -157,6 +152,7 @@
     <div class="tactical-panel">
         <div class="panel-header"><span>INTEL TOOLS</span><i class="fas fa-search"></i></div>
         <div class="panel-content">
+            <a href="TEXT_2_QRCODE.html" class="combat-btn"><span class="app-icon">🏁</span><div class="label-wrap"><span class="m-lab">QR GENERATOR</span><span class="s-lab">TEXT_2_QRCODE.HTML</span></div></a>
             <a href="PHOTO_VAULT.html" class="combat-btn"><span class="app-icon">🔐</span><div class="label-wrap"><span class="m-lab">PHOTO VAULT</span><span class="s-lab">MEDIA_SECURE.HTML</span></div></a>
             <a href="CAM_SCANNER.html" class="combat-btn"><span class="app-icon">📸</span><div class="label-wrap"><span class="m-lab">CAM SCANNER</span><span class="s-lab">INTEL_CAPTURE.HTML</span></div></a>
             <a href="IMG_TO_TEXT.html" class="combat-btn"><span class="app-icon">📄</span><div class="label-wrap"><span class="m-lab">OCR EXTRACTOR</span><span class="s-lab">TEXT_RECOGNITION.HTML</span></div></a>
