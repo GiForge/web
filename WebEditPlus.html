@@ -1,49 +1,249 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
-    <title>Web Edit Plus</title>
-    <script>
-        function openModal() {
-            document.getElementById('modal').style.display = 'block';
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CloudEdit Plus | Pro Editor</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --toolbar-bg: #2d2d2d;
+            --accent: #007acc;
+            --text-color: #cccccc;
+            --border: #444;
         }
-        function closeModal() {
-            document.getElementById('modal').style.display = 'none';
+
+        body, html {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            background-color: var(--bg-dark);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
         }
-        function replaceSingle() {
-            const caseSensitive = document.getElementById('caseSensitive').checked;
-            const findText = document.getElementById('findText').value;
-            const replaceText = document.getElementById('replaceText').value;
-            const editor = document.getElementById('editor');
-            const regex = new RegExp(findText, caseSensitive ? 'g' : 'gi');
-            editor.value = editor.value.replace(regex, replaceText);
-            closeModal();
+
+        /* Toolbar Principale */
+        #toolbar {
+            height: 55px;
+            background-color: var(--toolbar-bg);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+            box-sizing: border-box;
         }
-        function replaceAll() {
-            const caseSensitive = document.getElementById('caseSensitive').checked;
-            const findText = document.getElementById('findText').value;
-            const replaceText = document.getElementById('replaceText').value;
-            const editor = document.getElementById('editor');
-            const regex = new RegExp(findText, caseSensitive ? 'g' : 'gi');
-            editor.value = editor.value.replace(regex, replaceText);
-            closeModal();
+
+        .actions { display: flex; gap: 8px; align-items: center; }
+
+        button, select {
+            background: #3c3c3c;
+            color: white;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
         }
-    </script>
+
+        button:hover { background: #505050; }
+        button i { font-size: 14px; }
+
+        select {
+            background: var(--accent);
+            border: none;
+            outline: none;
+            font-weight: bold;
+        }
+
+        .file-info {
+            margin-left: auto;
+            font-size: 12px;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        /* Container Editor */
+        #editor-container {
+            height: calc(100% - 55px);
+            width: 100%;
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 650px) {
+            #toolbar { height: auto; padding: 10px; flex-wrap: wrap; justify-content: center; }
+            .actions { width: 100%; justify-content: space-around; }
+            button span { display: none; } /* Nasconde testo, lascia solo icone su mobile */
+            button { padding: 10px 18px; }
+            .file-info { width: 100%; text-align: center; margin-top: 5px; max-width: none; }
+            #editor-container { height: calc(100% - 95px); }
+        }
+    </style>
 </head>
 <body>
-    <h1>Web Edit Plus</h1>
-    <textarea id="editor" rows="20" cols="80"></textarea><br>
-    <button onclick="openModal()">Find and Replace</button>
 
-    <div id="modal" style="display:none;">
-        <h2>Find and Replace</h2>
-        <label for="findText">Find:</label>
-        <input type="text" id="findText"><br>
-        <label for="replaceText">Replace with:</label>
-        <input type="text" id="replaceText"><br>
-        <input type="checkbox" id="caseSensitive"> Case Sensitive<br>
-        <button onclick="replaceSingle()">Replace Single</button>
-        <button onclick="replaceAll()">Replace All</button>
-        <button onclick="closeModal()">Cancel</button>
+<div id="toolbar">
+    <div class="actions">
+        <button onclick="newFile()" title="Nuovo File"><i class="fas fa-file-alt"></i><span>Nuovo</span></button>
+        <button onclick="openFile()" title="Apri File"><i class="fas fa-folder-open"></i><span>Apri</span></button>
+        <button onclick="saveFile()" title="Salva"><i class="fas fa-save"></i><span>Salva</span></button>
+        <button onclick="saveFileAs()" title="Salva con nome"><i class="fas fa-file-export"></i><span>Salva con nome</span></button>
+        
+        <select id="languageSelector" onchange="changeLanguage()">
+            <option value="plaintext">Testo (.txt)</option>
+            <option value="javascript">JavaScript</option>
+            <option value="python">Python</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="cpp">C++</option>
+            <option value="json">JSON</option>
+            <option value="sql">SQL</option>
+            <option value="markdown">Markdown</option>
+        </select>
     </div>
+    <div class="file-info" id="fileNameDisplay">Senza nome.txt</div>
+</div>
+
+<div id="editor-container"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
+
+<script>
+    let editor;
+    let currentFileHandle = null;
+
+    // Inizializzazione Editor
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+        editor = monaco.editor.create(document.getElementById('editor-container'), {
+            value: "",
+            language: 'plaintext',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            fontSize: window.innerWidth < 600 ? 12 : 14,
+            lineNumbers: "on",
+            wordWrap: "on",
+            minimap: { enabled: window.innerWidth > 600 },
+            scrollBeyondLastLine: false,
+            smoothScrolling: true,
+            cursorBlinking: "smooth",
+            lineNumbersMinChars: 3,
+            tabSize: 4
+        });
+
+        // Resize handler per rotazione smartphone
+        window.addEventListener('resize', () => {
+            editor.layout();
+        });
+    });
+
+    // --- FUNZIONI FILE SYSTEM ---
+
+    async function newFile() {
+        if (confirm("Vuoi creare un nuovo file? Assicurati di aver salvato le modifiche.")) {
+            editor.setValue("");
+            currentFileHandle = null;
+            updateUI("Senza nome.txt", "plaintext");
+        }
+    }
+
+    async function openFile() {
+        try {
+            // Supporto per .txt e file generici (*)
+            [currentFileHandle] = await window.showOpenFilePicker({
+                types: [{
+                    description: 'Tutti i file di testo e codice',
+                    accept: { 'text/plain': ['.txt', '.js', '.py', '.html', '.css', '.cpp', '.json', '.md', '.sql', '.log'] }
+                }],
+                multiple: false
+            });
+
+            const file = await currentFileHandle.getFile();
+            const contents = await file.text();
+            
+            const extension = file.name.split('.').pop().toLowerCase();
+            const language = getLanguageFromExt(extension);
+            
+            editor.setValue(contents);
+            updateUI(file.name, language);
+        } catch (err) {
+            console.log("Apertura annullata.");
+        }
+    }
+
+    async function saveFile() {
+        if (!currentFileHandle) {
+            return saveFileAs();
+        }
+        try {
+            const writable = await currentFileHandle.createWritable();
+            await writable.write(editor.getValue());
+            await writable.close();
+            showStatus("Salvato!");
+        } catch (err) {
+            alert("Errore durante il salvataggio: " + err.message);
+        }
+    }
+
+    async function saveFileAs() {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: document.getElementById('fileNameDisplay').innerText,
+                types: [{
+                    description: 'File di testo',
+                    accept: { 'text/plain': ['.txt'] }
+                }, {
+                    description: 'Codice Sorgente',
+                    accept: { 'text/plain': ['.js', '.py', '.html', '.css', '.cpp', '.json'] }
+                }]
+            });
+            currentFileHandle = handle;
+            await saveFile();
+            const file = await handle.getFile();
+            updateUI(file.name, getLanguageFromExt(file.name.split('.').pop()));
+        } catch (err) {
+            console.log("Salvataggio annullato.");
+        }
+    }
+
+    // --- UTILITIES ---
+
+    function changeLanguage() {
+        const lang = document.getElementById('languageSelector').value;
+        monaco.editor.setModelLanguage(editor.getModel(), lang);
+    }
+
+    function getLanguageFromExt(ext) {
+        const map = {
+            'js': 'javascript', 'py': 'python', 'html': 'html', 
+            'css': 'css', 'cpp': 'cpp', 'json': 'json', 
+            'sql': 'sql', 'md': 'markdown', 'txt': 'plaintext'
+        };
+        return map[ext] || 'plaintext';
+    }
+
+    function updateUI(name, lang) {
+        document.getElementById('fileNameDisplay').innerText = name;
+        document.getElementById('languageSelector').value = lang;
+        monaco.editor.setModelLanguage(editor.getModel(), lang);
+    }
+
+    function showStatus(msg) {
+        const info = document.getElementById('fileNameDisplay');
+        const originalText = info.innerText;
+        info.innerText = "✅ " + msg;
+        setTimeout(() => info.innerText = originalText, 2000);
+    }
+
+</script>
 </body>
 </html>
