@@ -1,151 +1,159 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CloudEdit Plus | Pro Editor</title>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <style>
-        :root {
-            --bg-dark: #1e1e1e;
-            --toolbar-bg: #2d2d2d;
-            --accent: #007acc;
-            --text-color: #cccccc;
-            --border: #444;
-            --input-bg: #3c3c3c;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CloudEdit Plus | Pro Editor</title>
 
-        body, html {
-            margin: 0; padding: 0; height: 100%; width: 100%;
-            background-color: var(--bg-dark);
-            color: var(--text-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-        }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-        #toolbar {
-            height: 55px;
-            background-color: var(--toolbar-bg);
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            gap: 10px;
-            border-bottom: 1px solid var(--border);
-            box-sizing: border-box;
-            z-index: 10;
-        }
+<style>
+:root{
+    --bg-dark:#1e1e1e;
+    --toolbar-bg:#2d2d2d;
+    --accent:#007acc;
+    --text-color:#ccc;
+    --border:#444;
+    --input-bg:#3c3c3c;
+}
 
-        #search-bar {
-            background-color: var(--toolbar-bg);
-            border-bottom: 1px solid var(--border);
-            padding: 8px 15px;
-            display: none; 
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
+html,body{
+    margin:0;
+    height:100%;
+    background:var(--bg-dark);
+    color:var(--text-color);
+    font-family:'Segoe UI',Tahoma,sans-serif;
+    overflow:hidden;
+}
 
-        .search-group { display: flex; gap: 5px; align-items: center; }
+/* TOOLBAR */
+#toolbar{
+    height:55px;
+    background:var(--toolbar-bg);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 15px;
+    border-bottom:1px solid var(--border);
+}
 
-        input[type="text"] {
-            background: var(--input-bg);
-            border: 1px solid var(--border);
-            color: white;
-            padding: 6px 10px;
-            border-radius: 4px;
-            outline: none;
-            font-size: 13px;
-        }
+.actions{display:flex;gap:8px}
 
-        input[type="text"]:focus { border-color: var(--accent); }
+button,select{
+    background:#3c3c3c;
+    color:#fff;
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:6px 12px;
+    cursor:pointer;
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+button:hover{background:#505050}
+button.primary{background:var(--accent);border:none}
+select{background:var(--accent);border:none;font-weight:bold}
 
-        .actions { display: flex; gap: 8px; align-items: center; }
+.file-info{
+    margin-left:auto;
+    font-size:12px;
+    color:#888;
+    max-width:200px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
 
-        button, select {
-            background: #3c3c3c;
-            color: white;
-            border: 1px solid var(--border);
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: background 0.2s;
-        }
+/* TAB BAR */
+#tabs{
+    height:34px;
+    display:flex;
+    align-items:center;
+    background:#252526;
+    border-bottom:1px solid var(--border);
+    overflow-x:auto;
+}
 
-        button:hover { background: #505050; }
-        button.primary { background: var(--accent); border: none; }
-        
-        select {
-            background: var(--accent);
-            border: none;
-            outline: none;
-            font-weight: bold;
-        }
+.tab{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 12px;
+    cursor:pointer;
+    border-right:1px solid var(--border);
+    font-size:13px;
+    white-space:nowrap;
+}
+.tab.active{
+    background:#1e1e1e;
+    color:#fff;
+}
+.tab i{
+    font-size:12px;
+    color:#999;
+}
+.tab i:hover{color:#ff5c5c}
 
-        .file-info {
-            margin-left: auto;
-            font-size: 12px;
-            color: #888;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px;
-        }
+/* SEARCH BAR */
+#search-bar{
+    display:none;
+    background:var(--toolbar-bg);
+    border-bottom:1px solid var(--border);
+    padding:8px 15px;
+    gap:8px;
+    flex-wrap:wrap;
+}
+input[type=text]{
+    background:var(--input-bg);
+    border:1px solid var(--border);
+    color:#fff;
+    padding:6px 10px;
+    border-radius:4px;
+}
 
-        #editor-container {
-            height: calc(100% - 55px);
-            width: 100%;
-        }
-
-        @media (max-width: 768px) {
-            #toolbar { height: auto; padding: 10px; flex-wrap: wrap; justify-content: center; }
-            .actions { width: 100%; justify-content: space-around; }
-            button span { display: none; } 
-            #editor-container { height: calc(100% - 95px); }
-            #search-bar { justify-content: center; }
-        }
-    </style>
+/* EDITOR */
+#editor-container{
+    height:calc(100% - 55px - 34px);
+}
+@media(max-width:768px){
+    button span{display:none}
+    #editor-container{height:calc(100% - 95px - 34px)}
+}
+</style>
 </head>
+
 <body>
 
 <div id="toolbar">
     <div class="actions">
-        <button onclick="newFile()" title="Nuovo"><i class="fas fa-file"></i><span>Nuovo</span></button>
-        <button onclick="openFile()" title="Apri"><i class="fas fa-folder-open"></i><span>Apri</span></button>
-        <button onclick="saveFile()" title="Salva"><i class="fas fa-save"></i><span>Salva</span></button>
-        <button onclick="toggleSearchBar()" title="Cerca (Ctrl+F)"><i class="fas fa-search"></i><span>Cerca</span></button>
-        
+        <button onclick="newFile()"><i class="fas fa-file"></i><span>Nuovo</span></button>
+        <button onclick="openFile()"><i class="fas fa-folder-open"></i><span>Apri</span></button>
+        <button onclick="saveFile()"><i class="fas fa-save"></i><span>Salva</span></button>
+        <button onclick="toggleSearchBar()"><i class="fas fa-search"></i><span>Cerca</span></button>
+
         <select id="languageSelector" onchange="changeLanguage()">
-            <option value="plaintext">Testo (.txt)</option>
+            <option value="plaintext">Testo</option>
             <option value="javascript">JavaScript</option>
             <option value="python">Python</option>
             <option value="html">HTML</option>
             <option value="css">CSS</option>
-            <option value="cpp">C++</option>
             <option value="json">JSON</option>
-            <option value="sql">SQL</option>
+            <option value="cpp">C++</option>
             <option value="markdown">Markdown</option>
         </select>
     </div>
-    <div class="file-info" id="fileNameDisplay">Senza nome.txt</div>
+    <div class="file-info" id="fileNameDisplay">Senza nome</div>
 </div>
 
+<div id="tabs"></div>
+
 <div id="search-bar">
-    <div class="search-group">
-        <input type="text" id="searchInput" placeholder="Cerca (Invio per prossimo)...">
-        <input type="text" id="replaceInput" placeholder="Sostituisci con...">
-    </div>
-    <div class="search-group">
-        <button onclick="findNext()" title="Trova Prossimo (Invio)"><i class="fas fa-arrow-down"></i> Trova</button>
-        <button onclick="replaceOnce()" title="Sostituisci selezionato"><i class="fas fa-exchange-alt"></i> Sostituisci</button>
-        <button onclick="replaceAll()" class="primary" title="Sostituisci tutti"><i class="fas fa-clone"></i> Tutti</button>
-        <button onclick="toggleSearchBar()" style="background:none; border:none; padding:5px;"><i class="fas fa-times"></i></button>
-    </div>
+    <input id="searchInput" placeholder="Cerca...">
+    <input id="replaceInput" placeholder="Sostituisci...">
+    <button onclick="findNext()"><i class="fas fa-arrow-down"></i></button>
+    <button onclick="replaceOnce()"><i class="fas fa-exchange-alt"></i></button>
+    <button onclick="replaceAll()" class="primary"><i class="fas fa-clone"></i></button>
 </div>
 
 <div id="editor-container"></div>
@@ -153,179 +161,140 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
 
 <script>
-    let editor;
-    let currentFileHandle = null;
+let editor;
+let tabs=[];
+let activeTab=null;
+let untitledCount=1;
 
-    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs' }});
-    require(['vs/editor/editor.main'], function() {
-        editor = monaco.editor.create(document.getElementById('editor-container'), {
-            value: "",
-            language: 'plaintext',
-            theme: 'vs-dark',
-            automaticLayout: true,
-            fontSize: window.innerWidth < 600 ? 12 : 14,
-            lineNumbers: "on",
-            wordWrap: "on",
-            minimap: { enabled: window.innerWidth > 600 },
-            scrollBeyondLastLine: false,
-            smoothScrolling: true,
-            cursorBlinking: "smooth"
-        });
-
-        // Gestione tasto Invio nell'input di ricerca
-        document.getElementById('searchInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                findNext(e.shiftKey); // Shift+Invio cerca all'indietro
-            }
-        });
-
-        window.addEventListener('resize', () => editor.layout());
+require.config({paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs'}});
+require(['vs/editor/editor.main'],()=>{
+    editor=monaco.editor.create(document.getElementById('editor-container'),{
+        value:'',
+        language:'plaintext',
+        theme:'vs-dark',
+        automaticLayout:true,
+        wordWrap:'on',
+        minimap:{enabled:true}
     });
+    newFile();
+});
 
-    // --- LOGICA SEARCH & REPLACE ---
+/* TAB SYSTEM */
 
-    function toggleSearchBar() {
-        const bar = document.getElementById('search-bar');
-        const isVisible = bar.style.display === 'flex';
-        bar.style.display = isVisible ? 'none' : 'flex';
-        if (!isVisible) {
-            const input = document.getElementById('searchInput');
-            input.focus();
-            input.select();
-        }
-        editor.layout();
+function createTab(name,value='',lang='plaintext',handle=null){
+    const id='tab-'+Date.now()+Math.random();
+    const model=monaco.editor.createModel(value,lang);
+    const tab={id,name,model,handle};
+    tabs.push(tab);
+
+    const el=document.createElement('div');
+    el.className='tab';
+    el.dataset.id=id;
+    el.innerHTML=`<span>${name}</span><i class="fas fa-times"></i>`;
+    el.onclick=()=>switchTab(id);
+    el.querySelector('i').onclick=e=>{
+        e.stopPropagation();
+        closeTab(id);
+    };
+    document.getElementById('tabs').appendChild(el);
+    switchTab(id);
+}
+
+function switchTab(id){
+    const tab=tabs.find(t=>t.id===id);
+    if(!tab)return;
+    activeTab=tab;
+    editor.setModel(tab.model);
+    document.querySelectorAll('.tab').forEach(t=>{
+        t.classList.toggle('active',t.dataset.id===id);
+    });
+    updateUI(tab.name,tab.model.getLanguageId());
+}
+
+function closeTab(id){
+    const i=tabs.findIndex(t=>t.id===id);
+    if(i===-1)return;
+    tabs[i].model.dispose();
+    document.querySelector(`.tab[data-id="${id}"]`).remove();
+    tabs.splice(i,1);
+    if(activeTab?.id===id && tabs.length) switchTab(tabs[Math.max(0,i-1)].id);
+}
+
+/* FILE OPERATIONS */
+
+function newFile(){
+    createTab(`Senza nome ${untitledCount++}.txt`);
+}
+
+async function openFile(){
+    const [h]=await window.showOpenFilePicker();
+    const f=await h.getFile();
+    createTab(f.name,await f.text(),getLang(f.name),h);
+}
+
+async function saveFile(){
+    if(!activeTab)return;
+    if(!activeTab.handle){
+        activeTab.handle=await window.showSaveFilePicker({suggestedName:activeTab.name});
     }
+    const w=await activeTab.handle.createWritable();
+    await w.write(activeTab.model.getValue());
+    await w.close();
+    showStatus("Salvato");
+}
 
-    function findNext(backwards = false) {
-        const searchText = document.getElementById('searchInput').value;
-        if (!searchText) return;
+/* SEARCH & REPLACE */
 
-        const model = editor.getModel();
-        const currentPos = editor.getPosition();
-        
-        let match;
-        if (backwards) {
-            // Ricerca all'indietro (Shift + Invio)
-            match = model.findPreviousMatch(searchText, currentPos, false, false, null, true);
-            if (!match || match.range.endLineNumber > currentPos.lineNumber) {
-                const lastLine = model.getLineCount();
-                const lastCol = model.getLineMaxColumn(lastLine);
-                match = model.findPreviousMatch(searchText, new monaco.Position(lastLine, lastCol), false, false, null, true);
-            }
-        } else {
-            // Ricerca in avanti (Invio)
-            match = model.findNextMatch(searchText, currentPos, false, false, null, true);
-            if (!match || match.range.startLineNumber < currentPos.lineNumber) {
-                match = model.findNextMatch(searchText, new monaco.Position(1, 1), false, false, null, true);
-            }
-        }
+function toggleSearchBar(){
+    const b=document.getElementById('search-bar');
+    b.style.display=b.style.display==='flex'?'none':'flex';
+}
 
-        if (match) {
-            editor.setSelection(match.range);
-            editor.revealRangeInCenter(match.range, monaco.editor.ScrollType.Smooth);
-            editor.focus();
-        }
-    }
+function findNext(){
+    const t=searchInput.value;
+    if(!t)return;
+    const m=editor.getModel();
+    const p=editor.getPosition();
+    const r=m.findNextMatch(t,p,false,false,null,true);
+    if(r){editor.setSelection(r.range);editor.revealRangeInCenter(r.range);}
+}
 
-    function replaceOnce() {
-        const searchText = document.getElementById('searchInput').value;
-        const replaceText = document.getElementById('replaceInput').value;
-        if (!searchText) return;
+function replaceOnce(){
+    const s=editor.getSelection();
+    editor.executeEdits("",[{range:s,text:replaceInput.value}]);
+    findNext();
+}
 
-        const selection = editor.getSelection();
-        const model = editor.getModel();
-        const selectedText = model.getValueInRange(selection);
+function replaceAll(){
+    const t=searchInput.value;
+    const m=editor.getModel();
+    const ms=m.findMatches(t,true,false,false,null,true);
+    editor.executeEdits("",ms.map(x=>({range:x.range,text:replaceInput.value})));
+}
 
-        if (selectedText.toLowerCase() === searchText.toLowerCase()) {
-            editor.executeEdits("search", [{
-                range: selection,
-                text: replaceText,
-                forceMoveMarkers: true
-            }]);
-            findNext(); 
-        } else {
-            findNext();
-        }
-    }
+/* UTILS */
 
-    function replaceAll() {
-        const searchText = document.getElementById('searchInput').value;
-        const replaceText = document.getElementById('replaceInput').value;
-        if (!searchText) return;
+function getLang(n){
+    const e=n.split('.').pop();
+    return {js:'javascript',py:'python',html:'html',css:'css',json:'json',md:'markdown',cpp:'cpp'}[e]||'plaintext';
+}
 
-        const model = editor.getModel();
-        const matches = model.findMatches(searchText, true, false, false, null, true);
+function changeLanguage(){
+    if(activeTab) monaco.editor.setModelLanguage(activeTab.model,languageSelector.value);
+}
 
-        if (matches.length > 0) {
-            const edits = matches.map(m => ({ range: m.range, text: replaceText }));
-            editor.executeEdits("search", edits);
-            showStatus(`Sostituite ${matches.length} occorrenze`);
-        }
-    }
+function updateUI(n,l){
+    fileNameDisplay.innerText=n;
+    languageSelector.value=l;
+}
 
-    // --- FILE SYSTEM (Standard Web API) ---
-
-    async function newFile() {
-        if (confirm("Creare un nuovo file?")) {
-            editor.setValue("");
-            currentFileHandle = null;
-            updateUI("Senza nome.txt", "plaintext");
-        }
-    }
-
-    async function openFile() {
-        try {
-            [currentFileHandle] = await window.showOpenFilePicker();
-            const file = await currentFileHandle.getFile();
-            const contents = await file.text();
-            editor.setValue(contents);
-            updateUI(file.name, getLanguageFromExt(file.name.split('.').pop().toLowerCase()));
-        } catch (e) {}
-    }
-
-    async function saveFile() {
-        if (!currentFileHandle) return saveFileAs();
-        try {
-            const writable = await currentFileHandle.createWritable();
-            await writable.write(editor.getValue());
-            await writable.close();
-            showStatus("Salvato");
-        } catch (e) { alert(e.message); }
-    }
-
-    async function saveFileAs() {
-        try {
-            currentFileHandle = await window.showSaveFilePicker({
-                suggestedName: document.getElementById('fileNameDisplay').innerText
-            });
-            await saveFile();
-            const file = await currentFileHandle.getFile();
-            updateUI(file.name, getLanguageFromExt(file.name.split('.').pop()));
-        } catch (e) {}
-    }
-
-    function getLanguageFromExt(ext) {
-        const map = { 'js': 'javascript', 'py': 'python', 'html': 'html', 'css': 'css', 'json': 'json', 'md': 'markdown', 'cpp': 'cpp' };
-        return map[ext] || 'plaintext';
-    }
-
-    function changeLanguage() {
-        monaco.editor.setModelLanguage(editor.getModel(), document.getElementById('languageSelector').value);
-    }
-
-    function updateUI(name, lang) {
-        document.getElementById('fileNameDisplay').innerText = name;
-        document.getElementById('languageSelector').value = lang;
-        monaco.editor.setModelLanguage(editor.getModel(), lang);
-    }
-
-    function showStatus(msg) {
-        const info = document.getElementById('fileNameDisplay');
-        const old = info.innerText;
-        info.innerText = "✓ " + msg;
-        setTimeout(() => info.innerText = old, 2000);
-    }
+function showStatus(t){
+    const el=fileNameDisplay;
+    const o=el.innerText;
+    el.innerText='✓ '+t;
+    setTimeout(()=>el.innerText=o,2000);
+}
 </script>
+
 </body>
 </html>
