@@ -18,8 +18,7 @@
 }
 
 html,body{
-    margin:0;
-    height:100%;
+    margin:0;height:100%;
     background:var(--bg-dark);
     color:var(--text-color);
     font-family:'Segoe UI',Tahoma,sans-serif;
@@ -36,9 +35,7 @@ html,body{
     padding:0 15px;
     border-bottom:1px solid var(--border);
 }
-
 .actions{display:flex;gap:8px}
-
 button,select{
     background:#3c3c3c;
     color:#fff;
@@ -74,7 +71,6 @@ select{background:var(--accent);border:none;font-weight:bold}
     border-bottom:1px solid var(--border);
     overflow-x:auto;
 }
-
 .tab{
     display:flex;
     align-items:center;
@@ -85,15 +81,16 @@ select{background:var(--accent);border:none;font-weight:bold}
     font-size:13px;
     white-space:nowrap;
 }
-.tab.active{
+.tab.active{background:#1e1e1e;color:#fff}
+.tab i{font-size:12px;color:#999}
+.tab i:hover{color:#ff5c5c}
+.tab input{
     background:#1e1e1e;
     color:#fff;
+    border:1px solid var(--accent);
+    font-size:13px;
+    width:140px;
 }
-.tab i{
-    font-size:12px;
-    color:#999;
-}
-.tab i:hover{color:#ff5c5c}
 
 /* SEARCH BAR */
 #search-bar{
@@ -173,13 +170,20 @@ require(['vs/editor/editor.main'],()=>{
         language:'plaintext',
         theme:'vs-dark',
         automaticLayout:true,
-        wordWrap:'on',
-        minimap:{enabled:true}
+        wordWrap:'on'
     });
     newFile();
+
+    /* ✅ PATCH: INVIO PER LA RICERCA */
+    searchInput.addEventListener('keydown',e=>{
+        if(e.key==='Enter'){
+            e.preventDefault();
+            e.shiftKey ? findPrevious() : findNext();
+        }
+    });
 });
 
-/* TAB SYSTEM */
+/* TAB SYSTEM + RENAME */
 
 function createTab(name,value='',lang='plaintext',handle=null){
     const id='tab-'+Date.now()+Math.random();
@@ -190,12 +194,42 @@ function createTab(name,value='',lang='plaintext',handle=null){
     const el=document.createElement('div');
     el.className='tab';
     el.dataset.id=id;
-    el.innerHTML=`<span>${name}</span><i class="fas fa-times"></i>`;
+
+    const title=document.createElement('span');
+    title.innerText=name;
+
+    const close=document.createElement('i');
+    close.className='fas fa-times';
+
     el.onclick=()=>switchTab(id);
-    el.querySelector('i').onclick=e=>{
+
+    title.ondblclick=e=>{
+        e.stopPropagation();
+        const input=document.createElement('input');
+        input.value=tab.name;
+        el.replaceChild(input,title);
+        input.focus(); input.select();
+
+        const commit=()=>{
+            tab.name=input.value.trim()||tab.name;
+            title.innerText=tab.name;
+            el.replaceChild(title,input);
+            if(activeTab.id===tab.id) fileNameDisplay.innerText=tab.name;
+        };
+        input.onblur=commit;
+        input.onkeydown=ev=>{
+            if(ev.key==='Enter') commit();
+            if(ev.key==='Escape') el.replaceChild(title,input);
+        };
+    };
+
+    close.onclick=e=>{
         e.stopPropagation();
         closeTab(id);
     };
+
+    el.appendChild(title);
+    el.appendChild(close);
     document.getElementById('tabs').appendChild(el);
     switchTab(id);
 }
@@ -205,9 +239,7 @@ function switchTab(id){
     if(!tab)return;
     activeTab=tab;
     editor.setModel(tab.model);
-    document.querySelectorAll('.tab').forEach(t=>{
-        t.classList.toggle('active',t.dataset.id===id);
-    });
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.id===id));
     updateUI(tab.name,tab.model.getLanguageId());
 }
 
@@ -217,21 +249,17 @@ function closeTab(id){
     tabs[i].model.dispose();
     document.querySelector(`.tab[data-id="${id}"]`).remove();
     tabs.splice(i,1);
-    if(activeTab?.id===id && tabs.length) switchTab(tabs[Math.max(0,i-1)].id);
+    if(tabs.length) switchTab(tabs[Math.max(0,i-1)]?.id);
 }
 
-/* FILE OPERATIONS */
+/* FILE */
 
-function newFile(){
-    createTab(`Senza nome ${untitledCount++}.txt`);
-}
-
+function newFile(){createTab(`Senza nome ${untitledCount++}.txt`);}
 async function openFile(){
     const [h]=await window.showOpenFilePicker();
     const f=await h.getFile();
     createTab(f.name,await f.text(),getLang(f.name),h);
 }
-
 async function saveFile(){
     if(!activeTab)return;
     if(!activeTab.handle){
@@ -243,7 +271,7 @@ async function saveFile(){
     showStatus("Salvato");
 }
 
-/* SEARCH & REPLACE */
+/* SEARCH */
 
 function toggleSearchBar(){
     const b=document.getElementById('search-bar');
@@ -253,21 +281,25 @@ function toggleSearchBar(){
 function findNext(){
     const t=searchInput.value;
     if(!t)return;
-    const m=editor.getModel();
-    const p=editor.getPosition();
-    const r=m.findNextMatch(t,p,false,false,null,true);
+    const r=editor.getModel().findNextMatch(t,editor.getPosition(),false,false,null,true);
+    if(r){editor.setSelection(r.range);editor.revealRangeInCenter(r.range);}
+}
+
+function findPrevious(){
+    const t=searchInput.value;
+    if(!t)return;
+    const r=editor.getModel().findPreviousMatch(t,editor.getPosition(),false,false,null,true);
     if(r){editor.setSelection(r.range);editor.revealRangeInCenter(r.range);}
 }
 
 function replaceOnce(){
-    const s=editor.getSelection();
-    editor.executeEdits("",[{range:s,text:replaceInput.value}]);
+    editor.executeEdits("",[{range:editor.getSelection(),text:replaceInput.value}]);
     findNext();
 }
 
 function replaceAll(){
-    const t=searchInput.value;
     const m=editor.getModel();
+    const t=searchInput.value;
     const ms=m.findMatches(t,true,false,false,null,true);
     editor.executeEdits("",ms.map(x=>({range:x.range,text:replaceInput.value})));
 }
@@ -278,21 +310,17 @@ function getLang(n){
     const e=n.split('.').pop();
     return {js:'javascript',py:'python',html:'html',css:'css',json:'json',md:'markdown',cpp:'cpp'}[e]||'plaintext';
 }
-
 function changeLanguage(){
     if(activeTab) monaco.editor.setModelLanguage(activeTab.model,languageSelector.value);
 }
-
 function updateUI(n,l){
     fileNameDisplay.innerText=n;
     languageSelector.value=l;
 }
-
 function showStatus(t){
-    const el=fileNameDisplay;
-    const o=el.innerText;
-    el.innerText='✓ '+t;
-    setTimeout(()=>el.innerText=o,2000);
+    const o=fileNameDisplay.innerText;
+    fileNameDisplay.innerText='✓ '+t;
+    setTimeout(()=>fileNameDisplay.innerText=o,2000);
 }
 </script>
 
