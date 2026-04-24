@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CloudEdit Plus | Pro Editor</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -25,31 +25,33 @@ html,body{
     overflow:hidden;
 }
 
-/* TOOLBAR */
+/* ===== TOOLBAR ===== */
 #toolbar{
     height:55px;
     background:var(--toolbar-bg);
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:8px;
     padding:0 15px;
     border-bottom:1px solid var(--border);
 }
-.actions{display:flex;gap:8px}
+
+.actions{display:flex;gap:8px;align-items:center}
+
 button,select{
     background:#3c3c3c;
-    color:#fff;
+    color:white;
     border:1px solid var(--border);
     border-radius:4px;
-    padding:6px 12px;
-    cursor:pointer;
+    padding:6px 10px;
     font-size:13px;
+    cursor:pointer;
     display:flex;
     align-items:center;
     gap:6px;
 }
+
 button:hover{background:#505050}
-button.primary{background:var(--accent);border:none}
 select{background:var(--accent);border:none;font-weight:bold}
 
 .file-info{
@@ -57,12 +59,12 @@ select{background:var(--accent);border:none;font-weight:bold}
     font-size:12px;
     color:#888;
     max-width:200px;
-    white-space:nowrap;
     overflow:hidden;
+    white-space:nowrap;
     text-overflow:ellipsis;
 }
 
-/* TAB BAR */
+/* ===== TABS ===== */
 #tabs{
     height:34px;
     display:flex;
@@ -71,51 +73,50 @@ select{background:var(--accent);border:none;font-weight:bold}
     border-bottom:1px solid var(--border);
     overflow-x:auto;
 }
+
 .tab{
-    display:flex;
-    align-items:center;
-    gap:8px;
     padding:6px 12px;
+    display:flex;
+    gap:8px;
+    align-items:center;
     cursor:pointer;
     border-right:1px solid var(--border);
-    font-size:13px;
-    white-space:nowrap;
 }
-.tab.active{background:#1e1e1e;color:#fff}
-.tab i{font-size:12px;color:#999}
+
+.tab.active{background:#1e1e1e;color:white}
+.tab i{font-size:12px;color:#aaa}
 .tab i:hover{color:#ff5c5c}
 .tab input{
     background:#1e1e1e;
-    color:#fff;
+    color:white;
     border:1px solid var(--accent);
-    font-size:13px;
-    width:140px;
+    width:150px;
 }
 
-/* SEARCH BAR */
+/* ===== SEARCH ===== */
 #search-bar{
     display:none;
     background:var(--toolbar-bg);
     border-bottom:1px solid var(--border);
     padding:8px 15px;
     gap:8px;
-    flex-wrap:wrap;
 }
-input[type=text]{
+
+input{
     background:var(--input-bg);
     border:1px solid var(--border);
-    color:#fff;
-    padding:6px 10px;
+    color:white;
+    padding:6px;
     border-radius:4px;
 }
 
-/* EDITOR */
+/* ===== EDITOR ===== */
 #editor-container{
     height:calc(100% - 55px - 34px);
 }
+
 @media(max-width:768px){
     button span{display:none}
-    #editor-container{height:calc(100% - 95px - 34px)}
 }
 </style>
 </head>
@@ -127,11 +128,21 @@ input[type=text]{
         <button onclick="newFile()"><i class="fas fa-file"></i><span>Nuovo</span></button>
         <button onclick="openFile()"><i class="fas fa-folder-open"></i><span>Apri</span></button>
         <button onclick="saveFile()"><i class="fas fa-save"></i><span>Salva</span></button>
-        <button onclick="toggleSearchBar()"><i class="fas fa-search"></i><span>Cerca</span></button>
+        <button onclick="toggleSearchBar()"><i class="fas fa-search"></i></button>
+
+        <!-- FONT SIZE -->
+        <button onclick="decreaseFont()">A−</button>
+        <button onclick="increaseFont()">A+</button>
+
+        <!-- EDITOR CONTEXT MENU (MOBILE) -->
+        <button onclick="openEditorContextMenu()" title="Menu editor">
+            <i class="fas fa-ellipsis-vertical"></i>
+        </button>
 
         <select id="languageSelector" onchange="changeLanguage()">
             <option value="plaintext">Testo</option>
             <option value="javascript">JavaScript</option>
+            <option value="java">Java</option>
             <option value="python">Python</option>
             <option value="html">HTML</option>
             <option value="css">CSS</option>
@@ -146,11 +157,11 @@ input[type=text]{
 <div id="tabs"></div>
 
 <div id="search-bar">
-    <input id="searchInput" placeholder="Cerca...">
-    <input id="replaceInput" placeholder="Sostituisci...">
-    <button onclick="findNext()"><i class="fas fa-arrow-down"></i></button>
-    <button onclick="replaceOnce()"><i class="fas fa-exchange-alt"></i></button>
-    <button onclick="replaceAll()" class="primary"><i class="fas fa-clone"></i></button>
+    <input id="searchInput" placeholder="Cerca…">
+    <input id="replaceInput" placeholder="Sostituisci…">
+    <button onclick="findNext()">↓</button>
+    <button onclick="replaceOnce()">⤾</button>
+    <button onclick="replaceAll()">⧉</button>
 </div>
 
 <div id="editor-container"></div>
@@ -158,101 +169,104 @@ input[type=text]{
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
 
 <script>
-let editor;
-let tabs=[];
-let activeTab=null;
-let untitledCount=1;
+let editor, tabs=[], activeTab=null, untitledCount=1;
+let fontSize = 14;
 
+/* ===== MONACO INIT ===== */
 require.config({paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs'}});
 require(['vs/editor/editor.main'],()=>{
-    editor=monaco.editor.create(document.getElementById('editor-container'),{
-        value:'',
-        language:'plaintext',
+    editor = monaco.editor.create(document.getElementById('editor-container'),{
         theme:'vs-dark',
+        language:'plaintext',
         automaticLayout:true,
-        wordWrap:'on'
+        fontSize
     });
     newFile();
 
-    /* ✅ PATCH: INVIO PER LA RICERCA */
     searchInput.addEventListener('keydown',e=>{
-        if(e.key==='Enter'){
-            e.preventDefault();
-            e.shiftKey ? findPrevious() : findNext();
-        }
+        if(e.key==='Enter'){e.shiftKey?findPrevious():findNext();}
     });
 });
 
-/* TAB SYSTEM + RENAME */
+/* ===== CONTEXT MENU (EDITOR) ===== */
+function openEditorContextMenu(){
+    if(!editor) return;
+    editor.focus();
+    const contrib = editor.getContribution('editor.contrib.contextmenu');
+    if(contrib && contrib.showContextMenu){
+        contrib.showContextMenu();
+    }
+}
 
-function createTab(name,value='',lang='plaintext',handle=null){
+/* ===== FONT SIZE ===== */
+function increaseFont(){
+    fontSize++;
+    editor.updateOptions({fontSize});
+}
+function decreaseFont(){
+    if(fontSize>8){fontSize--;}
+    editor.updateOptions({fontSize});
+}
+
+/* ===== CORE ===== */
+function createTab(name,content='',lang='plaintext',handle=null){
     const id='tab-'+Date.now()+Math.random();
-    const model=monaco.editor.createModel(value,lang);
+    const model=monaco.editor.createModel(content,lang);
     const tab={id,name,model,handle};
     tabs.push(tab);
 
     const el=document.createElement('div');
-    el.className='tab';
-    el.dataset.id=id;
+    el.className='tab'; el.dataset.id=id;
 
     const title=document.createElement('span');
-    title.innerText=name;
+    title.textContent=name;
 
-    const close=document.createElement('i');
-    close.className='fas fa-times';
-
-    el.onclick=()=>switchTab(id);
-
-    title.ondblclick=e=>{
-        e.stopPropagation();
-        const input=document.createElement('input');
-        input.value=tab.name;
-        el.replaceChild(input,title);
-        input.focus(); input.select();
-
-        const commit=()=>{
-            tab.name=input.value.trim()||tab.name;
-            title.innerText=tab.name;
-            el.replaceChild(title,input);
-            if(activeTab.id===tab.id) fileNameDisplay.innerText=tab.name;
-        };
-        input.onblur=commit;
-        input.onkeydown=ev=>{
-            if(ev.key==='Enter') commit();
-            if(ev.key==='Escape') el.replaceChild(title,input);
+    title.ondblclick=()=>{
+        const inp=document.createElement('input');
+        inp.value=tab.name;
+        el.replaceChild(inp,title);
+        inp.focus();
+        inp.onkeydown=e=>{
+            if(e.key==='Enter'){
+                tab.name=inp.value;
+                title.textContent=tab.name;
+                el.replaceChild(title,inp);
+                fileNameDisplay.textContent=tab.name;
+            }
         };
     };
 
+    const close=document.createElement('i');
+    close.className='fas fa-times';
     close.onclick=e=>{
         e.stopPropagation();
         closeTab(id);
     };
 
-    el.appendChild(title);
-    el.appendChild(close);
+    el.onclick=()=>switchTab(id);
+    el.append(title,close);
     document.getElementById('tabs').appendChild(el);
     switchTab(id);
 }
 
 function switchTab(id){
-    const tab=tabs.find(t=>t.id===id);
-    if(!tab)return;
-    activeTab=tab;
-    editor.setModel(tab.model);
-    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.id===id));
-    updateUI(tab.name,tab.model.getLanguageId());
+    activeTab=tabs.find(t=>t.id===id);
+    editor.setModel(activeTab.model);
+    document.querySelectorAll('.tab')
+        .forEach(t=>t.classList.toggle('active',t.dataset.id===id));
+    fileNameDisplay.textContent=activeTab.name;
+    languageSelector.value=activeTab.model.getLanguageId();
 }
 
 function closeTab(id){
     const i=tabs.findIndex(t=>t.id===id);
-    if(i===-1)return;
-    tabs[i].model.dispose();
-    document.querySelector(`.tab[data-id="${id}"]`).remove();
-    tabs.splice(i,1);
-    if(tabs.length) switchTab(tabs[Math.max(0,i-1)]?.id);
+    if(i>=0){
+        tabs[i].model.dispose();
+        document.querySelector(`.tab[data-id="${id}"]`).remove();
+        tabs.splice(i,1);
+        if(tabs.length) switchTab(tabs[0].id);
+    }
 }
-
-/* FILE */
 
 function newFile(){createTab(`Senza nome ${untitledCount++}.txt`);}
 async function openFile(){
@@ -261,66 +275,48 @@ async function openFile(){
     createTab(f.name,await f.text(),getLang(f.name),h);
 }
 async function saveFile(){
-    if(!activeTab)return;
     if(!activeTab.handle){
         activeTab.handle=await window.showSaveFilePicker({suggestedName:activeTab.name});
     }
     const w=await activeTab.handle.createWritable();
-    await w.write(activeTab.model.getValue());
+    await w.write(editor.getValue());
     await w.close();
-    showStatus("Salvato");
 }
 
 /* SEARCH */
-
 function toggleSearchBar(){
     const b=document.getElementById('search-bar');
     b.style.display=b.style.display==='flex'?'none':'flex';
 }
-
 function findNext(){
-    const t=searchInput.value;
-    if(!t)return;
-    const r=editor.getModel().findNextMatch(t,editor.getPosition(),false,false,null,true);
-    if(r){editor.setSelection(r.range);editor.revealRangeInCenter(r.range);}
+    const r=editor.getModel()
+        .findNextMatch(searchInput.value,editor.getPosition(),false,false,null,true);
+    if(r)editor.setSelection(r.range);
 }
-
 function findPrevious(){
-    const t=searchInput.value;
-    if(!t)return;
-    const r=editor.getModel().findPreviousMatch(t,editor.getPosition(),false,false,null,true);
-    if(r){editor.setSelection(r.range);editor.revealRangeInCenter(r.range);}
+    const r=editor.getModel()
+        .findPreviousMatch(searchInput.value,editor.getPosition(),false,false,null,true);
+    if(r)editor.setSelection(r.range);
 }
-
 function replaceOnce(){
     editor.executeEdits("",[{range:editor.getSelection(),text:replaceInput.value}]);
-    findNext();
 }
-
 function replaceAll(){
     const m=editor.getModel();
-    const t=searchInput.value;
-    const ms=m.findMatches(t,true,false,false,null,true);
+    const ms=m.findMatches(searchInput.value,true,false,false,null,true);
     editor.executeEdits("",ms.map(x=>({range:x.range,text:replaceInput.value})));
 }
 
 /* UTILS */
-
-function getLang(n){
-    const e=n.split('.').pop();
-    return {js:'javascript',py:'python',html:'html',css:'css',json:'json',md:'markdown',cpp:'cpp'}[e]||'plaintext';
+function getLang(name){
+    return {
+        js:'javascript',java:'java',py:'python',
+        html:'html',css:'css',json:'json',
+        cpp:'cpp',md:'markdown',txt:'plaintext'
+    }[name.split('.').pop()]||'plaintext';
 }
 function changeLanguage(){
-    if(activeTab) monaco.editor.setModelLanguage(activeTab.model,languageSelector.value);
-}
-function updateUI(n,l){
-    fileNameDisplay.innerText=n;
-    languageSelector.value=l;
-}
-function showStatus(t){
-    const o=fileNameDisplay.innerText;
-    fileNameDisplay.innerText='✓ '+t;
-    setTimeout(()=>fileNameDisplay.innerText=o,2000);
+    monaco.editor.setModelLanguage(activeTab.model,languageSelector.value);
 }
 </script>
 
