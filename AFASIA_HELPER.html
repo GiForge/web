@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parla con Me - Assistente Completo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #fdfcfb; -webkit-tap-highlight-color: transparent; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .no-select { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="module">
+        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+        window.GoogleGenerativeAI = GoogleGenerativeAI;
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        const API_KEY = "AIzaSyCx8cy1JDHs-2TTWXztXohfx6LtP_LIDYs"; 
+
+        const DEFAULT_CATEGORIES = [
+            { id: 'casa', label: 'Casa', icon: 'home', color: 'bg-blue-100 text-blue-700' },
+            { id: 'cibo', label: 'Cibo', icon: 'utensils', color: 'bg-orange-100 text-orange-700' },
+            { id: 'dolore', label: 'Dolore', icon: 'heart-pulse', color: 'bg-red-100 text-red-700' },
+            { id: 'emergenza', label: 'Emergenza', icon: 'alert-circle', color: 'bg-rose-100 text-rose-700 font-bold' },
+        ];
+
+        const AphasiaApp = () => {
+            const [isListening, setIsListening] = useState(false);
+            const [activeMode, setActiveMode] = useState(null); // 'toggle' o 'push'
+            const [transcript, setTranscript] = useState("");
+            const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+            const [selectedCategory, setSelectedCategory] = useState(null);
+            const [results, setResults] = useState(null);
+            const [isLoading, setIsLoading] = useState(false);
+            const [isAddingCategory, setIsAddingCategory] = useState(false);
+            const [newCategoryName, setNewCategoryName] = useState("");
+            const [fullscreenText, setFullscreenText] = useState(null);
+            const [history, setHistory] = useState([]);
+            
+            const recognitionRef = useRef(null);
+            const transcriptRef = useRef("");
+            const fileInputRef = useRef(null);
+
+            useEffect(() => {
+                const savedCustom = localStorage.getItem('aph_cust_cat');
+                if (savedCustom) {
+                    const custom = JSON.parse(savedCustom);
+                    setCategories([...DEFAULT_CATEGORIES, ...custom]);
+                }
+
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SpeechRecognition) {
+                    recognitionRef.current = new SpeechRecognition();
+                    recognitionRef.current.continuous = true;
+                    recognitionRef.current.interimResults = true;
+                    recognitionRef.current.lang = 'it-IT';
+                    
+                    recognitionRef.current.onresult = (e) => {
+                        let currentText = "";
+                        for (let i = 0; i < e.results.length; i++) {
+                            currentText += e.results[i][0].transcript;
+                        }
+                        setTranscript(currentText);
+                        transcriptRef.current = currentText;
+                    };
+                    recognitionRef.current.onend = () => {
+                        setIsListening(false);
+                        setActiveMode(null);
+                    };
+                }
+            }, []);
+
+            useEffect(() => { lucide.createIcons(); }, [categories, results, isListening, isAddingCategory]);
+
+            // --- GESTIONE AI ---
+            const handleProcessAI = async (text) => {
+                if (!text.trim() || !window.GoogleGenerativeAI) return;
+                setIsLoading(true);
+                try {
+                    const genAI = new window.GoogleGenerativeAI(API_KEY);
+                    const model = genAI.getGenerativeModel({ model: "models/gemini-3-flash-preview" });
+                    const catLabel = categories.find(c => c.id === selectedCategory)?.label || "generale";
+                    
+                    const prompt = `Contesto: ${catLabel}. L'utente ha detto: "${text}". Genera 3 frasi brevi per aiutarlo a comunicare. Rispondi solo in JSON: {"completions": ["f1", "f2", "f3"]}`;
+                    
+                    const result = await model.generateContent(prompt);
+                    const data = JSON.parse(result.response.text().replace(/```json|```/g, ""));
+                    setResults(data);
+                } catch (e) { console.error("Errore AI:", e); }
+                setIsLoading(false);
+            };
+
+            // --- CONTROLLI VOCALI ---
+            const startListening = (mode) => {
+                setTranscript("");
+                transcriptRef.current = "";
+                setResults(null);
+                setIsListening(true);
+                setActiveMode(mode);
+                recognitionRef.current?.start();
+            };
+
+            const stopListening = () => {
+                recognitionRef.current?.stop();
+                setIsListening(false);
+                setTimeout(() => handleProcessAI(transcriptRef.current), 500);
+            };
+
+            // --- CATEGORIE PERSONALIZZATE ---
+            const addCategory = () => {
+                if (!newCategoryName.trim()) return;
+                const newCat = { id: Date.now().toString(), label: newCategoryName, icon: 'tag', color: 'bg-gray-100 text-gray-700', isCustom: true };
+                const updated = [...categories, newCat];
+                setCategories(updated);
+                saveCustomCategories(updated);
+                setNewCategoryName("");
+                setIsAddingCategory(false);
+            };
+
+            const deleteCategory = (id) => {
+                const updated = categories.filter(c => c.id !== id);
+                setCategories(updated);
+                saveCustomCategories(updated);
+            };
+
+            const saveCustomCategories = (allCats) => {
+                const customOnly = allCats.filter(c => c.isCustom);
+                localStorage.setItem('aph_cust_cat', JSON.stringify(customOnly));
+            };
+
+            // --- IMPORT/EXPORT FILE ---
+            const exportToFile = () => {
+                const customOnly = categories.filter(c => c.isCustom);
+                const blob = new Blob([JSON.stringify(customOnly, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'mie_categorie.json';
+                a.click();
+            };
+
+            const importFromFile = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        const merged = [...DEFAULT_CATEGORIES, ...imported.map(c => ({...c, isCustom: true}))];
+                        setCategories(merged);
+                        saveCustomCategories(merged);
+                        alert("Categorie caricate con successo!");
+                    } catch (err) { alert("Errore nel caricamento del file."); }
+                };
+                reader.readAsText(file);
+            };
+
+            const handleSelectPhrase = (phrase) => {
+                const u = new SpeechSynthesisUtterance(phrase);
+                u.lang = 'it-IT';
+                window.speechSynthesis.speak(u);
+                setFullscreenText(phrase);
+            };
+
+            return (
+                <div className="min-h-screen pb-20 no-select">
+                    <header className="p-6 bg-white border-b sticky top-0 z-20 flex justify-between items-center">
+                        <div>
+                            <h1 className="text-xl font-serif font-bold text-gray-900">Parla con Me</h1>
+                            <p className="text-[9px] font-black text-blue-600 tracking-tighter uppercase">Dual Mode AI</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={exportToFile} className="p-2 bg-gray-50 rounded-lg text-gray-600 hover:bg-blue-50" title="Salva su Disco">
+                                <i data-lucide="download" className="w-4 h-4"></i>
+                            </button>
+                            <button onClick={() => fileInputRef.current.click()} className="p-2 bg-gray-50 rounded-lg text-gray-600 hover:bg-green-50" title="Carica da Disco">
+                                <i data-lucide="upload" className="w-4 h-4"></i>
+                            </button>
+                            <input type="file" ref={fileInputRef} onChange={importFromFile} className="hidden" accept=".json" />
+                        </div>
+                    </header>
+
+                    <main className="max-w-xl mx-auto p-6 space-y-6">
+                        {/* Gestione Categorie */}
+                        <section className="space-y-3">
+                            <div className="flex justify-between items-center">
+                                <label className="text-[10px] font-black text-gray-400 uppercase">Argomento</label>
+                                <button onClick={() => setIsAddingCategory(!isAddingCategory)} className="text-[10px] font-bold text-blue-600 uppercase flex items-center gap-1">
+                                    <i data-lucide={isAddingCategory ? "x" : "plus"} className="w-3 h-3"></i>
+                                    {isAddingCategory ? "Chiudi" : "Aggiungi"}
+                                </button>
+                            </div>
+
+                            <AnimatePresence>
+                                {isAddingCategory && (
+                                    <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="flex gap-2">
+                                        <input value={newCategoryName} onChange={e=>setNewCategoryName(e.target.value)} placeholder="Nome categoria..." className="flex-1 border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-black outline-none"/>
+                                        <button onClick={addCategory} className="bg-black text-white px-4 py-2 rounded-xl text-sm font-bold">Salva</button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                {categories.map(cat => (
+                                    <button key={cat.id} onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)} 
+                                        className={`relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${selectedCategory === cat.id ? 'border-black bg-black text-white shadow-md' : cat.color + ' border-transparent'}`}>
+                                        <i data-lucide={cat.icon} className="w-4 h-4"></i>
+                                        <span className="text-xs font-bold">{cat.label}</span>
+                                        {cat.isCustom && (
+                                            <span onClick={(e) => {e.stopPropagation(); deleteCategory(cat.id);}} className="ml-auto opacity-50 hover:text-red-500">
+                                                <i data-lucide="trash-2" className="w-3 h-3"></i>
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* Pulsante TOGGLE */}
+                        <div className="flex flex-col items-center gap-4 py-4">
+                            <motion.button
+                                onClick={() => isListening ? stopListening() : startListening('toggle')}
+                                animate={{ scale: activeMode === 'toggle' ? 1.05 : 1 }}
+                                className={`w-32 h-32 rounded-full shadow-xl flex flex-col items-center justify-center border-4 transition-colors ${activeMode === 'toggle' ? 'bg-red-500 border-red-200 text-white' : 'bg-white border-gray-900 text-gray-900'}`}
+                            >
+                                <i data-lucide={activeMode === 'toggle' ? "square" : "mic"} className="w-10 h-10 mb-1"></i>
+                                <span className="text-[9px] font-black uppercase tracking-tighter">{activeMode === 'toggle' ? 'STOP' : 'TOGGLE'}</span>
+                            </motion.button>
+
+                            {/* Pulsante PUSH TO TALK */}
+                            <button
+                                onMouseDown={() => startListening('push')}
+                                onMouseUp={() => activeMode === 'push' && stopListening()}
+                                onTouchStart={(e) => { e.preventDefault(); startListening('push'); }}
+                                onTouchEnd={(e) => { e.preventDefault(); activeMode === 'push' && stopListening(); }}
+                                className={`w-full py-6 rounded-2xl font-black text-sm tracking-widest transition-all shadow-lg ${activeMode === 'push' ? 'bg-red-600 text-white scale-95' : 'bg-gray-900 text-white active:scale-95'}`}
+                            >
+                                {activeMode === 'push' ? 'RILASCIA PER INVIARE' : 'PUSH TO TALK (TIENI PREMUTO)'}
+                            </button>
+                            
+                            <div className="w-full text-center p-4 rounded-2xl bg-white border border-gray-100 italic text-gray-600 min-h-[60px]">
+                                {transcript || "Inizia a parlare..."}
+                            </div>
+                        </div>
+
+                        {/* Risultati */}
+                        {isLoading && <div className="text-center py-4 animate-pulse font-bold text-gray-400">GEMINI STA PENSANDO...</div>}
+                        
+                        <div className="space-y-3">
+                            {results?.completions.map((p, i) => (
+                                <button key={i} onClick={() => handleSelectPhrase(p)} className="w-full bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:border-black text-left flex justify-between items-center transition-all group">
+                                    <span className="text-lg font-bold text-gray-800">{p}</span>
+                                    <i data-lucide="volume-2" className="text-gray-300 group-hover:text-black"></i>
+                                </button>
+                            ))}
+                        </div>
+                    </main>
+
+                    {/* Modal Fullscreen */}
+                    <AnimatePresence>
+                        {fullscreenText && (
+                            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-8 text-center">
+                                <h2 className="text-5xl font-serif font-medium mb-10 leading-tight">{fullscreenText}</h2>
+                                <div className="flex gap-4">
+                                    <button onClick={() => handleSelectPhrase(fullscreenText)} className="bg-black text-white px-8 py-4 rounded-full font-bold">ASCOLTA</button>
+                                    <button onClick={() => setFullscreenText(null)} className="bg-green-500 text-white px-8 py-4 rounded-full font-bold">OK</button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AphasiaApp />);
+    </script>
+</body>
+</html>
