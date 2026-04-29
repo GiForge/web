@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Parla con Me - Assistente Protetto</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -31,7 +31,7 @@
         const { useState, useEffect, useRef } = React;
         const { motion, AnimatePresence } = window.Motion;
 
-        // CONFIGURAZIONE SICUREZZA
+        // CHIAVE CIFRATA (La tua configurazione attuale)
         const ENCRYPTED_KEY = "U2FsdGVkX19nEQwFjkO574PnWoIWqp0AQ4bwWsSxG4WHMgrlCwF0rKqDtICSI6hJ2wSje8vpucowR6atmEzGAw=="; 
 
         const DEFAULT_CATEGORIES = [
@@ -56,42 +56,30 @@
             
             const recognitionRef = useRef(null);
             const transcriptRef = useRef("");
-            const fileInputRef = useRef(null);
 
-            // 1. Funzione di decifratura (Sposta la logica qui)
             const unlockApp = () => {
                 const password = prompt("Inserisci la password di sblocco:");
-                if (!password) return false;
-
+                if (!password) return;
                 try {
                     const bytes = CryptoJS.AES.decrypt(ENCRYPTED_KEY, password);
                     const originalKey = bytes.toString(CryptoJS.enc.Utf8);
-                    
                     if (!originalKey.startsWith("AIza")) throw new Error();
-                    
                     sessionStorage.setItem('aph_key', originalKey);
                     setIsUnlocked(true);
-                    return true;
                 } catch (e) {
-                    alert("Password errata o chiave non valida.");
-                    return false;
+                    alert("Password errata.");
                 }
             };
 
-            // 2. Controllo all'avvio
             useEffect(() => {
                 const storedKey = sessionStorage.getItem('aph_key');
-                if (storedKey) {
-                    setIsUnlocked(true);
-                } else {
-                    unlockApp();
-                }
+                if (storedKey) setIsUnlocked(true);
+                else unlockApp();
 
-                // Inizializzazione categorie e voce
                 const savedCustom = localStorage.getItem('aph_cust_cat');
                 if (savedCustom) {
                     const custom = JSON.parse(savedCustom);
-                    setCategories([...DEFAULT_CATEGORIES, ...custom]);
+                    setCategories([...DEFAULT_CATEGORIES, ...custom.map(c => ({...c, isCustom: true}))]);
                 }
 
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -100,76 +88,53 @@
                     recognitionRef.current.continuous = true;
                     recognitionRef.current.interimResults = true;
                     recognitionRef.current.lang = 'it-IT';
-                    
                     recognitionRef.current.onresult = (e) => {
-                        let currentText = "";
-                        for (let i = 0; i < e.results.length; i++) {
-                            currentText += e.results[i][0].transcript;
-                        }
-                        setTranscript(currentText);
-                        transcriptRef.current = currentText;
+                        let text = "";
+                        for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+                        setTranscript(text);
+                        transcriptRef.current = text;
                     };
-
-                    recognitionRef.current.onend = () => {
-                        setIsListening(false);
-                        setActiveMode(null);
-                    };
+                    recognitionRef.current.onend = () => { setIsListening(false); setActiveMode(null); };
                 }
             }, []);
 
-            useEffect(() => { 
-                if(window.lucide) window.lucide.createIcons(); 
-            }, [categories, results, isListening, isAddingCategory]);
+            useEffect(() => { if(window.lucide) window.lucide.createIcons(); }, [categories, results, isListening, isAddingCategory, isUnlocked]);
 
             const handleProcessAI = async (text) => {
                 if (!text.trim() || !window.GoogleGenerativeAI) return;
-                
-                let apiKey = sessionStorage.getItem('aph_key');
-                if (!apiKey) {
-                    if (unlockApp()) {
-                        apiKey = sessionStorage.getItem('aph_key');
-                    } else return;
-                }
+                const apiKey = sessionStorage.getItem('aph_key');
+                if (!apiKey) return;
 
                 setIsLoading(true);
                 try {
                     const genAI = new window.GoogleGenerativeAI(apiKey);
-                    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                    // PATCH: Modello impostato correttamente con prefisso 'models/'
+                    const model = genAI.getGenerativeModel({ model: "models/gemini-3-flash-preview" });
                     const catLabel = categories.find(c => c.id === selectedCategory)?.label || "generale";
                     
-                    const prompt = `Contesto: ${catLabel}. L'utente ha difficoltà a parlare e ha detto: "${text}". Genera 3 frasi brevi (max 5 parole) in prima persona per aiutarlo. Rispondi SOLO in JSON: {"completions": ["f1", "f2", "f3"]}`;
+                    const prompt = `L'utente ha l'afasia. Ha provato a dire: "${text}". Contesto: ${catLabel}. Genera 3 frasi brevi (max 5 parole) in prima persona che vorrebbe dire. Rispondi SOLO in JSON: {"completions": ["f1", "f2", "f3"]}`;
                     
                     const result = await model.generateContent(prompt);
-                    const cleanJson = result.response.text().replace(/```json|```/g, "").trim();
-                    setResults(JSON.parse(cleanJson));
+                    const responseText = result.response.text().replace(/```json|```/g, "").trim();
+                    setResults(JSON.parse(responseText));
                 } catch (e) { 
-                    console.error("Errore AI:", e);
-                    setResults({ completions: ["Ripeti per favore", "Ho bisogno di aiuto", "Non mi sento bene"] });
+                    console.error(e);
+                    setResults({ completions: ["Puoi ripetere?", "Ho bisogno di aiuto", "Mi sento stanco"] });
                 }
                 setIsLoading(false);
             };
 
-            // I restanti metodi (startListening, stopListening, etc.) rimangono invariati...
             const startListening = (mode) => {
                 if (isListening) return;
-                setTranscript("");
-                transcriptRef.current = "";
-                setResults(null);
-                setIsListening(true);
-                setActiveMode(mode);
-                try {
-                    recognitionRef.current?.start();
-                    if (window.navigator.vibrate) window.navigator.vibrate(50);
-                } catch (err) {
-                    setIsListening(false);
-                }
+                setTranscript(""); transcriptRef.current = ""; setResults(null);
+                setIsListening(true); setActiveMode(mode);
+                try { recognitionRef.current?.start(); } catch (err) { setIsListening(false); }
             };
 
             const stopListening = () => {
                 if (!isListening) return;
                 recognitionRef.current?.stop();
-                setIsListening(false);
-                setActiveMode(null);
+                setIsListening(false); setActiveMode(null);
                 setTimeout(() => handleProcessAI(transcriptRef.current), 500);
             };
 
@@ -179,8 +144,7 @@
                 const updated = [...categories, newCat];
                 setCategories(updated);
                 localStorage.setItem('aph_cust_cat', JSON.stringify(updated.filter(c => c.isCustom)));
-                setNewCategoryName("");
-                setIsAddingCategory(false);
+                setNewCategoryName(""); setIsAddingCategory(false);
             };
 
             const deleteCategory = (id) => {
@@ -189,138 +153,92 @@
                 localStorage.setItem('aph_cust_cat', JSON.stringify(updated.filter(c => c.isCustom)));
             };
 
-            const handleSelectPhrase = (phrase) => {
+            const speak = (phrase) => {
                 const u = new SpeechSynthesisUtterance(phrase);
-                u.lang = 'it-IT';
-                u.rate = 0.9;
+                u.lang = 'it-IT'; u.rate = 0.9;
                 window.speechSynthesis.speak(u);
                 setFullscreenText(phrase);
             };
 
             return (
                 <div className="min-h-screen pb-20 no-select bg-[#fdfcfb]">
-                    <header className="p-6 bg-white/80 backdrop-blur-md border-b sticky top-0 z-20 flex justify-between items-center">
+                    <header className="p-6 bg-white border-b sticky top-0 z-20 flex justify-between items-center">
                         <div>
                             <h1 className="text-xl font-serif font-bold text-gray-900">Parla con Me</h1>
-                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-tighter">
-                                {isUnlocked ? "● Sistema Sbloccato" : "○ Sistema Bloccato"}
-                            </p>
+                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{isUnlocked ? "● Sbloccato" : "○ Bloccato"}</p>
                         </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => {sessionStorage.clear(); location.reload();}} className="p-2 bg-red-50 rounded-lg text-red-600" title="Blocca App">
-                                <i data-lucide="lock" className="w-4 h-4"></i>
-                            </button>
-                        </div>
+                        <button onClick={() => {sessionStorage.clear(); location.reload();}} className="p-2 bg-red-50 text-red-600 rounded-lg">
+                            <i data-lucide="lock" className="w-4 h-4"></i>
+                        </button>
                     </header>
 
                     <main className={`max-w-xl mx-auto p-6 space-y-8 ${!isUnlocked ? 'opacity-20 pointer-events-none' : ''}`}>
                         {/* Sezione Categorie */}
                         <section className="space-y-4">
-                            <div className="flex justify-between items-end">
+                            <div className="flex justify-between items-center">
                                 <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Argomento</label>
-                                <button onClick={() => setIsAddingCategory(!isAddingCategory)} className="text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-md">
-                                    <i data-lucide={isAddingCategory ? "x" : "plus"} className="w-3 h-3"></i>
-                                    {isAddingCategory ? "Annulla" : "Nuovo"}
+                                <button onClick={() => setIsAddingCategory(!isAddingCategory)} className="text-[11px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded">
+                                    <i data-lucide={isAddingCategory ? "x" : "plus"} className="w-3 h-3 inline mr-1"></i>
+                                    {isAddingCategory ? "Chiudi" : "Aggiungi"}
                                 </button>
                             </div>
 
-                            <AnimatePresence>
-                                {isAddingCategory && (
-                                    <motion.div initial={{opacity:0, height:0}} animate={{opacity:1, height:'auto'}} exit={{opacity:0, height:0}} className="overflow-hidden">
-                                        <div className="flex gap-2 pb-2">
-                                            <input value={newCategoryName} onChange={e=>setNewCategoryName(e.target.value)} placeholder="Esempio: Famiglia" className="flex-1 border rounded-xl px-4 py-3 text-sm outline-none focus:border-black transition-colors"/>
-                                            <button onClick={addCategory} className="bg-black text-white px-6 rounded-xl text-sm font-bold">Aggiungi</button>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                            {isAddingCategory && (
+                                <div className="flex gap-2">
+                                    <input value={newCategoryName} onChange={e=>setNewCategoryName(e.target.value)} placeholder="Esempio: Famiglia" className="flex-1 border rounded-xl px-4 py-2 text-sm"/>
+                                    <button onClick={addCategory} className="bg-black text-white px-4 rounded-xl text-sm font-bold">OK</button>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-2 gap-3">
                                 {categories.map(cat => (
                                     <button key={cat.id} onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)} 
-                                        className={`relative flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${selectedCategory === cat.id ? 'border-black bg-black text-white shadow-lg scale-[1.02]' : cat.color + ' border-transparent opacity-80'}`}>
+                                        className={`relative flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${selectedCategory === cat.id ? 'border-black bg-black text-white' : cat.color + ' border-transparent'}`}>
                                         <i data-lucide={cat.icon} className="w-5 h-5"></i>
                                         <span className="text-sm font-bold">{cat.label}</span>
-                                        {cat.isCustom && (
-                                            <span onClick={(e) => {e.stopPropagation(); deleteCategory(cat.id);}} className="ml-auto p-1 hover:text-red-500">
-                                                <i data-lucide="trash-2" className="w-3 h-3"></i>
-                                            </span>
-                                        )}
+                                        {cat.isCustom && <i data-lucide="trash-2" onClick={(e) => {e.stopPropagation(); deleteCategory(cat.id);}} className="w-3 h-3 ml-auto opacity-50 hover:text-red-500"></i>}
                                     </button>
                                 ))}
                             </div>
                         </section>
 
-                        {/* Input Vocale */}
-                        <section className="flex flex-col items-center gap-6 py-6 bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-                            <motion.button
-                                onClick={() => isListening ? stopListening() : startListening('toggle')}
-                                whileTap={{ scale: 0.9 }}
-                                className={`w-28 h-28 rounded-full shadow-2xl flex flex-col items-center justify-center border-8 transition-all ${activeMode === 'toggle' ? 'bg-red-500 border-red-100 text-white animate-pulse' : 'bg-gray-900 border-gray-100 text-white'}`}
-                            >
-                                <i data-lucide={activeMode === 'toggle' ? "square" : "mic"} className="w-10 h-10 mb-1"></i>
-                                <span className="text-[9px] font-black uppercase">{activeMode === 'toggle' ? 'STOP' : 'ATTIVA'}</span>
-                            </motion.button>
-
-                            <button
-                                onMouseDown={() => startListening('push')}
-                                onMouseUp={() => activeMode === 'push' && stopListening()}
-                                onTouchStart={(e) => { e.preventDefault(); startListening('push'); }}
-                                onTouchEnd={(e) => { e.preventDefault(); activeMode === 'push' && stopListening(); }}
-                                className={`w-full py-5 rounded-2xl font-black text-xs tracking-widest transition-all shadow-md ${activeMode === 'push' ? 'bg-red-600 text-white scale-95' : 'bg-gray-100 text-gray-400 active:bg-gray-200'}`}
-                            >
-                                {activeMode === 'push' ? 'RILASCIA ORA' : 'TIENI PREMUTO PER PARLARE'}
+                        {/* Pulsante Microfono */}
+                        <section className="flex flex-col items-center gap-6 py-10 bg-white rounded-3xl border shadow-sm">
+                            <button onClick={() => isListening ? stopListening() : startListening('toggle')}
+                                className={`w-28 h-28 rounded-full shadow-xl flex flex-col items-center justify-center text-white transition-all ${isListening ? 'bg-red-500 animate-pulse' : 'bg-gray-900'}`}>
+                                <i data-lucide={isListening ? "square" : "mic"} className="w-10 h-10 mb-1"></i>
+                                <span className="text-[9px] font-black">{isListening ? 'STOP' : 'PARLA'}</span>
                             </button>
                             
-                            <div className="w-full text-center px-4 py-2 text-lg font-medium text-gray-800 min-h-[40px] border-t border-gray-50 pt-4">
-                                {transcript || <span className="text-gray-300 italic">In ascolto...</span>}
-                            </div>
+                            <button onMouseDown={() => startListening('push')} onMouseUp={stopListening} onTouchStart={() => startListening('push')} onTouchEnd={stopListening}
+                                className={`w-full max-w-xs py-4 rounded-2xl font-black text-xs tracking-widest transition-all ${activeMode === 'push' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                TIENI PREMUTO PER PARLARE
+                            </button>
+                            
+                            <div className="px-6 text-center text-lg font-medium">{transcript || <span className="text-gray-300">...</span>}</div>
                         </section>
 
-                        {/* Risultati AI */}
+                        {/* Risultati */}
                         <section className="space-y-3">
-                            {isLoading && (
-                                <div className="flex items-center justify-center gap-2 py-8 text-blue-600 font-bold animate-bounce">
-                                    <i data-lucide="cpu" className="w-5 h-5"></i>
-                                    <span className="text-sm uppercase">Gemini sta elaborando...</span>
-                                </div>
-                            )}
-                            
-                            <AnimatePresence>
-                                {results?.completions.map((p, i) => (
-                                    <motion.button 
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: i * 0.1 }}
-                                        key={i} 
-                                        onClick={() => handleSelectPhrase(p)} 
-                                        className="w-full bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:border-blue-500 text-left flex justify-between items-center group transition-all"
-                                    >
-                                        <span className="text-xl font-bold text-gray-800 leading-tight">{p}</span>
-                                        <div className="bg-blue-50 p-2 rounded-full group-hover:bg-blue-600 transition-colors">
-                                            <i data-lucide="volume-2" className="w-5 h-5 text-blue-600 group-hover:text-white"></i>
-                                        </div>
-                                    </motion.button>
-                                ))}
-                            </AnimatePresence>
+                            {isLoading && <div className="text-center text-blue-600 font-bold animate-bounce uppercase text-xs">Gemini sta scrivendo...</div>}
+                            {results?.completions.map((phrase, i) => (
+                                <button key={i} onClick={() => speak(phrase)} className="w-full bg-white p-6 rounded-2xl border shadow-sm flex justify-between items-center hover:border-blue-500 transition-all">
+                                    <span className="text-xl font-bold text-gray-800 leading-tight">{phrase}</span>
+                                    <i data-lucide="volume-2" className="text-blue-500 shrink-0 ml-4"></i>
+                                </button>
+                            ))}
                         </section>
                     </main>
 
-                    {/* Modal Fullscreen */}
+                    {/* Overlay Fullscreen */}
                     <AnimatePresence>
                         {fullscreenText && (
-                            <motion.div initial={{opacity:0, scale:0.9}} animate={{opacity:1, scale:1}} exit={{opacity:0}} className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-10 text-center">
-                                <motion.div initial={{y:20}} animate={{y:0}} className="max-w-2xl">
-                                    <h2 className="text-6xl font-serif font-medium mb-16 leading-tight text-gray-900">{fullscreenText}</h2>
-                                    <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                                        <button onClick={() => handleSelectPhrase(fullscreenText)} className="bg-blue-600 text-white px-12 py-6 rounded-3xl font-black text-xl shadow-xl active:scale-95 transition-transform flex items-center justify-center gap-3 uppercase">
-                                            <i data-lucide="play" className="fill-current"></i> Ripeti
-                                        </button>
-                                        <button onClick={() => setFullscreenText(null)} className="bg-gray-900 text-white px-12 py-6 rounded-3xl font-black text-xl shadow-xl active:scale-95 transition-transform uppercase">
-                                            Chiudi
-                                        </button>
-                                    </div>
-                                </motion.div>
+                            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-8 text-center">
+                                <h2 className="text-5xl font-serif font-bold mb-16">{fullscreenText}</h2>
+                                <div className="flex gap-4">
+                                    <button onClick={() => speak(fullscreenText)} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg">RIPETI</button>
+                                    <button onClick={() => setFullscreenText(null)} className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-bold shadow-lg">CHIUDI</button>
+                                </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
