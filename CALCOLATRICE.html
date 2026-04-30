@@ -3,21 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Tactical Register V5 - Weight Aligned</title>
+<title>Tactical Register V5 - Precision Patch</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@700;800&display=swap');
 
   :root {
-    --bg: #0b0c10;
-    --panel: #1a1c23;
-    --border: #303443;
-    --accent: #e8f027;
-    --accent2: #27f0b4;
-    --danger: #f06060;
-    --text: #e0e4f0;
-    --muted: #4a4f5d;
-    --cell-w: 35px;
-    --cell-h: 40px;
+    --bg: #0b0c10; --panel: #1a1c23; --border: #303443;
+    --accent: #e8f027; --accent2: #27f0b4; --danger: #f06060;
+    --text: #e0e4f0; --muted: #4a4f5d;
+    --cell-w: 35px; --cell-h: 40px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
@@ -44,7 +38,7 @@
   .cell.index-cell { width: 30px; background: #13151a; color: var(--muted); font-size: 0.6rem; cursor: default; }
   .cell.header { background: #13151a; color: var(--muted); font-size: 0.5rem; height: 20px; }
   .cell.op-cell { width: 45px; color: var(--accent2); font-weight: 800; }
-  .cell.point-cell { color: var(--accent); font-weight: bold; background: rgba(232, 240, 39, 0.05); cursor: default; }
+  .cell.point-cell { color: var(--accent); font-weight: bold; background: rgba(232, 240, 39, 0.05); }
 
   .cell.subtotal-cell { 
     width: 120px; background: #13151a; color: var(--accent2); 
@@ -58,7 +52,6 @@
   .cell.result-label { background: #0f1115; border-top: 2px solid var(--accent2); color: var(--accent2); font-size: 0.7rem; }
   .cell.total-final { width: 120px; background: #0f1115; color: var(--accent2); border-top: 2px solid var(--accent2); justify-content: flex-end; padding-right: 8px; font-weight: bold; }
 
-  /* Tastierino */
   .sidebar { width: 100%; max-width: 400px; }
   .numpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: var(--panel); padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
   
@@ -79,7 +72,7 @@
 </head>
 <body>
 
-<h2 style="color: var(--accent); margin-bottom: 10px; font-family: 'Syne'; letter-spacing: 2px; font-size: 0.9rem;">OPERATIONAL_REGISTER_V5</h2>
+<h2 style="color: var(--accent); margin-bottom: 10px; font-family: 'Syne'; letter-spacing: 2px; font-size: 0.9rem;">TACTICAL_PRECISION_REGISTER</h2>
 
 <div class="calc-container">
   <div id="grid"></div>
@@ -88,44 +81,43 @@
 <div class="sidebar">
   <div class="numpad-grid">
     <button class="btn-reset" onclick="fullReset()">MASTER SYSTEM RESET</button>
-    <button onclick="clearCurrentRow()" style="color:var(--danger)">CLR</button>
+    <button onclick="clearRow()" style="color:var(--danger)">CLR</button>
     <button class="btn-op" onclick="handleOp('/')">/</button>
     <button class="btn-op" onclick="handleOp('*')">×</button>
-    <button onclick="deleteDigit()" style="color:var(--danger)">⌫</button>
+    <button onclick="deleteAction()" style="color:var(--danger)">⌫</button>
     
-    <button onclick="inputKey('7')">7</button><button onclick="inputKey('8')">8</button><button onclick="inputKey('9')">9</button>
+    <button onclick="inputAction('7')">7</button><button onclick="inputAction('8')">8</button><button onclick="inputAction('9')">9</button>
     <button class="btn-op" onclick="handleOp('-')">-</button>
-    
-    <button onclick="inputKey('4')">4</button><button onclick="inputKey('5')">5</button><button onclick="inputKey('6')">6</button>
+    <button onclick="inputAction('4')">4</button><button onclick="inputAction('5')">5</button><button onclick="inputAction('6')">6</button>
     <button class="btn-op" onclick="handleOp('+')">+</button>
-    
-    <button onclick="inputKey('1')">1</button><button onclick="inputKey('2')">2</button><button onclick="inputKey('3')">3</button>
+    <button onclick="inputAction('1')">1</button><button onclick="inputAction('2')">2</button><button onclick="inputAction('3')">3</button>
     <button class="btn-op btn-tall" onclick="handleOp('+')">ENT</button>
-    
-    <button class="btn-wide" onclick="inputKey('0')">0</button><button onclick="inputKey('.')">.</button>
+    <button class="btn-wide" onclick="inputAction('0')">0</button><button onclick="inputAction('.')">.</button>
   </div>
 </div>
 
 <script>
-const COLS = 13; // 1-9 interi, 10 punto, 11-13 decimali
-let rows = [{ val: "0", op: "" }];
-let selRow = 0;
+const COLS = 13; 
+let rows = [{ val: Array(COLS).fill(""), op: "" }];
+rows[0].val[8] = "0"; 
+let selR = 0;
+let selC = 8; 
 
 function render() {
     const grid = document.getElementById('grid');
-    grid.style.gridTemplateColumns = `30px 45px repeat(${COLS}, var(--cell-w)) 1fr`;
+    grid.style.gridTemplateColumns = `30px 45px repeat(${COLS}, var(--cell-w)) 120px`;
     grid.innerHTML = '';
 
-    // Header
-    grid.appendChild(createCell('ID', 'header'));
-    grid.appendChild(createCell('OP', 'header'));
+    grid.appendChild(createCell('ID', 'header')); grid.appendChild(createCell('OP', 'header'));
     for(let i=1; i<=COLS; i++) grid.appendChild(createCell(i==10 ? 'PT' : 'W'+i, 'header'));
     grid.appendChild(createCell('SUBTOTAL', 'header'));
 
     let total = 0;
 
     rows.forEach((row, ri) => {
-        let n = parseFloat(row.val) || 0;
+        let numStr = row.val.slice(0, 9).join('') + "." + row.val.slice(10).join('');
+        let n = parseFloat(numStr) || 0;
+        
         if(ri === 0) total = n;
         else {
             if(row.op === '+') total += n;
@@ -134,93 +126,104 @@ function render() {
             if(row.op === '/' && n !== 0) total /= n;
         }
 
-        // ID & OP
         grid.appendChild(createCell((ri+1).toString().padStart(2,'0'), 'index-cell'));
         const opCell = createCell(ri === 0 ? "START" : row.op, 'op-cell');
         opCell.onclick = () => removeRow(ri);
         grid.appendChild(opCell);
 
-        // Allineamento Cifre
-        let parts = row.val.split('.');
-        let integerPart = parts[0] || "0";
-        let decimalPart = parts[1] || "";
-
-        for(let c=1; c<=COLS; c++) {
-            let char = "";
-            let cls = (c === 10) ? "point-cell" : "digit-cell";
-            if(ri === selRow) cls += " selected";
-
-            if(c === 10) char = ".";
-            else if(c < 10) { // Interi (da destra verso il punto)
-                let idx = integerPart.length - (10 - c);
-                char = integerPart[idx] || "";
-            } else { // Decimali (da sinistra dopo il punto)
-                let idx = c - 11;
-                char = decimalPart[idx] || "";
-            }
+        for(let ci=0; ci<COLS; ci++) {
+            let char = (ci === 9) ? "." : row.val[ci];
+            let cls = (ci === 9) ? "point-cell" : "digit-cell";
+            if(ri === selR && ci === selC) cls += " selected";
 
             const cell = createCell(char, cls);
-            cell.onclick = () => { selRow = ri; render(); };
+            cell.onclick = () => { selR = ri; selC = ci; render(); };
             grid.appendChild(cell);
         }
         grid.appendChild(createCell(format(total), 'subtotal-cell'));
     });
 
-    // Riga Totale Finale
     grid.appendChild(createCell('TOT', 'result-label'));
     grid.appendChild(createCell('=', 'result-label'));
     let fStr = total.toFixed(2).split('.');
-    for(let c=1; c<=COLS; c++) {
-        let char = "";
-        if(c === 10) char = ".";
-        else if(c < 10) {
-            let idx = fStr[0].length - (10 - c);
-            char = fStr[0][idx] || "";
-        } else {
-            let idx = c - 11;
-            char = fStr[1][idx] || "";
-        }
-        grid.appendChild(createCell(char, 'result-val ' + (c===10?'point-cell':'')));
-    }
+    let intP = fStr[0].padStart(9, ' ');
+    let decP = fStr[1].padEnd(3, ' ');
+    
+    for(let i=0; i<9; i++) grid.appendChild(createCell(intP[i].trim(), 'result-val'));
+    grid.appendChild(createCell('.', 'result-val point-cell'));
+    for(let i=0; i<3; i++) grid.appendChild(createCell(decP[i].trim(), 'result-val'));
     grid.appendChild(createCell(format(total), 'total-final'));
 }
 
 function format(n) { return n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function createCell(t, c) { const d = document.createElement('div'); d.className = 'cell ' + c; d.textContent = t; return d; }
 
-function inputKey(k) {
-    let s = rows[selRow].val;
-    if(s === "0" && k !== ".") s = "";
-    if(k === "." && s.includes(".")) return;
-    rows[selRow].val = s + k;
+function inputAction(k) {
+    let row = rows[selR];
+    
+    if (k === "." || k === ",") { selC = 10; render(); return; }
+
+    if (selC === 8 || selC === 12) {
+        if (selC === 8) { 
+            // PATCH: Se c'è solo lo "0" iniziale, lo sostituiamo invece di scalarlo a sinistra
+            const isInitialZero = row.val[8] === "0" && row.val.slice(0, 8).every(v => v === "");
+            
+            if (isInitialZero) {
+                row.val[8] = k;
+            } else {
+                for(let i=0; i<8; i++) row.val[i] = row.val[i+1];
+                row.val[8] = k;
+            }
+        } else { 
+            for(let i=10; i<12; i++) row.val[i] = row.val[i+1];
+            row.val[12] = k;
+        }
+    } else {
+        if (selC !== 9) {
+            row.val[selC] = k;
+            if (selC < 8) selC++; 
+            else if (selC >= 10 && selC < 12) selC++;
+        }
+    }
     render();
 }
 
-function deleteDigit() {
-    let s = rows[selRow].val;
-    rows[selRow].val = s.length > 1 ? s.slice(0, -1) : "0";
+function deleteAction() {
+    let row = rows[selR];
+    if (selC === 8 || selC === 12) {
+        let start = (selC === 8) ? 0 : 10;
+        let end = (selC === 8) ? 8 : 12;
+        for(let i=end; i>start; i--) row.val[i] = row.val[i-1];
+        row.val[start] = "";
+        // Se la riga diventa vuota, rimetti lo zero di cortesia
+        if (row.val.every(v => v === "")) row.val[8] = "0";
+    } else {
+        row.val[selC] = "";
+    }
     render();
 }
 
 function handleOp(op) {
-    if(rows[selRow].val !== "0" || rows.length > 1) {
-        rows.push({ val: "0", op: op });
-        selRow = rows.length - 1;
-        render();
-    }
+    rows.push({ val: Array(COLS).fill(""), op: op });
+    rows[rows.length-1].val[8] = "0";
+    selR = rows.length - 1;
+    selC = 8; 
+    render();
 }
 
-function clearCurrentRow() { rows[selRow].val = "0"; render(); }
-function removeRow(i) { if(rows.length > 1) { rows.splice(i, 1); selRow = rows.length - 1; render(); } }
-function fullReset() { if(confirm("Master Reset?")) { rows = [{ val: "0", op: "" }]; selRow = 0; render(); } }
+function clearRow() { rows[selR].val = Array(COLS).fill(""); rows[selR].val[8] = "0"; selC = 8; render(); }
+function removeRow(i) { if(rows.length > 1) { rows.splice(i, 1); selR = rows.length - 1; render(); } }
+function fullReset() { if(confirm("Reset Totale?")) { rows = [{ val: Array(COLS).fill(""), op: "" }]; rows[0].val[8]="0"; selR=0; selC=8; render(); } }
 
 document.addEventListener('keydown', (e) => {
-    if(e.key >= '0' && e.key <= '9' || e.key === '.') inputKey(e.key);
-    else if(e.key === 'Backspace') { e.preventDefault(); deleteDigit(); }
+    if(e.key >= '0' && e.key <= '9' || e.key === '.' || e.key === ',') inputAction(e.key);
+    else if(e.key === 'Backspace') { e.preventDefault(); deleteAction(); }
     else if(['+','-','*','/'].includes(e.key)) { e.preventDefault(); handleOp(e.key); }
     else if(e.key === 'Enter') { e.preventDefault(); handleOp('+'); }
-    else if(e.key === 'ArrowUp') { selRow = Math.max(0, selRow-1); render(); }
-    else if(e.key === 'ArrowDown') { selRow = Math.min(rows.length-1, selRow+1); render(); }
+    else if(e.key === 'ArrowUp') { selR = Math.max(0, selR-1); render(); }
+    else if(e.key === 'ArrowDown') { selR = Math.min(rows.length-1, selR+1); render(); }
+    else if(e.key === 'ArrowLeft') { selC = Math.max(0, selC-1); render(); }
+    else if(e.key === 'ArrowRight') { selC = Math.min(COLS-1, selC+1); render(); }
 });
 
 render();
