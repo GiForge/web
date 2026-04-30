@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Tactical Calc Hybrid</title>
+<title>Tactical Register V5 - Weight Aligned</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@700;800&display=swap');
 
@@ -16,119 +16,70 @@
     --danger: #f06060;
     --text: #e0e4f0;
     --muted: #4a4f5d;
-    --subtotal-bg: #13151a;
-    --cell-w: 42px; /* Desktop default */
-    --cell-h: 45px;
-    --btn-h: 55px;
+    --cell-w: 35px;
+    --cell-h: 40px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
   body { 
-    background: var(--bg); 
-    color: var(--text); 
+    background: var(--bg); color: var(--text); 
     font-family: 'Share Tech Mono', monospace; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    padding: 10px;
-    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; padding: 10px;
   }
 
   .calc-container {
-    background: var(--panel);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    padding: 10px;
-    overflow-x: auto;
-    width: 100%;
-    max-width: 900px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    margin-bottom: 15px;
-    -webkit-overflow-scrolling: touch;
+    background: var(--panel); border: 2px solid var(--border); border-radius: 12px;
+    padding: 10px; overflow-x: auto; width: 100%; max-width: 950px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 15px;
   }
 
-  #grid { 
-    display: grid; 
-    gap: 1px; 
-    background: var(--border); 
-    border: 1px solid var(--border);
-    min-width: fit-content;
-  }
+  #grid { display: grid; gap: 1px; background: var(--border); border: 1px solid var(--border); min-width: fit-content; }
 
   .cell {
-    width: var(--cell-w);
-    height: var(--cell-h);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--panel);
-    font-size: 1rem;
-    cursor: pointer;
+    width: var(--cell-w); height: var(--cell-h);
+    display: flex; align-items: center; justify-content: center;
+    background: var(--panel); font-size: 1.1rem; cursor: pointer;
   }
 
   .cell.index-cell { width: 30px; background: #13151a; color: var(--muted); font-size: 0.6rem; cursor: default; }
-  .cell.header { background: #13151a; color: var(--muted); font-size: 0.5rem; cursor: default; }
-  .cell.op-cell { width: 40px; color: var(--accent2); font-weight: 800; }
-  
+  .cell.header { background: #13151a; color: var(--muted); font-size: 0.5rem; height: 20px; }
+  .cell.op-cell { width: 45px; color: var(--accent2); font-weight: 800; }
+  .cell.point-cell { color: var(--accent); font-weight: bold; background: rgba(232, 240, 39, 0.05); cursor: default; }
+
   .cell.subtotal-cell { 
-    width: 90px; 
-    background: var(--subtotal-bg); 
-    color: var(--accent2); 
-    font-size: 0.8rem; 
-    justify-content: flex-end; 
-    padding-right: 8px;
-    border-left: 1px solid var(--border);
+    width: 120px; background: #13151a; color: var(--accent2); 
+    font-size: 0.9rem; justify-content: flex-end; padding-right: 8px;
+    border-left: 2px solid var(--border);
   }
 
-  .cell.selected { 
-    background: #252936; 
-    box-shadow: inset 0 0 0 2px var(--accent); 
-    color: var(--accent); 
-    z-index: 5;
-  }
+  .cell.selected { background: #252936; box-shadow: inset 0 0 0 2px var(--accent); color: var(--accent); z-index: 5; }
 
-  .cell.result-val { color: var(--accent2); background: #0f1115; border-top: 2px solid var(--accent2); }
+  .cell.result-val { color: var(--accent2); background: #0f1115; border-top: 2px solid var(--accent2); font-weight: bold; }
   .cell.result-label { background: #0f1115; border-top: 2px solid var(--accent2); color: var(--accent2); font-size: 0.7rem; }
-  .cell.total-final { width: 90px; background: #0f1115; color: var(--accent2); font-weight: bold; border-top: 2px solid var(--accent2); justify-content: flex-end; padding-right: 8px; }
+  .cell.total-final { width: 120px; background: #0f1115; color: var(--accent2); border-top: 2px solid var(--accent2); justify-content: flex-end; padding-right: 8px; font-weight: bold; }
 
   /* Tastierino */
-  .sidebar { width: 100%; max-width: 380px; }
-  .numpad-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    background: var(--panel);
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-  }
-
-  .btn-reset-total { grid-column: span 4; background: #2d161a; color: var(--danger); border: 1px solid #4a2025; font-size: 0.7rem; height: 35px; margin-bottom: 5px; text-transform: uppercase; }
-  button { font-family: 'Syne', sans-serif; background: #232731; border: 1px solid var(--border); color: var(--text); border-radius: 8px; cursor: pointer; height: var(--btn-h); font-size: 1.2rem; }
-  button:active { background: var(--accent); color: #000; transform: scale(0.98); }
+  .sidebar { width: 100%; max-width: 400px; }
+  .numpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: var(--panel); padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
+  
+  button { font-family: 'Syne', sans-serif; background: #232731; border: 1px solid var(--border); color: var(--text); border-radius: 8px; cursor: pointer; height: 55px; font-size: 1.4rem; }
+  button:active { background: var(--accent); color: #000; }
+  .btn-reset { grid-column: span 4; height: 35px; font-size: 0.7rem; color: var(--danger); background: #1a0a0a; margin-bottom: 5px; }
   .btn-op { color: var(--accent2); background: #1c2029; }
-  .btn-danger { color: var(--danger); }
-  .btn-tall { grid-row: span 2; height: calc(var(--btn-h) * 2 + 8px); }
+  .btn-tall { grid-row: span 2; height: 118px; }
   .btn-wide { grid-column: span 2; }
 
-  /* Responsive Patch per Smartphone */
   @media (max-width: 600px) {
-    :root {
-      --cell-w: 22px; /* Celle strette per far stare 12 digit */
-      --cell-h: 35px;
-      --btn-h: 60px; /* Tasti più alti per dita */
-    }
-    .cell { font-size: 0.85rem; }
-    .cell.subtotal-cell, .cell.total-final { width: 75px; font-size: 0.7rem; }
+    :root { --cell-w: 24px; --cell-h: 38px; }
+    .cell { font-size: 0.9rem; }
+    .cell.subtotal-cell, .cell.total-final { width: 85px; font-size: 0.7rem; }
     .cell.op-cell { width: 35px; }
-    .sidebar { max-width: 100%; }
-    h2 { font-size: 1rem; }
   }
 </style>
 </head>
 <body>
 
-<h2 style="color: var(--accent); margin-bottom: 10px; font-family: 'Syne'; letter-spacing: 1px;">OPERATIONAL_REGISTER_V3</h2>
+<h2 style="color: var(--accent); margin-bottom: 10px; font-family: 'Syne'; letter-spacing: 2px; font-size: 0.9rem;">OPERATIONAL_REGISTER_V5</h2>
 
 <div class="calc-container">
   <div id="grid"></div>
@@ -136,145 +87,140 @@
 
 <div class="sidebar">
   <div class="numpad-grid">
-    <button class="btn-reset-total" onclick="fullReset()">⚠ MASTER RESET</button>
-    <button class="btn-danger" onclick="clearCurrentRow()">CLR</button>
+    <button class="btn-reset" onclick="fullReset()">MASTER SYSTEM RESET</button>
+    <button onclick="clearCurrentRow()" style="color:var(--danger)">CLR</button>
     <button class="btn-op" onclick="handleOp('/')">/</button>
     <button class="btn-op" onclick="handleOp('*')">×</button>
-    <button class="btn-danger" onclick="deleteSingleDigit()">⌫</button>
+    <button onclick="deleteDigit()" style="color:var(--danger)">⌫</button>
     
-    <button onclick="inputAction('7')">7</button>
-    <button onclick="inputAction('8')">8</button>
-    <button onclick="inputAction('9')">9</button>
+    <button onclick="inputKey('7')">7</button><button onclick="inputKey('8')">8</button><button onclick="inputKey('9')">9</button>
     <button class="btn-op" onclick="handleOp('-')">-</button>
     
-    <button onclick="inputAction('4')">4</button>
-    <button onclick="inputAction('5')">5</button>
-    <button onclick="inputAction('6')">6</button>
+    <button onclick="inputKey('4')">4</button><button onclick="inputKey('5')">5</button><button onclick="inputKey('6')">6</button>
     <button class="btn-op" onclick="handleOp('+')">+</button>
     
-    <button onclick="inputAction('1')">1</button>
-    <button onclick="inputAction('2')">2</button>
-    <button onclick="inputAction('3')">3</button>
+    <button onclick="inputKey('1')">1</button><button onclick="inputKey('2')">2</button><button onclick="inputKey('3')">3</button>
     <button class="btn-op btn-tall" onclick="handleOp('+')">ENT</button>
     
-    <button class="btn-wide" onclick="inputAction('0')">0</button>
-    <button onclick="inputAction('.')">.</button>
+    <button class="btn-wide" onclick="inputKey('0')">0</button><button onclick="inputKey('.')">.</button>
   </div>
 </div>
 
 <script>
-const MAX_DIGITS = 12;
-let rows = [{ digits: Array(MAX_DIGITS).fill(''), op: '' }];
-let sel = { r: 0, c: MAX_DIGITS - 1 };
+const COLS = 13; // 1-9 interi, 10 punto, 11-13 decimali
+let rows = [{ val: "0", op: "" }];
+let selRow = 0;
 
 function render() {
     const grid = document.getElementById('grid');
-    grid.style.gridTemplateColumns = `30px 40px repeat(${MAX_DIGITS}, var(--cell-w)) 1fr`;
+    grid.style.gridTemplateColumns = `30px 45px repeat(${COLS}, var(--cell-w)) 1fr`;
     grid.innerHTML = '';
 
-    // Headers
+    // Header
     grid.appendChild(createCell('ID', 'header'));
     grid.appendChild(createCell('OP', 'header'));
-    for(let i=1; i<=MAX_DIGITS; i++) grid.appendChild(createCell(i, 'header'));
+    for(let i=1; i<=COLS; i++) grid.appendChild(createCell(i==10 ? 'PT' : 'W'+i, 'header'));
     grid.appendChild(createCell('SUBTOTAL', 'header'));
 
-    let runningTotal = 0;
+    let total = 0;
 
     rows.forEach((row, ri) => {
-        let val = parseFloat(row.digits.join('')) || 0;
-        if(ri === 0) runningTotal = val;
+        let n = parseFloat(row.val) || 0;
+        if(ri === 0) total = n;
         else {
-            if(row.op === '+') runningTotal += val;
-            if(row.op === '-') runningTotal -= val;
-            if(row.op === '*') runningTotal *= val;
-            if(row.op === '/' && val !== 0) runningTotal /= val;
+            if(row.op === '+') total += n;
+            if(row.op === '-') total -= n;
+            if(row.op === '*') total *= n;
+            if(row.op === '/' && n !== 0) total /= n;
         }
-        
-        grid.appendChild(createCell((ri + 1).toString().padStart(2, '0'), 'index-cell'));
-        const opCell = createCell(ri === 0 ? 'START' : row.op, 'op-cell');
-        if(ri === 0) opCell.style.fontSize = '0.5rem';
-        opCell.onclick = () => removeFullRow(ri);
+
+        // ID & OP
+        grid.appendChild(createCell((ri+1).toString().padStart(2,'0'), 'index-cell'));
+        const opCell = createCell(ri === 0 ? "START" : row.op, 'op-cell');
+        opCell.onclick = () => removeRow(ri);
         grid.appendChild(opCell);
 
-        for(let ci=0; ci<MAX_DIGITS; ci++) {
-            const isSel = (sel.r === ri && sel.c === ci);
-            const cell = createCell(row.digits[ci], 'digit' + (isSel ? ' selected' : ''));
-            cell.onclick = () => { sel = {r: ri, c: ci}; render(); };
+        // Allineamento Cifre
+        let parts = row.val.split('.');
+        let integerPart = parts[0] || "0";
+        let decimalPart = parts[1] || "";
+
+        for(let c=1; c<=COLS; c++) {
+            let char = "";
+            let cls = (c === 10) ? "point-cell" : "digit-cell";
+            if(ri === selRow) cls += " selected";
+
+            if(c === 10) char = ".";
+            else if(c < 10) { // Interi (da destra verso il punto)
+                let idx = integerPart.length - (10 - c);
+                char = integerPart[idx] || "";
+            } else { // Decimali (da sinistra dopo il punto)
+                let idx = c - 11;
+                char = decimalPart[idx] || "";
+            }
+
+            const cell = createCell(char, cls);
+            cell.onclick = () => { selRow = ri; render(); };
             grid.appendChild(cell);
         }
-        grid.appendChild(createCell(formatResult(runningTotal), 'subtotal-cell'));
+        grid.appendChild(createCell(format(total), 'subtotal-cell'));
     });
 
     // Riga Totale Finale
     grid.appendChild(createCell('TOT', 'result-label'));
     grid.appendChild(createCell('=', 'result-label'));
-    
-    let resStr = runningTotal.toFixed(2).replace('.', '').replace('-', '');
-    let resDisplay = Array(MAX_DIGITS).fill('');
-    for(let i=0; i < resStr.length && i < MAX_DIGITS; i++) {
-        resDisplay[MAX_DIGITS - 1 - i] = resStr[resStr.length - 1 - i];
+    let fStr = total.toFixed(2).split('.');
+    for(let c=1; c<=COLS; c++) {
+        let char = "";
+        if(c === 10) char = ".";
+        else if(c < 10) {
+            let idx = fStr[0].length - (10 - c);
+            char = fStr[0][idx] || "";
+        } else {
+            let idx = c - 11;
+            char = fStr[1][idx] || "";
+        }
+        grid.appendChild(createCell(char, 'result-val ' + (c===10?'point-cell':'')));
     }
-    resDisplay.forEach(val => grid.appendChild(createCell(val, 'result-val')));
-    grid.appendChild(createCell(formatResult(runningTotal), 'total-final'));
+    grid.appendChild(createCell(format(total), 'total-final'));
 }
 
-function formatResult(num) {
-    return Number(num.toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2 });
-}
+function format(n) { return n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function createCell(t, c) { const d = document.createElement('div'); d.className = 'cell ' + c; d.textContent = t; return d; }
 
-function createCell(txt, cls) {
-    const d = document.createElement('div');
-    d.className = 'cell ' + cls;
-    d.textContent = txt;
-    return d;
-}
-
-function inputAction(char) {
-    let row = rows[sel.r];
-    if (sel.c === MAX_DIGITS - 1) {
-        if (row.digits[sel.c] !== '') for(let i=0; i<MAX_DIGITS-1; i++) row.digits[i] = row.digits[i+1];
-        row.digits[MAX_DIGITS-1] = char;
-    } else {
-        row.digits[sel.c] = char;
-        sel.c = Math.min(MAX_DIGITS - 1, sel.c + 1);
-    }
+function inputKey(k) {
+    let s = rows[selRow].val;
+    if(s === "0" && k !== ".") s = "";
+    if(k === "." && s.includes(".")) return;
+    rows[selRow].val = s + k;
     render();
 }
 
-function deleteSingleDigit() {
-    let row = rows[sel.r];
-    if (sel.c === MAX_DIGITS - 1) {
-        for(let i=MAX_DIGITS-1; i>0; i--) row.digits[i] = row.digits[i-1];
-        row.digits[0] = '';
-    } else row.digits[sel.c] = '';
+function deleteDigit() {
+    let s = rows[selRow].val;
+    rows[selRow].val = s.length > 1 ? s.slice(0, -1) : "0";
     render();
 }
 
 function handleOp(op) {
-    if (rows[sel.r].digits.join('').trim() !== "") {
-        rows.push({ digits: Array(MAX_DIGITS).fill(''), op: op });
-        sel.r = rows.length - 1; sel.c = MAX_DIGITS - 1;
+    if(rows[selRow].val !== "0" || rows.length > 1) {
+        rows.push({ val: "0", op: op });
+        selRow = rows.length - 1;
         render();
     }
 }
 
-function clearCurrentRow() { rows[sel.r].digits = Array(MAX_DIGITS).fill(''); sel.c = MAX_DIGITS - 1; render(); }
-function removeFullRow(idx) { if(rows.length > 1) { rows.splice(idx, 1); sel.r = Math.min(rows.length - 1, sel.r); render(); } else clearCurrentRow(); }
-function fullReset() { if (confirm("Cancellare tutto il registro?")) { rows = [{ digits: Array(MAX_DIGITS).fill(''), op: '' }]; sel = { r: 0, c: MAX_DIGITS - 1 }; render(); } }
+function clearCurrentRow() { rows[selRow].val = "0"; render(); }
+function removeRow(i) { if(rows.length > 1) { rows.splice(i, 1); selRow = rows.length - 1; render(); } }
+function fullReset() { if(confirm("Master Reset?")) { rows = [{ val: "0", op: "" }]; selRow = 0; render(); } }
 
-// Supporto Tastiera Fisica
 document.addEventListener('keydown', (e) => {
-    if (e.key >= '0' && e.key <= '9' || e.key === '.') { inputAction(e.key); }
-    else if (e.key === 'Backspace') { e.preventDefault(); deleteSingleDigit(); }
-    else if (e.key === 'Delete') { e.preventDefault(); clearCurrentRow(); }
-    else if (['+', '-', '*', '/'].includes(e.key)) { e.preventDefault(); handleOp(e.key); }
-    else if (e.key === 'Enter') { e.preventDefault(); handleOp('+'); }
-    else if (e.key.startsWith('Arrow')) {
-        const dir = e.key.replace('Arrow','').toLowerCase();
-        if(dir==='up' && sel.r>0) sel.r--; if(dir==='down' && sel.r<rows.length-1) sel.r++;
-        if(dir==='left' && sel.c>0) sel.c--; if(dir==='right' && sel.c<MAX_DIGITS-1) sel.c++;
-        render();
-    }
+    if(e.key >= '0' && e.key <= '9' || e.key === '.') inputKey(e.key);
+    else if(e.key === 'Backspace') { e.preventDefault(); deleteDigit(); }
+    else if(['+','-','*','/'].includes(e.key)) { e.preventDefault(); handleOp(e.key); }
+    else if(e.key === 'Enter') { e.preventDefault(); handleOp('+'); }
+    else if(e.key === 'ArrowUp') { selRow = Math.max(0, selRow-1); render(); }
+    else if(e.key === 'ArrowDown') { selRow = Math.min(rows.length-1, selRow+1); render(); }
 });
 
 render();
