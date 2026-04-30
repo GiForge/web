@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Tactical Register V5 - Audio/Haptic Patch</title>
+<title>Tactical Register V5 - Fixed Layout</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@700;800&display=swap');
 
@@ -15,19 +15,41 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
+
+  /* Layout bloccato all'altezza dello schermo */
   body { 
     background: var(--bg); color: var(--text); 
     font-family: 'Share Tech Mono', monospace; 
-    display: flex; flex-direction: column; align-items: center; padding: 10px;
+    display: flex; flex-direction: column; 
+    height: 100vh; height: 100dvh; /* Supporto per mobile toolbar */
+    overflow: hidden; 
+    padding: 10px;
   }
 
+  h2 {
+    color: var(--accent); margin-bottom: 10px; 
+    font-family: 'Syne'; letter-spacing: 2px; 
+    font-size: 0.8rem; text-align: center;
+    flex-shrink: 0; /* Non si restringe */
+  }
+
+  /* Area della griglia scrollabile */
   .calc-container {
     background: var(--panel); border: 2px solid var(--border); border-radius: 12px;
-    padding: 10px; overflow-x: auto; width: 100%; max-width: 950px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 15px;
+    padding: 10px; overflow: auto; 
+    width: 100%; max-width: 950px;
+    margin: 0 auto 10px auto;
+    flex-grow: 1; /* Prende tutto lo spazio tra titolo e tastiera */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    -webkit-overflow-scrolling: touch;
   }
 
-  #grid { display: grid; gap: 1px; background: var(--border); border: 1px solid var(--border); min-width: fit-content; }
+  #grid { 
+    display: grid; gap: 1px; 
+    background: var(--border); 
+    border: 1px solid var(--border); 
+    min-width: fit-content; 
+  }
 
   .cell {
     width: var(--cell-w); height: var(--cell-h);
@@ -36,7 +58,7 @@
   }
 
   .cell.index-cell { width: 30px; background: #13151a; color: var(--muted); font-size: 0.6rem; cursor: default; }
-  .cell.header { background: #13151a; color: var(--muted); font-size: 0.5rem; height: 20px; }
+  .cell.header { background: #13151a; color: var(--muted); font-size: 0.5rem; height: 20px; position: sticky; top: 0; z-index: 10; }
   .cell.op-cell { width: 45px; color: var(--accent2); font-weight: 800; }
   .cell.point-cell { color: var(--accent); font-weight: bold; background: rgba(232, 240, 39, 0.05); }
 
@@ -48,33 +70,46 @@
 
   .cell.selected { background: #252936; box-shadow: inset 0 0 0 2px var(--accent); color: var(--accent); z-index: 5; }
 
+  /* Riga del totale finale */
   .cell.result-val { color: var(--accent2); background: #0f1115; border-top: 2px solid var(--accent2); font-weight: bold; }
   .cell.result-label { background: #0f1115; border-top: 2px solid var(--accent2); color: var(--accent2); font-size: 0.7rem; }
   .cell.total-final { width: 120px; background: #0f1115; color: var(--accent2); border-top: 2px solid var(--accent2); justify-content: flex-end; padding-right: 8px; font-weight: bold; }
 
-  .sidebar { width: 100%; max-width: 400px; }
-  .numpad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: var(--panel); padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
+  /* Tastierino fisso in basso */
+  .sidebar { 
+    width: 100%; max-width: 450px; 
+    margin: 0 auto;
+    flex-shrink: 0; /* Non permette al tastierino di rimpicciolirsi */
+  }
+  .numpad-grid { 
+    display: grid; grid-template-columns: repeat(4, 1fr); 
+    gap: 6px; background: var(--panel); 
+    padding: 10px; border-radius: 12px; 
+    border: 1px solid var(--border); 
+  }
   
-  button { font-family: 'Syne', sans-serif; background: #232731; border: 1px solid var(--border); color: var(--text); border-radius: 8px; cursor: pointer; height: 55px; font-size: 1.4rem; }
+  button { font-family: 'Syne', sans-serif; background: #232731; border: 1px solid var(--border); color: var(--text); border-radius: 8px; cursor: pointer; height: 50px; font-size: 1.3rem; }
   button:active { background: var(--accent); color: #000; }
-  .btn-reset { grid-column: span 4; height: 35px; font-size: 0.7rem; color: var(--danger); background: #1a0a0a; margin-bottom: 5px; }
+  .btn-reset { grid-column: span 4; height: 30px; font-size: 0.65rem; color: var(--danger); background: #1a0a0a; margin-bottom: 2px; }
   .btn-op { color: var(--accent2); background: #1c2029; }
-  .btn-tall { grid-row: span 2; height: 118px; }
+  .btn-tall { grid-row: span 2; height: 106px; }
   .btn-wide { grid-column: span 2; }
 
   @media (max-width: 600px) {
-    :root { --cell-w: 24px; --cell-h: 38px; }
-    .cell { font-size: 0.9rem; }
-    .cell.subtotal-cell, .cell.total-final { width: 85px; font-size: 0.7rem; }
+    :root { --cell-w: 24px; --cell-h: 36px; }
+    .cell { font-size: 0.85rem; }
+    .cell.subtotal-cell, .cell.total-final { width: 80px; font-size: 0.65rem; }
     .cell.op-cell { width: 35px; }
+    button { height: 45px; font-size: 1.1rem; }
+    .btn-tall { height: 96px; }
   }
 </style>
 </head>
 <body>
 
-<h2 style="color: var(--accent); margin-bottom: 10px; font-family: 'Syne'; letter-spacing: 2px; font-size: 0.9rem;">TACTICAL_PRECISION_REGISTER</h2>
+<h2>TACTICAL_PRECISION_REGISTER</h2>
 
-<div class="calc-container">
+<div class="calc-container" id="scroll-area">
   <div id="grid"></div>
 </div>
 
@@ -103,28 +138,18 @@ rows[0].val[8] = "0";
 let selR = 0;
 let selC = 8; 
 
-// --- FEEDBACK SYSTEM ---
 function triggerFeedback(type = 'default') {
-    // Vibrazione (Android/Chrome)
     if (navigator.vibrate) navigator.vibrate(15);
-
-    // Audio (Sintesi istantanea)
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-
         osc.type = 'sine';
         osc.frequency.setValueAtTime(type === 'op' ? 1000 : 700, audioCtx.currentTime);
-        
         gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.05);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
     } catch(e) {}
 }
 
@@ -133,6 +158,7 @@ function render() {
     grid.style.gridTemplateColumns = `30px 45px repeat(${COLS}, var(--cell-w)) 120px`;
     grid.innerHTML = '';
 
+    // Headers
     grid.appendChild(createCell('ID', 'header')); grid.appendChild(createCell('OP', 'header'));
     for(let i=1; i<=COLS; i++) grid.appendChild(createCell(i==10 ? 'PT' : 'W'+i, 'header'));
     grid.appendChild(createCell('SUBTOTAL', 'header'));
@@ -152,7 +178,7 @@ function render() {
         }
 
         grid.appendChild(createCell((ri+1).toString().padStart(2,'0'), 'index-cell'));
-        const opCell = createCell(ri === 0 ? "START" : row.op, 'op-cell');
+        const opCell = createCell(ri === 0 ? "STR" : row.op, 'op-cell');
         opCell.onclick = () => { triggerFeedback('op'); removeRow(ri); };
         grid.appendChild(opCell);
 
@@ -160,7 +186,6 @@ function render() {
             let char = (ci === 9) ? "." : row.val[ci];
             let cls = (ci === 9) ? "point-cell" : "digit-cell";
             if(ri === selR && ci === selC) cls += " selected";
-
             const cell = createCell(char, cls);
             cell.onclick = () => { triggerFeedback(); selR = ri; selC = ci; render(); };
             grid.appendChild(cell);
@@ -168,16 +193,20 @@ function render() {
         grid.appendChild(createCell(format(total), 'subtotal-cell'));
     });
 
+    // Totale Finale in fondo
     grid.appendChild(createCell('TOT', 'result-label'));
     grid.appendChild(createCell('=', 'result-label'));
     let fStr = total.toFixed(2).split('.');
     let intP = fStr[0].padStart(9, ' ');
     let decP = fStr[1].padEnd(3, ' ');
-    
     for(let i=0; i<9; i++) grid.appendChild(createCell(intP[i].trim(), 'result-val'));
     grid.appendChild(createCell('.', 'result-val point-cell'));
     for(let i=0; i<3; i++) grid.appendChild(createCell(decP[i].trim(), 'result-val'));
     grid.appendChild(createCell(format(total), 'total-final'));
+
+    // Auto-scroll verso il basso quando si aggiungono righe
+    const scrollArea = document.getElementById('scroll-area');
+    scrollArea.scrollTop = scrollArea.scrollHeight;
 }
 
 function format(n) { return n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -186,21 +215,14 @@ function createCell(t, c) { const d = document.createElement('div'); d.className
 function inputAction(k) {
     triggerFeedback();
     let row = rows[selR];
-    
     if (k === "." || k === ",") { selC = 10; render(); return; }
-
     if (selC === 8 || selC === 12) {
         if (selC === 8) { 
             const isInitialZero = row.val[8] === "0" && row.val.slice(0, 8).every(v => v === "");
-            if (isInitialZero) {
-                row.val[8] = k;
-            } else {
-                for(let i=0; i<8; i++) row.val[i] = row.val[i+1];
-                row.val[8] = k;
-            }
+            if (isInitialZero) row.val[8] = k;
+            else { for(let i=0; i<8; i++) row.val[i] = row.val[i+1]; row.val[8] = k; }
         } else { 
-            for(let i=10; i<12; i++) row.val[i] = row.val[i+1];
-            row.val[12] = k;
+            for(let i=10; i<12; i++) row.val[i] = row.val[i+1]; row.val[12] = k;
         }
     } else {
         if (selC !== 9) {
@@ -221,9 +243,7 @@ function deleteAction() {
         for(let i=end; i>start; i--) row.val[i] = row.val[i-1];
         row.val[start] = "";
         if (row.val.every(v => v === "")) row.val[8] = "0";
-    } else {
-        row.val[selC] = "";
-    }
+    } else { row.val[selC] = ""; }
     render();
 }
 
@@ -231,8 +251,7 @@ function handleOp(op) {
     triggerFeedback('op');
     rows.push({ val: Array(COLS).fill(""), op: op });
     rows[rows.length-1].val[8] = "0";
-    selR = rows.length - 1;
-    selC = 8; 
+    selR = rows.length - 1; selC = 8; 
     render();
 }
 
@@ -240,8 +259,7 @@ function clearRow() {
     triggerFeedback('op');
     rows[selR].val = Array(COLS).fill(""); 
     rows[selR].val[8] = "0"; 
-    selC = 8; 
-    render(); 
+    selC = 8; render(); 
 }
 
 function removeRow(i) { 
@@ -256,10 +274,7 @@ function fullReset() {
     if(confirm("Reset Totale?")) { 
         triggerFeedback('op');
         rows = [{ val: Array(COLS).fill(""), op: "" }]; 
-        rows[0].val[8]="0"; 
-        selR=0; 
-        selC=8; 
-        render(); 
+        rows[0].val[8]="0"; selR=0; selC=8; render(); 
     } 
 }
 
@@ -268,10 +283,10 @@ document.addEventListener('keydown', (e) => {
     else if(e.key === 'Backspace') { e.preventDefault(); deleteAction(); }
     else if(['+','-','*','/'].includes(e.key)) { e.preventDefault(); handleOp(e.key); }
     else if(e.key === 'Enter') { e.preventDefault(); handleOp('+'); }
-    else if(e.key === 'ArrowUp') { selR = Math.max(0, selR-1); render(); }
-    else if(e.key === 'ArrowDown') { selR = Math.min(rows.length-1, selR+1); render(); }
-    else if(e.key === 'ArrowLeft') { selC = Math.max(0, selC-1); render(); }
-    else if(e.key === 'ArrowRight') { selC = Math.min(COLS-1, selC+1); render(); }
+    else if(e.key === 'ArrowUp') { e.preventDefault(); selR = Math.max(0, selR-1); render(); }
+    else if(e.key === 'ArrowDown') { e.preventDefault(); selR = Math.min(rows.length-1, selR+1); render(); }
+    else if(e.key === 'ArrowLeft') { e.preventDefault(); selC = Math.max(0, selC-1); render(); }
+    else if(e.key === 'ArrowRight') { e.preventDefault(); selC = Math.min(COLS-1, selC+1); render(); }
 });
 
 render();
