@@ -328,12 +328,40 @@
             cleanUp(); render(document.getElementById('searchInput').value);
         }
 
-        function saveData() {
-            const blob = new Blob([JSON.stringify(db)], {type:"application/json"});
+ async function saveData() {
+            const data = JSON.stringify(db, null, 2);
+            
+            // Controlla se il browser supporta la nuova API File System Access
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: 'dial_config.json',
+                        types: [{
+                            description: 'JSON Config File',
+                            accept: {'application/json': ['.json']},
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(data);
+                    await writable.close();
+                    return; // Uscita se il salvataggio è andato a buon fine
+                } catch (err) {
+                    if (err.name === 'AbortError') return; // L'utente ha annullato
+                    console.error("Errore API salvataggio:", err);
+                }
+            }
+
+            // --- FALLBACK (Metodo classico se l'API non è supportata) ---
+            const blob = new Blob([data], {type: "application/json"});
             const a = document.createElement('a');
+            const fileName = prompt("Inserisci il nome del file:", "dial_config.json");
+            
+            if (!fileName) return; // Annulla se non viene inserito un nome
+            
             a.href = URL.createObjectURL(blob);
-            a.download = 'dial_config.json';
+            a.download = fileName.endsWith('.json') ? fileName : fileName + '.json';
             a.click();
+            URL.revokeObjectURL(a.href);
         }
 
         function loadData() {
