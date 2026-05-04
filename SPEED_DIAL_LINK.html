@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Dial Pro - Search Fixed</title>
+    <style>
+        :root {
+            --bg-dark: #050b18;
+            --tile-bg: rgba(25, 25, 30, 0.95);
+            --accent-blue: #00adc9;
+            --text-main: #ffffff;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #050505 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+            user-select: none;
+        }
+
+        /* Header & Search */
+        .header { width: 100%; max-width: 800px; margin-top: 40px; margin-bottom: 20px; }
+        .search-bar {
+            background: rgba(30, 30, 35, 0.8);
+            border-radius: 8px; padding: 12px 20px;
+            display: flex; align-items: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .search-bar input {
+            background: transparent; border: none; color: white;
+            font-size: 1.1rem; width: 100%; outline: none; margin-left: 15px;
+        }
+
+        .fs-toolbar { margin-bottom: 30px; display: flex; gap: 10px; }
+        .btn-fs { 
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;
+        }
+
+        /* Grid */
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px; width: 92%; max-width: 1400px; padding: 10px;
+        }
+
+        .tile {
+            background: var(--tile-bg);
+            aspect-ratio: 16 / 9;
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            clip-path: polygon(0 0, 100% 0, 100% 82%, 88% 100%, 0 100%);
+            border: 1px solid rgba(255,255,255,0.05);
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .tile:active { transform: scale(0.95); filter: brightness(0.8); }
+
+        .icon-container { display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: none; }
+        .site-icon {
+            width: 36px; height: 36px; border-radius: 8px;
+            object-fit: contain; background: white; padding: 3px;
+        }
+
+        .tile-label { 
+            font-weight: bold; font-size: 0.75rem; text-align: center; 
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8); 
+            max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        /* Folder Styles */
+        .folder-grid {
+            display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+            gap: 4px; width: 80%; height: 70%; margin-top: -5px; pointer-events: none;
+        }
+        
+        .mini-tile {
+            border-radius: 4px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.05);
+            padding: 1px; overflow: hidden;
+        }
+        
+        .mini-icon { width: 12px; height: 12px; object-fit: contain; }
+        .mini-label { font-size: 0.4rem; font-weight: bold; color: white; margin-top: 1px; }
+
+        .btn-del {
+            position: absolute; top: 4px; right: 8px;
+            background: rgba(255,0,0,0.6); border: none; color: white;
+            border-radius: 50%; width: 20px; height: 20px; cursor: pointer;
+            z-index: 10; font-size: 12px;
+        }
+        
+        .add-btn { background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.2); font-size: 2rem; color: #666; }
+
+        .folder-expanded {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px; padding: 15px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px; border: 1px solid rgba(255,255,255,0.05);
+            margin: 5px 0;
+        }
+
+        .dimmed { opacity: 0.2; filter: grayscale(1); }
+    </style>
+</head>
+<body ondragover="event.preventDefault()">
+
+    <div class="header">
+        <div class="search-bar">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20">
+            <input type="text" id="searchInput" placeholder="Cerca siti..." oninput="handleSearch()">
+        </div>
+    </div>
+
+    <div class="fs-toolbar">
+        <button class="btn-fs" onclick="saveData()">💾 Salva</button>
+        <button class="btn-fs" onclick="loadData()">📂 Carica</button>
+    </div>
+
+    <div id="grid" ondrop="onDropGrid(event)">
+        <div id="main-content" style="display: contents;"></div>
+        <div class="tile add-btn" onclick="addNewItem()">+</div>
+    </div>
+
+    <script>
+        let db = [];
+        let openFolderId = null;
+        let draggedItemInfo = null;
+        let pressTimer = null;
+        let isLongPress = false;
+
+        // Chiudi gruppo cliccando fuori
+        document.addEventListener('click', (e) => {
+            if (openFolderId && !e.target.closest('.tile') && !e.target.closest('.folder-expanded')) {
+                openFolderId = null; 
+                render(document.getElementById('searchInput').value); 
+            }
+        });
+
+        async function extractColor(imgUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous"; 
+                img.src = imgUrl;
+                img.onload = () => {
+                    try {
+                        const canvas = document.createElement("canvas");
+                        const ctx = canvas.getContext("2d");
+                        canvas.width = 1; canvas.height = 1;
+                        ctx.drawImage(img, 0, 0, 1, 1);
+                        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+                        resolve(`rgba(${r}, ${g}, ${b}, 0.6)`);
+                    } catch (e) { resolve(`rgba(60, 60, 70, 0.6)`); }
+                };
+                img.onerror = () => resolve(`rgba(60, 60, 70, 0.6)`);
+            });
+        }
+
+        function getFaviconUrl(url) {
+            try { return `https://www.google.com/s2/favicons?sz=128&domain=${new URL(url).hostname}`; } 
+            catch(e) { return 'https://cdn-icons-png.flaticon.com/512/1243/1243933.png'; }
+        }
+
+        async function addNewItem() {
+            const url = prompt("URL:");
+            if (!url) return;
+            const name = new URL(url).hostname.replace('www.', '').split('.')[0].toUpperCase();
+            const icon = getFaviconUrl(url);
+            const color = await extractColor(icon);
+            db.push({ id: 'id'+Date.now(), type: 'link', name, url, color, icon });
+            render(document.getElementById('searchInput').value);
+        }
+
+        // --- LONG PRESS ---
+        function startPress(e, id) {
+            isLongPress = false;
+            pressTimer = setTimeout(() => {
+                const item = db.find(i => i.id === id);
+                if (item && item.type === 'folder') {
+                    isLongPress = true;
+                    const newName = prompt("Nuovo nome gruppo:", item.name);
+                    if (newName) { 
+                        item.name = newName.toUpperCase(); 
+                        render(document.getElementById('searchInput').value); 
+                    }
+                }
+            }, 700);
+        }
+
+        function cancelPress() { clearTimeout(pressTimer); }
+
+        // --- DRAG & DROP ---
+        function onDragStart(e, id, parentId) {
+            draggedItemInfo = { id, parentId };
+            e.dataTransfer.setData('text/plain', id);
+        }
+
+        function onDropGrid(e) {
+            if (e.target.id !== 'grid' || !draggedItemInfo) return;
+            const { id, parentId } = draggedItemInfo;
+            if (parentId) {
+                const folder = db.find(f => f.id === parentId);
+                const item = folder.children.splice(folder.children.findIndex(c => c.id === id), 1)[0];
+                db.push(item);
+                cleanUp(); render(document.getElementById('searchInput').value);
+            }
+            draggedItemInfo = null;
+        }
+
+        function onDropTile(e, targetId) {
+            e.stopPropagation();
+            if (!draggedItemInfo || draggedItemInfo.id === targetId) return;
+            
+            let sourceObj = null;
+            const findAndRem = (list) => {
+                for(let i=0; i<list.length; i++){
+                    if(list[i].id === draggedItemInfo.id) return list.splice(i,1)[0];
+                    if(list[i].type==='folder'){ let r=findAndRem(list[i].children); if(r) return r; }
+                }
+            }
+            sourceObj = findAndRem(db);
+            if(!sourceObj) return;
+
+            const target = db.find(t => t.id === targetId);
+            if(target.type === 'link') {
+                const newF = { id:'f'+Date.now(), type:'folder', name:'GRUPPO', children:[target, sourceObj] };
+                db.splice(db.indexOf(target), 1, newF);
+            } else { target.children.push(sourceObj); }
+            
+            cleanUp(); render(document.getElementById('searchInput').value); 
+            draggedItemInfo = null;
+        }
+
+        function cleanUp() { db = db.filter(i => i.type !== 'folder' || i.children.length > 0); }
+
+        // --- RICERCA RIPRISTINATA ---
+        function handleSearch() {
+            const query = document.getElementById('searchInput').value;
+            render(query);
+        }
+
+        function render(query = "") {
+            const container = document.getElementById('main-content');
+            container.innerHTML = '';
+            const q = query.toLowerCase().trim();
+
+            db.forEach(item => {
+                // Controllo se l'item o i figli della cartella matchano la ricerca
+                const selfMatch = item.name.toLowerCase().includes(q) || (item.url && item.url.toLowerCase().includes(q));
+                const childrenMatch = item.type === 'folder' && item.children.some(c => c.name.toLowerCase().includes(q) || c.url.toLowerCase().includes(q));
+                
+                const isDimmed = q !== "" && !selfMatch && !childrenMatch;
+
+                if (item.type === 'link') {
+                    container.appendChild(createTile(item, null, isDimmed));
+                } else {
+                    container.appendChild(createTile(item, null, isDimmed));
+                    // Se la cartella è aperta, renderizza i figli
+                    if (openFolderId === item.id) {
+                        const panel = document.createElement('div');
+                        panel.className = 'folder-expanded';
+                        item.children.forEach(c => {
+                            const childDimmed = q !== "" && !c.name.toLowerCase().includes(q) && !c.url.toLowerCase().includes(q);
+                            panel.appendChild(createTile(c, item.id, childDimmed));
+                        });
+                        container.appendChild(panel);
+                    }
+                }
+            });
+        }
+
+        function createTile(item, parentId, isDimmed) {
+            const div = document.createElement('div');
+            div.className = 'tile' + (isDimmed ? ' dimmed' : '');
+            div.style.backgroundColor = item.color || 'var(--tile-bg)';
+            if(item.color) div.style.borderTop = `3px solid rgba(255,255,255,0.3)`;
+            
+            div.onmousedown = (e) => startPress(e, item.id);
+            div.ontouchstart = (e) => startPress(e, item.id);
+            div.onmouseup = cancelPress;
+            div.ontouchend = cancelPress;
+
+            div.draggable = true;
+            div.ondragstart = (e) => onDragStart(e, item.id, parentId);
+            div.ondragover = (e) => { e.preventDefault(); div.style.boxShadow = "0 0 15px var(--accent-blue)"; };
+            div.ondragleave = () => div.style.boxShadow = "none";
+            div.ondrop = (e) => onDropTile(e, item.id);
+
+            const del = `<button class="btn-del" onclick="event.stopPropagation(); deleteItem('${item.id}','${parentId}')">×</button>`;
+
+            if (item.type === 'link') {
+                div.onclick = () => { if(!isLongPress) window.open(item.url, '_blank'); };
+                div.innerHTML = `${del}<div class="icon-container"><img src="${item.icon}" class="site-icon"><div class="tile-label">${item.name}</div></div>`;
+            } else {
+                div.onclick = (e) => { 
+                    if(isLongPress) return;
+                    e.stopPropagation(); 
+                    openFolderId = (openFolderId === item.id) ? null : item.id; 
+                    render(document.getElementById('searchInput').value); 
+                };
+                let grid = '<div class="folder-grid">';
+                item.children.slice(0,4).forEach(c => {
+                    grid += `<div class="mini-tile" style="background:${c.color}"><img src="${c.icon}" class="mini-icon"><div class="mini-label">${c.name.slice(0,3)}</div></div>`;
+                });
+                grid += '</div>';
+                div.innerHTML = `${del}${grid}<div class="tile-label">${item.name}</div>`;
+            }
+            return div;
+        }
+
+        function deleteItem(id, pId) {
+            if(pId && pId !== 'null') {
+                const f = db.find(x => x.id === pId);
+                f.children = f.children.filter(c => c.id !== id);
+            } else db = db.filter(i => i.id !== id);
+            cleanUp(); render(document.getElementById('searchInput').value);
+        }
+
+        function saveData() {
+            const blob = new Blob([JSON.stringify(db)], {type:"application/json"});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'dial_config.json';
+            a.click();
+        }
+
+        function loadData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.onchange = e => {
+                const reader = new FileReader();
+                reader.onload = ev => { db = JSON.parse(ev.target.result); render(); };
+                reader.readAsText(e.target.files[0]);
+            }
+            input.click();
+        }
+
+        render();
+    </script>
+</body>
+</html>
