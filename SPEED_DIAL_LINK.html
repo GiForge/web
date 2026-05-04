@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speed Dial Pro - Search Fixed</title>
+    <title>Speed Dial Pro - Clean Search</title>
     <style>
         :root {
             --bg-dark: #050b18;
@@ -66,6 +66,9 @@
 
         .tile:active { transform: scale(0.95); filter: brightness(0.8); }
 
+        /* NUOVA REGOLA: Nasconde gli elementi che non matchano */
+        .hidden { display: none !important; }
+
         .icon-container { display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: none; }
         .site-icon {
             width: 36px; height: 36px; border-radius: 8px;
@@ -78,7 +81,6 @@
             max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
 
-        /* Folder Styles */
         .folder-grid {
             display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
             gap: 4px; width: 80%; height: 70%; margin-top: -5px; pointer-events: none;
@@ -111,8 +113,6 @@
             gap: 12px; border: 1px solid rgba(255,255,255,0.05);
             margin: 5px 0;
         }
-
-        .dimmed { opacity: 0.2; filter: grayscale(1); }
     </style>
 </head>
 <body ondragover="event.preventDefault()">
@@ -125,13 +125,13 @@
     </div>
 
     <div class="fs-toolbar">
-        <button class="btn-fs" onclick="saveData()">💾 Salva</button>
+        <button class="btn-fs" onclick="saveData()">💾 Salva con nome</button>
         <button class="btn-fs" onclick="loadData()">📂 Carica</button>
     </div>
 
     <div id="grid" ondrop="onDropGrid(event)">
         <div id="main-content" style="display: contents;"></div>
-        <div class="tile add-btn" onclick="addNewItem()">+</div>
+        <div class="tile add-btn" id="addBtn" onclick="addNewItem()">+</div>
     </div>
 
     <script>
@@ -141,7 +141,6 @@
         let pressTimer = null;
         let isLongPress = false;
 
-        // Chiudi gruppo cliccando fuori
         document.addEventListener('click', (e) => {
             if (openFolderId && !e.target.closest('.tile') && !e.target.closest('.folder-expanded')) {
                 openFolderId = null; 
@@ -183,7 +182,6 @@
             render(document.getElementById('searchInput').value);
         }
 
-        // --- LONG PRESS ---
         function startPress(e, id) {
             isLongPress = false;
             pressTimer = setTimeout(() => {
@@ -201,7 +199,6 @@
 
         function cancelPress() { clearTimeout(pressTimer); }
 
-        // --- DRAG & DROP ---
         function onDragStart(e, id, parentId) {
             draggedItemInfo = { id, parentId };
             e.dataTransfer.setData('text/plain', id);
@@ -245,9 +242,10 @@
 
         function cleanUp() { db = db.filter(i => i.type !== 'folder' || i.children.length > 0); }
 
-        // --- RICERCA RIPRISTINATA ---
         function handleSearch() {
             const query = document.getElementById('searchInput').value;
+            // Nasconde il tasto "+" durante la ricerca per pulizia
+            document.getElementById('addBtn').style.display = query ? 'none' : 'flex';
             render(query);
         }
 
@@ -257,23 +255,28 @@
             const q = query.toLowerCase().trim();
 
             db.forEach(item => {
-                // Controllo se l'item o i figli della cartella matchano la ricerca
                 const selfMatch = item.name.toLowerCase().includes(q) || (item.url && item.url.toLowerCase().includes(q));
                 const childrenMatch = item.type === 'folder' && item.children.some(c => c.name.toLowerCase().includes(q) || c.url.toLowerCase().includes(q));
                 
-                const isDimmed = q !== "" && !selfMatch && !childrenMatch;
+                // Se c'è una ricerca e l'elemento non matcho, lo saltiamo (nascosto)
+                if (q !== "" && !selfMatch && !childrenMatch) return;
 
                 if (item.type === 'link') {
-                    container.appendChild(createTile(item, null, isDimmed));
+                    container.appendChild(createTile(item, null, false));
                 } else {
-                    container.appendChild(createTile(item, null, isDimmed));
-                    // Se la cartella è aperta, renderizza i figli
-                    if (openFolderId === item.id) {
+                    // Cartella: la mostriamo se matcho o se un figlio matcho
+                    container.appendChild(createTile(item, null, false));
+                    
+                    // AUTO-ESPANSIONE: Se c'è una ricerca e un figlio matcho, apriamo la cartella automaticamente
+                    if (openFolderId === item.id || (q !== "" && childrenMatch)) {
                         const panel = document.createElement('div');
                         panel.className = 'folder-expanded';
                         item.children.forEach(c => {
-                            const childDimmed = q !== "" && !c.name.toLowerCase().includes(q) && !c.url.toLowerCase().includes(q);
-                            panel.appendChild(createTile(c, item.id, childDimmed));
+                            const childMatch = c.name.toLowerCase().includes(q) || c.url.toLowerCase().includes(q);
+                            // Durante la ricerca, mostra solo i figli pertinenti
+                            if (q === "" || childMatch) {
+                                panel.appendChild(createTile(c, item.id, false));
+                            }
                         });
                         container.appendChild(panel);
                     }
@@ -281,9 +284,9 @@
             });
         }
 
-        function createTile(item, parentId, isDimmed) {
+        function createTile(item, parentId, isHidden) {
             const div = document.createElement('div');
-            div.className = 'tile' + (isDimmed ? ' dimmed' : '');
+            div.className = 'tile' + (isHidden ? ' hidden' : '');
             div.style.backgroundColor = item.color || 'var(--tile-bg)';
             if(item.color) div.style.borderTop = `3px solid rgba(255,255,255,0.3)`;
             
@@ -328,40 +331,27 @@
             cleanUp(); render(document.getElementById('searchInput').value);
         }
 
- async function saveData() {
+        async function saveData() {
             const data = JSON.stringify(db, null, 2);
-            
-            // Controlla se il browser supporta la nuova API File System Access
             if ('showSaveFilePicker' in window) {
                 try {
                     const handle = await window.showSaveFilePicker({
                         suggestedName: 'dial_config.json',
-                        types: [{
-                            description: 'JSON Config File',
-                            accept: {'application/json': ['.json']},
-                        }],
+                        types: [{ description: 'JSON Config File', accept: {'application/json': ['.json']}}],
                     });
                     const writable = await handle.createWritable();
                     await writable.write(data);
                     await writable.close();
-                    return; // Uscita se il salvataggio è andato a buon fine
-                } catch (err) {
-                    if (err.name === 'AbortError') return; // L'utente ha annullato
-                    console.error("Errore API salvataggio:", err);
-                }
+                    return;
+                } catch (err) { if (err.name === 'AbortError') return; }
             }
-
-            // --- FALLBACK (Metodo classico se l'API non è supportata) ---
             const blob = new Blob([data], {type: "application/json"});
             const a = document.createElement('a');
             const fileName = prompt("Inserisci il nome del file:", "dial_config.json");
-            
-            if (!fileName) return; // Annulla se non viene inserito un nome
-            
+            if (!fileName) return;
             a.href = URL.createObjectURL(blob);
             a.download = fileName.endsWith('.json') ? fileName : fileName + '.json';
             a.click();
-            URL.revokeObjectURL(a.href);
         }
 
         function loadData() {
