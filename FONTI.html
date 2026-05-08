@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Fonti Affidabili & Prompt AI</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+    --bg:#0f172a;
+    --card:#111c34;
+    --card-light:#182544;
+    --border:rgba(255,255,255,0.08);
+    --text:#f8fafc;
+    --muted:#cbd5e1;
+    --accent:#38bdf8;
+    --accent2:#818cf8;
+    --success:#22c55e;
+    --warning:#facc15;
+    --danger:#ef4444;
+    --shadow:0 10px 35px rgba(0,0,0,.35);
+    --radius:20px;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Inter',sans-serif;
+    background:
+        radial-gradient(circle at top left,#1e3a8a 0%,transparent 30%),
+        radial-gradient(circle at bottom right,#312e81 0%,transparent 30%),
+        var(--bg);
+    color:var(--text);
+    line-height:1.7;
+    padding:40px 20px;
+}
+
+.container{
+    max-width:1300px;
+    margin:auto;
+}
+
+.hero{
+    text-align:center;
+    margin-bottom:50px;
+}
+
+.hero h1{
+    font-size:3rem;
+    font-weight:800;
+    margin-bottom:15px;
+    background:linear-gradient(90deg,var(--accent),#ffffff,var(--accent2));
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+.hero p{
+    color:var(--muted);
+    font-size:1.1rem;
+    max-width:900px;
+    margin:auto;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:24px;
+    margin-bottom:50px;
+}
+
+.card{
+    background:rgba(17,28,52,.92);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:28px;
+    box-shadow:var(--shadow);
+    transition:.3s ease;
+    backdrop-filter:blur(12px);
+}
+
+.card:hover{
+    transform:translateY(-5px);
+    border-color:rgba(56,189,248,.4);
+}
+
+.card h2{
+    font-size:1.2rem;
+    margin-bottom:18px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.card ul{
+    list-style:none;
+}
+
+.card li{
+    margin-bottom:10px;
+}
+
+.card a{
+    color:#dbeafe;
+    text-decoration:none;
+    transition:.25s;
+}
+
+.card a:hover{
+    color:var(--accent);
+    padding-left:5px;
+}
+
+.badge{
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+}
+
+.prompt-section{
+    background:rgba(17,28,52,.95);
+    border:1px solid var(--border);
+    border-radius:28px;
+    padding:35px;
+    box-shadow:var(--shadow);
+}
+
+.prompt-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:20px;
+    margin-bottom:25px;
+}
+
+.prompt-header h2{
+    font-size:2rem;
+}
+
+.copy-btn{
+    border:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:white;
+    padding:14px 24px;
+    border-radius:14px;
+    cursor:pointer;
+    font-size:1rem;
+    font-weight:700;
+    transition:.3s;
+    box-shadow:0 6px 20px rgba(56,189,248,.35);
+}
+
+.copy-btn:hover{
+    transform:translateY(-2px) scale(1.02);
+}
+
+textarea{
+    width:100%;
+    min-height:950px;
+    resize:vertical;
+    border:none;
+    outline:none;
+    border-radius:18px;
+    padding:28px;
+    background:#0b1220;
+    color:#f8fafc;
+    font-size:15px;
+    line-height:1.8;
+    font-family:Consolas, monospace;
+    border:1px solid rgba(255,255,255,0.08);
+}
+
+.footer{
+    text-align:center;
+    color:#94a3b8;
+    margin-top:40px;
+    font-size:.95rem;
+}
+
+@media(max-width:768px){
+
+    .hero h1{
+        font-size:2.2rem;
+    }
+
+    .prompt-header{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    textarea{
+        min-height:1100px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <section class="hero">
+        <h1>Fonti Affidabili & Prompt Professionale AI</h1>
+
+        <p>
+            Raccolta strutturata di fonti istituzionali, giornalistiche,
+            economiche e scientifiche autorevoli, con prompt avanzato
+            ottimizzato per motori di Intelligenza Artificiale.
+        </p>
+    </section>
+
+    <section class="grid">
+
+        <div class="card">
+            <h2><span class="badge"></span> Organizzazioni Internazionali</h2>
+
+            <ul>
+                <li><a href="https://www.un.org" target="_blank">ONU</a></li>
+                <li><a href="https://www.oecd.org" target="_blank">OCSE</a></li>
+                <li><a href="https://www.imf.org" target="_blank">FMI</a></li>
+                <li><a href="https://www.worldbank.org" target="_blank">Banca Mondiale</a></li>
+                <li><a href="https://ec.europa.eu/eurostat" target="_blank">Eurostat</a></li>
+                <li><a href="https://www.istat.it" target="_blank">ISTAT</a></li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2><span class="badge"></span> Università & Think Tank</h2>
+
+            <ul>
+                <li><a href="https://www.hks.harvard.edu" target="_blank">Harvard Kennedy School</a></li>
+                <li><a href="https://www.ox.ac.uk" target="_blank">Oxford University</a></li>
+                <li><a href="https://www.mit.edu" target="_blank">MIT</a></li>
+                <li><a href="https://www.unibocconi.eu" target="_blank">Università Bocconi</a></li>
+                <li><a href="https://www.luiss.it" target="_blank">LUISS</a></li>
+                <li><a href="https://carnegieendowment.org" target="_blank">Carnegie Endowment</a></li>
+                <li><a href="https://www.chathamhouse.org" target="_blank">Chatham House</a></li>
+                <li><a href="https://www.brookings.edu" target="_blank">Brookings Institution</a></li>
+                <li><a href="https://www.ispionline.it" target="_blank">ISPI</a></li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2><span class="badge"></span> Giornalismo Internazionale</h2>
+
+            <ul>
+                <li><a href="https://www.bbc.com/news" target="_blank">BBC News</a></li>
+                <li><a href="https://www.reuters.com" target="_blank">Reuters</a></li>
+                <li><a href="https://apnews.com" target="_blank">Associated Press</a></li>
+                <li><a href="https://www.theguardian.com" target="_blank">The Guardian</a></li>
+                <li><a href="https://www.lemonde.fr" target="_blank">Le Monde</a></li>
+                <li><a href="https://elpais.com" target="_blank">El País</a></li>
+                <li><a href="https://www.spiegel.de" target="_blank">Der Spiegel</a></li>
+                <li><a href="https://www.nytimes.com" target="_blank">The New York Times</a></li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2><span class="badge"></span> Fonti Italiane</h2>
+
+            <ul>
+                <li><a href="https://www.ansa.it" target="_blank">ANSA</a></li>
+                <li><a href="https://www.ilsole24ore.com" target="_blank">Il Sole 24 Ore</a></li>
+                <li><a href="https://www.rainews.it" target="_blank">RaiNews</a></li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2><span class="badge"></span> Diritti & Democrazia</h2>
+
+            <ul>
+                <li><a href="https://freedomhouse.org" target="_blank">Freedom House</a></li>
+                <li><a href="https://www.transparency.org" target="_blank">Transparency International</a></li>
+                <li><a href="https://rsf.org" target="_blank">Reporters Without Borders</a></li>
+                <li><a href="https://www.amnesty.org" target="_blank">Amnesty International</a></li>
+                <li><a href="https://www.hrw.org" target="_blank">Human Rights Watch</a></li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2><span class="badge"></span> Dati & Ricerca</h2>
+
+            <ul>
+                <li><a href="https://ourworldindata.org" target="_blank">Our World in Data</a></li>
+                <li><a href="https://www.pewresearch.org" target="_blank">Pew Research Center</a></li>
+            </ul>
+        </div>
+
+    </section>
+
+    <section class="prompt-section">
+
+        <div class="prompt-header">
+            <h2>📄 Prompt AI Professionale</h2>
+
+            <button class="copy-btn" onclick="copyPrompt()">
+                📋 Copia Prompt
+            </button>
+        </div>
+
+<textarea id="promptBox" readonly>
+# PROMPT PROFESSIONALE — SINTESI QUOTIDIANA DI NOTIZIE VERIFICATE
+
+Agisci come un analista editoriale professionale specializzato in:
+- geopolitica
+- economia
+- attualità internazionale
+- dati statistici
+- diritti umani
+- scienza e tecnologia
+
+L’obiettivo è produrre una sintesi quotidiana composta esclusivamente da informazioni verificabili provenienti da fonti istituzionali, statistiche e giornalistiche affidabili.
+
+━━━━━━━━━━━━━━━━━━
+🇮🇹 1. ITALIA (PRIORITÀ)
+━━━━━━━━━━━━━━━━━━
+
+Utilizza esclusivamente:
+- ANSA
+- Il Sole 24 Ore
+- RaiNews
+- ISTAT
+
+Seleziona:
+- politica nazionale
+- economia
+- energia
+- lavoro
+- industria
+- sicurezza
+- infrastrutture
+- dati statistici rilevanti
+
+Escludi:
+- gossip
+- opinioni
+- editoriali
+- polemiche social
+- contenuti sensazionalistici
+
+━━━━━━━━━━━━━━━━━━
+🌍 2. POLITICA INTERNAZIONALE
+━━━━━━━━━━━━━━━━━━
+
+Fonti autorizzate:
+- ONU
+- OCSE
+- FMI
+- Banca Mondiale
+- Reuters
+- BBC
+- Associated Press
+- The Guardian
+- Le Monde
+- El País
+- Der Spiegel
+- The New York Times
+
+Includi:
+- conflitti
+- diplomazia
+- trattati
+- elezioni
+- sicurezza internazionale
+- decisioni governative ufficiali
+
+━━━━━━━━━━━━━━━━━━
+💶 3. ECONOMIA E MERCATI
+━━━━━━━━━━━━━━━━━━
+
+Fonti autorizzate:
+- OCSE
+- FMI
+- Banca Mondiale
+- Eurostat
+- Il Sole 24 Ore
+- Reuters
+- AP
+- BBC
+
+Includi:
+- inflazione
+- tassi di interesse
+- PIL
+- energia
+- borse
+- mercati finanziari
+- occupazione
+- commercio internazionale
+
+━━━━━━━━━━━━━━━━━━
+🧑‍⚖️ 4. DIRITTI UMANI E SOCIETÀ
+━━━━━━━━━━━━━━━━━━
+
+Fonti autorizzate:
+- Freedom House
+- Transparency International
+- Reporters Without Borders
+- Amnesty International
+- Human Rights Watch
+- ONU
+
+Includi:
+- libertà civili
+- diritti umani
+- libertà di stampa
+- corruzione
+- sicurezza sociale
+- emergenze umanitarie
+
+━━━━━━━━━━━━━━━━━━
+🔬 5. SCIENZA, TECNOLOGIA E AMBIENTE
+━━━━━━━━━━━━━━━━━━
+
+Fonti autorizzate:
+- Our World in Data
+- Pew Research Center
+- ONU
+- OMS
+- OCSE
+- Reuters
+- BBC
+- AP
+
+Includi:
+- innovazione tecnologica
+- intelligenza artificiale
+- ambiente
+- clima
+- energia
+- medicina
+- ricerca scientifica
+
+━━━━━━━━━━━━━━━━━━
+📌 REGOLE OBBLIGATORIE
+━━━━━━━━━━━━━━━━━━
+
+- Utilizzare SOLO fatti verificabili
+- Mantenere tono neutrale e professionale
+- Nessuna opinione personale
+- Nessun contenuto social
+- Nessuna speculazione
+- Evidenziare notizie non confermate con:
+  [in aggiornamento]
+
+Ogni notizia deve:
+- essere breve e chiara
+- contenere la fonte finale tra parentesi
+  Esempio:
+  “La BCE mantiene invariati i tassi di interesse (Reuters)”
+
+━━━━━━━━━━━━━━━━━━
+🗂️ STRUTTURA DEL REPORT
+━━━━━━━━━━━━━━━━━━
+
+Generare 5 sezioni:
+
+1. Italia
+2. Politica internazionale
+3. Economia e mercati
+4. Diritti umani e società
+5. Scienza, tecnologia e ambiente
+
+Ogni sezione deve contenere:
+- minimo 5 punti
+- massimo 7 punti
+
+━━━━━━━━━━━━━━━━━━
+🚦 TABELLA SEMAFORICA FINALE
+━━━━━━━━━━━━━━━━━━
+
+Creare una tabella conclusiva ordinando le notizie per impatto:
+
+| Livello | Notizia | Fonte |
+|----------|----------|--------|
+| 🟢 Positiva | ... | ... |
+| 🟡 Attenzione | ... | ... |
+| 🟠 Critica | ... | ... |
+| 🔴 Grave | ... | ... |
+| 🔴🔴 Gravissima | ... | ... |
+
+━━━━━━━━━━━━━━━━━━
+🏁 CHIUSURA OBBLIGATORIA
+━━━━━━━━━━━━━━━━━━
+
+Concludere sempre con:
+
+“Sintesi quotidiana aggiornata al [data corrente]”
+</textarea>
+
+    </section>
+
+    <div class="footer">
+        Interfaccia professionale ottimizzata per utilizzo con motori AI avanzati.
+    </div>
+
+</div>
+
+<script>
+
+function copyPrompt(){
+
+    const promptBox = document.getElementById("promptBox");
+
+    promptBox.select();
+    promptBox.setSelectionRange(0, 99999);
+
+    navigator.clipboard.writeText(promptBox.value);
+
+    const button = document.querySelector(".copy-btn");
+
+    const original = button.innerHTML;
+
+    button.innerHTML = "✅ Prompt Copiato";
+
+    setTimeout(() => {
+        button.innerHTML = original;
+    }, 2000);
+}
+
+</script>
+
+</body>
+</html>
