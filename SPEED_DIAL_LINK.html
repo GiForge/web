@@ -497,14 +497,39 @@
             save();
         }
 
-        function exportData() {
-            const blob = new Blob([JSON.stringify(db, null, 2)], {type: 'application/json'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `speeddial_pro_v5.json`;
-            a.click();
-        }
+async function exportData() {
+    // Configurazione del selettore di file
+    const options = {
+        suggestedName: `speeddial_pro_${new Date().toISOString().slice(0,10)}.json`,
+        types: [{
+            description: 'JSON File',
+            accept: {'application/json': ['.json']},
+        }],
+    };
 
+    try {
+        // 1. Chiede all'utente dove salvare e come chiamare il file
+        // Questa riga apre la finestra di dialogo nativa
+        const handle = await window.showSaveFilePicker(options);
+        
+        // 2. Crea uno stream di scrittura
+        const writable = await handle.createWritable();
+        
+        // 3. Scrive i dati dal database
+        await writable.write(JSON.stringify(db, null, 2));
+        
+        // 4. Chiude lo stream e salva fisicamente il file
+        await writable.close();
+        
+        console.log("File salvato con successo!");
+    } catch (err) {
+        // Gestisce l'annullamento dell'utente o errori di permesso
+        if (err.name !== 'AbortError') {
+            console.error("Errore durante il salvataggio:", err);
+            alert("Errore nel salvataggio del file.");
+        }
+    }
+}
         function importData() {
             const input = document.createElement('input');
             input.type = 'file'; input.accept = '.json';
