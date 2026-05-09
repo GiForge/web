@@ -11,6 +11,7 @@
             --glass: rgba(255, 255, 255, 0.03);
             --glass-border: rgba(255, 255, 255, 0.1);
             --accent: #00f2ff;
+            --danger: #ff4d4d;
         }
 
         * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -24,7 +25,6 @@
             overflow-x: hidden;
         }
 
-        /* --- LAYOUT RESPONSIVE & GRID --- */
         .header { width: 100%; max-width: 1100px; padding: 30px 20px; z-index: 100; }
         
         #grid {
@@ -33,63 +33,53 @@
             gap: 20px; padding-bottom: 80px; z-index: 60;
         }
 
-        @media (max-width: 600px) {
-            #grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 10px; }
-            .header { padding: 20px 15px; }
-            .tile { border-radius: 12px; }
-            .label { font-size: 0.65rem; }
-            .icon-wrap { width: 40px; height: 40px; }
-            .folder-open { padding: 15px; grid-template-columns: repeat(2, 1fr); }
-            .actions { opacity: 1 !important; transform: scale(0.8); top: 2px; right: 2px; }
-        }
-
-        /* --- TOOLTIP STYLE --- */
-        .tooltip {
-            position: absolute; bottom: 115%; left: 50%; transform: translateX(-50%) translateY(10px);
-            background: rgba(10, 15, 25, 0.98); border: 1px solid var(--accent);
-            padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; width: 180px;
-            pointer-events: none; opacity: 0; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 500;
-            text-transform: none; text-align: center; backdrop-filter: blur(10px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-        }
-        .tile:hover .tooltip { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-        /* --- MODALI & OVERLAYS --- */
+        /* --- MODALE UNIFICATA --- */
         #app-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-            z-index: 50; display: none;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+            z-index: 1000; display: none;
         }
         #app-overlay.active { display: block; }
 
-        #icon-picker {
+        .modal {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 90%; max-width: 450px; background: #161b26; border: 1px solid var(--accent);
-            border-radius: 20px; padding: 25px; z-index: 200; display: none;
-            box-shadow: 0 0 40px rgba(0, 242, 255, 0.2);
+            border-radius: 20px; padding: 25px; z-index: 1001; display: none;
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.15);
         }
-        #icon-picker.active { display: block; animation: fadeIn 0.3s ease; }
-        .picker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; max-height: 280px; overflow-y: auto; padding: 5px; }
-        .picker-item { background: var(--glass); padding: 10px; border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; border: 1px solid transparent; }
-        .picker-item:hover { border-color: var(--accent); background: rgba(0, 242, 255, 0.1); }
-        .picker-item img { width: 35px; height: 35px; object-fit: contain; }
+        .modal.active { display: block; animation: modalIn 0.3s ease; }
 
-        /* --- ELEMENTI UI --- */
-        .search-bar {
-            width: 100%; background: var(--glass); border: 1px solid var(--glass-border);
-            padding: 15px 22px; border-radius: 12px; color: white; font-size: 1rem;
-            backdrop-filter: blur(10px); outline: none; transition: 0.3s;
+        @keyframes modalIn { from { opacity: 0; transform: translate(-50%, -45%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.7rem; color: var(--accent); text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
+        
+        .input-text {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            padding: 12px; border-radius: 8px; color: white; outline: none; transition: 0.3s;
         }
-        .search-bar:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(0, 242, 255, 0.1); }
+        .input-text:focus { border-color: var(--accent); background: rgba(255,255,255,0.1); }
 
-        .toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
-        .btn-tool {
-            background: var(--glass); border: 1px solid var(--glass-border);
-            color: #ccc; padding: 8px 14px; border-radius: 8px; cursor: pointer;
-            font-size: 0.7rem; font-weight: bold; text-transform: uppercase; transition: 0.2s;
+        .icon-preview-area {
+            display: flex; align-items: center; gap: 15px; margin-top: 10px;
+            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px;
         }
-        .btn-tool:hover { background: rgba(255,255,255,0.1); color: white; border-color: white; }
+        #current-icon-img { width: 50px; height: 50px; object-fit: contain; border-radius: 8px; }
 
+        .btn-group { display: flex; gap: 8px; margin-top: 20px; }
+        
+        /* --- BOTTONI --- */
+        .btn {
+            flex: 1; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
+            font-weight: bold; text-transform: uppercase; font-size: 0.75rem; transition: 0.2s;
+        }
+        .btn-primary { background: var(--accent); color: black; }
+        .btn-primary:hover { filter: brightness(1.2); }
+        .btn-secondary { background: var(--glass); color: white; border: 1px solid var(--glass-border); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+        .btn-danger { background: rgba(255, 77, 77, 0.2); color: #ff4d4d; border: 1px solid #ff4d4d; }
+
+        /* --- TILE & GRID --- */
         .tile {
             aspect-ratio: 16 / 10; border-radius: 18px;
             background: var(--glass); border: 1px solid var(--glass-border);
@@ -116,7 +106,7 @@
             border: 1px solid var(--glass-border); border-radius: 24px;
             padding: 35px; display: grid; gap: 20px;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            backdrop-filter: blur(20px); animation: fadeIn 0.4s ease;
+            backdrop-filter: blur(20px); animation: fadeInNormal 0.4s ease;
         }
 
         .actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; opacity: 0; transition: 0.2s; z-index: 30; }
@@ -127,44 +117,90 @@
         .btn-add { border: 2px dashed var(--glass-border); clip-path: none; opacity: 0.5; cursor: copy; }
         .btn-add:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px) translate(-50%, -50%); } to { opacity: 1; transform: translateY(0) translate(-50%, -50%); } }
+        .search-bar {
+            width: 100%; background: var(--glass); border: 1px solid var(--glass-border);
+            padding: 15px 22px; border-radius: 12px; color: white; font-size: 1rem;
+            backdrop-filter: blur(10px); outline: none; transition: 0.3s;
+        }
+        .toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+        .btn-tool { background: var(--glass); border: 1px solid var(--glass-border); color: #ccc; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+
+        @media (max-width: 600px) {
+            #grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 10px; }
+            .folder-open { padding: 15px; grid-template-columns: repeat(2, 1fr); }
+            .actions { opacity: 1; transform: scale(0.8); }
+        }
+
         @keyframes fadeInNormal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body ondragover="event.preventDefault()" ondrop="handleGlobalDrop(event)">
 
-    <div id="app-overlay" onclick="closeModals()"></div>
+    <div id="app-overlay" onclick="closeModal()"></div>
 
-    <!-- Modale Icon Picker -->
-    <div id="icon-picker">
-        <h3 style="margin:0 0 15px 0; color:var(--accent); font-size: 1.1rem; text-transform: uppercase;">Trova Icona Digitale</h3>
-        <input type="text" id="icon-search-input" class="search-bar" placeholder="Nome app (es: Netflix, YouTube...)" style="font-size:0.9rem">
-        <div class="picker-grid" id="picker-results"></div>
-        <button class="btn-tool" onclick="closeModals()" style="width:100%; margin-top:15px; padding:12px">Annulla</button>
+    <div id="main-modal" class="modal">
+        <h3 id="modal-title" style="margin:0 0 20px 0; color:var(--accent); text-transform: uppercase; font-size: 1.1rem;">Modifica Elemento</h3>
+        
+        <div class="form-group" id="group-url">
+            <label>Link (URL)</label>
+            <input type="text" id="field-url" class="input-text" placeholder="https://www.google.com">
+        </div>
+
+        <div class="form-group">
+            <label>Nome Visualizzato</label>
+            <input type="text" id="field-name" class="input-text" placeholder="Esempio: GOOGLE">
+        </div>
+
+        <div class="form-group" id="group-desc">
+            <label>Descrizione (Opzionale)</label>
+            <input type="text" id="field-desc" class="input-text" placeholder="Note extra...">
+        </div>
+
+        <div id="group-icon-custom">
+            <label style="font-size: 0.7rem; color: var(--accent); font-weight: bold;">ICONA</label>
+            <div class="icon-preview-area">
+                <img id="current-icon-img" src="" alt="Icon">
+                <div style="display:flex; flex-direction:column; gap:5px; flex:1">
+                    <button class="btn btn-secondary" style="padding:6px; font-size:0.6rem" onclick="searchOnGoogle()">Cerca su Google</button>
+                    <button class="btn btn-secondary" style="padding:6px; font-size:0.6rem" onclick="pasteImage()">Incolla Immagine</button>
+                </div>
+            </div>
+            <p style="font-size: 0.6rem; color: #888; margin-top: 5px;">* Se lasci vuoto o incollato, verrà usata l'icona automatica.</p>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="closeModal()">Annulla</button>
+            <button class="btn btn-primary" onclick="saveModalData()">Salva</button>
+        </div>
     </div>
 
     <div class="header">
         <input type="text" class="search-bar" id="search" placeholder="Cerca link, gruppi o descrizioni..." oninput="render()">
         <div class="toolbar">
-            <button class="btn-tool" onclick="importData()">Importa Backup</button>
-            <button class="btn-tool" onclick="exportData()">Salva Backup</button>
+            <button class="btn-tool" onclick="importData()">Importa</button>
+            <button class="btn-tool" onclick="exportData()">Esporta</button>
         </div>
     </div>
 
     <div id="grid"></div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('speed_dial_final_v4')) || [];
+        let db = JSON.parse(localStorage.getItem('speed_dial_v5')) || [];
         let openFolderId = null;
         let dragId = null;
         let dragSourceFolderId = null;
-        let pendingIconTarget = null;
+        
+        // Stato modale
+        let currentEditId = null;
+        let currentParentId = null;
+        let tempCustomIcon = null;
 
-        // --- ANALISI & LOGICA COLORI ---
+        // --- CORE LOGIC ---
         async function analyzeIcon(url, customIcon = null) {
             return new Promise(resolve => {
                 const iconUrl = customIcon || `https://www.google.com/s2/favicons?sz=128&domain=${url}`;
-                const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(iconUrl.replace(/^https?:\/\//, ''))}&w=50&h=50`;
+                const proxyUrl = iconUrl.startsWith('data:') ? iconUrl : `https://images.weserv.nl/?url=${encodeURIComponent(iconUrl.replace(/^https?:\/\//, ''))}&w=50&h=50`;
+                
                 const img = new Image();
                 img.crossOrigin = "anonymous";
                 img.src = proxyUrl;
@@ -172,14 +208,14 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
                     canvas.width = 50; canvas.height = 50;
-                    ctx.drawImage(img, 0, 0);
+                    ctx.drawImage(img, 0, 0, 50, 50);
                     const pixels = ctx.getImageData(0, 0, 50, 50).data;
                     let r = 0, g = 0, b = 0, count = 0;
                     for (let i = 0; i < pixels.length; i += 4) {
                         if (pixels[i + 3] > 150) { r += pixels[i]; g += pixels[i+1]; b += pixels[i+2]; count++; }
                     }
-                    if (count === 0) resolve({ icon: iconUrl, color: [100, 100, 100] });
-                    resolve({ icon: iconUrl, color: [Math.round(r/count), Math.round(g/count), Math.round(b/count)] });
+                    const finalColor = count === 0 ? [100, 100, 100] : [Math.round(r/count), Math.round(g/count), Math.round(b/count)];
+                    resolve({ icon: iconUrl, color: finalColor });
                 };
                 img.onerror = () => resolve({ icon: iconUrl, color: [120, 120, 120] });
             });
@@ -192,91 +228,123 @@
             return [Math.round(r/children.length), Math.round(g/children.length), Math.round(b/children.length)];
         }
 
-        // --- GESTIONE ICON PICKER ---
-        function openIconPicker(id, pId) {
-            pendingIconTarget = { id, pId };
-            document.getElementById('app-overlay').classList.add('active');
-            document.getElementById('icon-picker').classList.add('active');
-            const input = document.getElementById('icon-search-input');
-            const results = document.getElementById('picker-results');
-            input.value = ""; results.innerHTML = "";
-            input.focus();
+        // --- UI MODAL MANAGEMENT ---
+        function openModal(id = null, pId = null, isFolder = false) {
+            currentEditId = id;
+            currentParentId = pId;
+            tempCustomIcon = null;
             
-            input.oninput = () => {
-                const q = input.value.toLowerCase();
-                results.innerHTML = "";
-                if(q.length < 2) return;
-                [`${q}.com`, `${q}.it`, `${q}.org`, `github.com/${q}`, `twitter.com/${q}`, `facebook.com/${q}`].forEach(d => {
-                    const url = `https://www.google.com/s2/favicons?sz=128&domain=${d}`;
-                    const item = document.createElement('div');
-                    item.className = 'picker-item';
-                    item.innerHTML = `<img src="${url}" onerror="this.remove()">`;
-                    item.onclick = () => selectIcon(url);
-                    results.appendChild(item);
-                });
-            };
-        }
+            const modal = document.getElementById('main-modal');
+            const overlay = document.getElementById('app-overlay');
+            const title = document.getElementById('modal-title');
+            
+            // Reset campi
+            document.getElementById('field-url').value = '';
+            document.getElementById('field-name').value = '';
+            document.getElementById('field-desc').value = '';
+            document.getElementById('current-icon-img').src = 'https://www.google.com/s2/favicons?sz=128&domain=google.com';
+            
+            document.getElementById('group-url').style.display = isFolder ? 'none' : 'block';
+            document.getElementById('group-desc').style.display = isFolder ? 'none' : 'block';
+            document.getElementById('group-icon-custom').style.display = isFolder ? 'none' : 'block';
 
-        async function selectIcon(url) {
-            const { id, pId } = pendingIconTarget;
-            const list = pId ? db.find(f => f.id === pId).children : db;
-            const item = list.find(x => x.id === id);
-            const data = await analyzeIcon(item.url, url);
-            item.icon = data.icon; item.color = data.color;
-            if (pId) {
-                const parent = db.find(f => f.id === pId);
-                parent.color = getFolderAverageColor(parent.children);
-            }
-            save(); closeModals();
-        }
-
-        function closeModals() {
-            document.getElementById('app-overlay').classList.remove('active');
-            document.getElementById('icon-picker').classList.remove('active');
-            openFolderId = null; 
-            render();
-        }
-
-        // --- CRUD OPERAZIONI ---
-        async function addItem() {
-            let url = prompt("Inserisci URL del sito:");
-            if (!url) return;
-            if (!url.startsWith('http')) url = 'https://' + url;
-            const name = new URL(url).hostname.replace('www.', '').split('.')[0].toUpperCase();
-            const desc = prompt("Descrizione opzionale (comparirà al passaggio del mouse):", "");
-            const data = await analyzeIcon(url);
-            const newItem = { id: 't'+Date.now(), type: 'link', name, url, desc: desc || "", icon: data.icon, color: data.color };
-            db.push(newItem);
-            save();
-            if(confirm("Vuoi cercare un'icona specifica per questo sito?")) openIconPicker(newItem.id, null);
-        }
-
-        async function editItem(id, pId) {
-            const list = pId ? db.find(f => f.id === pId).children : db;
-            const item = list.find(x => x.id === id);
-            if (item.type === 'link') {
-                const n = prompt("Nome:", item.name);
-                const u = prompt("URL:", item.url);
-                const d = prompt("Descrizione:", item.desc);
-                if (n) item.name = n.toUpperCase();
-                if (d !== null) item.desc = d;
-                if (u && u !== item.url) {
-                    const data = await analyzeIcon(u);
-                    item.url = u; item.icon = data.icon; item.color = data.color;
+            if (id) {
+                title.innerText = "Modifica Elemento";
+                const list = pId ? db.find(f => f.id === pId).children : db;
+                const item = list.find(x => x.id === id);
+                document.getElementById('field-name').value = item.name;
+                if (!isFolder) {
+                    document.getElementById('field-url').value = item.url;
+                    document.getElementById('field-desc').value = item.desc || '';
+                    document.getElementById('current-icon-img').src = item.icon;
+                    tempCustomIcon = item.icon;
                 }
             } else {
-                const n = prompt("Nome Gruppo:", item.name);
-                if (n) item.name = n.toUpperCase();
+                title.innerText = isFolder ? "Nuovo Gruppo" : "Nuovo Link";
             }
-            if (pId) {
-                const parent = db.find(f => f.id === pId);
-                parent.color = getFolderAverageColor(parent.children);
-            }
-            save();
+
+            modal.classList.add('active');
+            overlay.classList.add('active');
         }
 
+        function closeModal() {
+            document.getElementById('main-modal').classList.remove('active');
+            document.getElementById('app-overlay').classList.remove('active');
+        }
+
+        async function saveModalData() {
+            let url = document.getElementById('field-url').value;
+            let name = document.getElementById('field-name').value.toUpperCase();
+            let desc = document.getElementById('field-desc').value;
+            const isFolder = document.getElementById('group-url').style.display === 'none';
+
+            if (!name) { alert("Inserisci un nome!"); return; }
+            if (!isFolder && !url) { alert("Inserisci un URL!"); return; }
+            if (!isFolder && !url.startsWith('http')) url = 'https://' + url;
+
+            let finalData;
+            if (!isFolder) {
+                // Se l'utente non ha incollato nulla di nuovo, analizziamo l'URL o teniamo la vecchia
+                const data = await analyzeIcon(url, tempCustomIcon);
+                finalData = { ...data, name, url, desc };
+            } else {
+                finalData = { name };
+            }
+
+            if (currentEditId) {
+                // UPDATE
+                const list = currentParentId ? db.find(f => f.id === currentParentId).children : db;
+                const item = list.find(x => x.id === currentEditId);
+                Object.assign(item, finalData);
+                if (currentParentId) {
+                    const p = db.find(f => f.id === currentParentId);
+                    p.color = getFolderAverageColor(p.children);
+                }
+            } else {
+                // CREATE
+                const newItem = {
+                    id: (isFolder ? 'f' : 't') + Date.now(),
+                    type: isFolder ? 'folder' : 'link',
+                    ...finalData,
+                    children: isFolder ? [] : undefined
+                };
+                db.push(newItem);
+            }
+
+            save();
+            closeModal();
+        }
+
+        // --- ICON HELPERS ---
+        function searchOnGoogle() {
+            const name = document.getElementById('field-name').value || "App";
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(name)}+icon+logo+png&tbm=isch`, '_blank');
+        }
+
+        async function pasteImage() {
+            try {
+                const items = await navigator.clipboard.read();
+                for (const item of items) {
+                    if (item.types.includes('image/png') || item.types.includes('image/jpeg')) {
+                        const blob = await item.getType(item.types.find(t => t.includes('image')));
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            tempCustomIcon = e.target.result;
+                            document.getElementById('current-icon-img').src = tempCustomIcon;
+                        };
+                        reader.readAsDataURL(blob);
+                        return;
+                    }
+                }
+                alert("Nessuna immagine trovata negli appunti. Copia un'immagine (Tasto destro -> Copia immagine) da Google e riprova.");
+            } catch (err) {
+                alert("Errore nell'accesso agli appunti. Assicurati di aver dato i permessi al browser.");
+            }
+        }
+
+        // --- DATABASE OPERATIONS ---
         function deleteItem(id, pId) {
-            if (!confirm("Sei sicuro di voler eliminare questo elemento?")) return;
+            if (!confirm("Eliminare definitivamente?")) return;
             if (pId) {
                 const f = db.find(x => x.id === pId);
                 f.children = f.children.filter(c => c.id !== id);
@@ -286,7 +354,91 @@
             save();
         }
 
-        // --- DRAG & DROP LOGIC ---
+        function save() { localStorage.setItem('speed_dial_v5', JSON.stringify(db)); render(); }
+
+        // --- RENDERING ---
+        function createTile(item, pId, isMatch) {
+            const div = document.createElement('div');
+            div.className = 'tile' + (isMatch ? ' search-match' : '');
+            const rgb = item.color ? item.color.join(',') : '100,100,100';
+            div.style.background = `rgba(${rgb}, 0.08)`;
+            div.style.borderColor = isMatch ? 'var(--accent)' : `rgba(${rgb}, 0.2)`;
+
+            div.draggable = true;
+            div.ondragstart = () => { dragId = item.id; dragSourceFolderId = pId; };
+            div.ondragover = e => { e.preventDefault(); div.classList.add('drag-over'); };
+            div.ondragleave = () => div.classList.remove('drag-over');
+            div.ondrop = e => { e.preventDefault(); e.stopPropagation(); div.classList.remove('drag-over'); dropOnTile(item.id); };
+
+            div.onclick = () => {
+                if (item.type === 'link') window.open(item.url, '_blank');
+                else { openFolderId = (openFolderId === item.id ? null : item.id); render(); }
+            };
+
+            const acts = document.createElement('div');
+            acts.className = 'actions';
+            
+            const editBtn = document.createElement('button'); editBtn.className = 'btn-act'; editBtn.innerHTML = '✎';
+            editBtn.onclick = e => { e.stopPropagation(); openModal(item.id, pId, item.type === 'folder'); };
+            
+            const delBtn = document.createElement('button'); delBtn.className = 'btn-act'; delBtn.innerHTML = '×';
+            delBtn.onclick = e => { e.stopPropagation(); deleteItem(item.id, pId); };
+            
+            acts.append(editBtn, delBtn);
+
+            if (item.type === 'link') {
+                div.innerHTML = `
+                    <div class="icon-wrap">
+                        <div class="icon-glow" style="background:rgb(${rgb})"></div>
+                        <img src="${item.icon}" class="icon-img" loading="lazy">
+                    </div>
+                    <div class="label">${item.name}</div>
+                `;
+            } else {
+                let icons = '<div class="folder-preview">';
+                (item.children || []).slice(0, 4).forEach(c => icons += `<img src="${c.icon}" class="mini-icon">`);
+                div.innerHTML = icons + `</div><div class="label">${item.name}</div>`;
+            }
+            
+            div.appendChild(acts);
+            return div;
+        }
+
+        function render() {
+            const container = document.getElementById('grid');
+            const query = document.getElementById('search').value.toLowerCase();
+            container.innerHTML = '';
+            
+            db.forEach(item => {
+                const matchMe = item.name.toLowerCase().includes(query) || (item.desc && item.desc.toLowerCase().includes(query));
+                const matchChildren = item.type === 'folder' && item.children.some(c => c.name.toLowerCase().includes(query));
+                
+                if (!query || matchMe || matchChildren) {
+                    container.appendChild(createTile(item, null, query && matchMe));
+
+                    if (item.id === openFolderId || (query && matchChildren)) {
+                        const exp = document.createElement('div');
+                        exp.className = 'folder-open';
+                        item.children.forEach(c => exp.appendChild(createTile(c, item.id, query && c.name.toLowerCase().includes(query))));
+                        container.appendChild(exp);
+                    }
+                }
+            });
+
+            if (!query) {
+                const addLink = document.createElement('div');
+                addLink.className = 'tile btn-add'; addLink.innerHTML = '<b>+ LINK</b>';
+                addLink.onclick = () => openModal(null, null, false);
+                
+                const addFolder = document.createElement('div');
+                addFolder.className = 'tile btn-add'; addFolder.innerHTML = '<b>+ GRUPPO</b>';
+                addFolder.onclick = () => openModal(null, null, true);
+                
+                container.append(addLink, addFolder);
+            }
+        }
+
+        // --- DRAG & DROP FOLDER LOGIC ---
         function handleGlobalDrop(e) {
             if ((e.target.id === 'grid' || e.target.tagName === 'BODY') && dragId && dragSourceFolderId) {
                 const f = db.find(x => x.id === dragSourceFolderId);
@@ -321,127 +473,23 @@
             save();
         }
 
-        // --- RENDER UI ---
-        function createTile(item, pId, isMatch) {
-            const div = document.createElement('div');
-            div.className = 'tile' + (isMatch ? ' search-match' : '');
-            const rgb = item.color ? item.color.join(',') : '100,100,100';
-            div.style.background = `rgba(${rgb}, 0.08)`;
-            div.style.borderColor = isMatch ? 'var(--accent)' : `rgba(${rgb}, 0.2)`;
-
-            div.draggable = true;
-            div.ondragstart = () => { dragId = item.id; dragSourceFolderId = pId; };
-            div.ondragover = e => { e.preventDefault(); div.classList.add('drag-over'); };
-            div.ondragleave = () => div.classList.remove('drag-over');
-            div.ondrop = e => { e.preventDefault(); e.stopPropagation(); div.classList.remove('drag-over'); dropOnTile(item.id); };
-
-            div.onclick = () => {
-                if (item.type === 'link') window.open(item.url, '_blank');
-                else { openFolderId = (openFolderId === item.id ? null : item.id); render(); }
-            };
-
-            // Actions Buttons
-            const acts = document.createElement('div');
-            acts.className = 'actions';
-            
-            const editBtn = document.createElement('button'); editBtn.className = 'btn-act'; editBtn.innerHTML = '✎';
-            editBtn.onclick = e => { e.stopPropagation(); editItem(item.id, pId); };
-            
-            const delBtn = document.createElement('button'); delBtn.className = 'btn-act'; delBtn.innerHTML = '×';
-            delBtn.onclick = e => { e.stopPropagation(); deleteItem(item.id, pId); };
-            
-            if(item.type === 'link') {
-                const iconBtn = document.createElement('button'); iconBtn.className = 'btn-act'; iconBtn.innerHTML = '🖼️';
-                iconBtn.onclick = e => { e.stopPropagation(); openIconPicker(item.id, pId); };
-                acts.append(iconBtn);
-
-                if(item.desc) {
-                    const tt = document.createElement('div');
-                    tt.className = 'tooltip';
-                    tt.style.borderColor = `rgb(${rgb})`;
-                    tt.innerHTML = `<strong style="color:rgb(${rgb})">${item.name}</strong><br>${item.desc}`;
-                    div.appendChild(tt);
-                }
-            }
-            
-            acts.prepend(editBtn); acts.append(delBtn);
-
-            if (item.type === 'link') {
-                div.innerHTML += `
-                    <div class="icon-wrap">
-                        <div class="icon-glow" style="background:rgb(${rgb})"></div>
-                        <img src="${item.icon}" class="icon-img" loading="lazy">
-                    </div>
-                    <div class="label">${item.name}</div>
-                `;
-            } else {
-                let icons = '<div class="folder-preview">';
-                (item.children || []).slice(0, 4).forEach(c => icons += `<img src="${c.icon}" class="mini-icon">`);
-                div.innerHTML += icons + `</div><div class="label">${item.name}</div>`;
-            }
-            
-            div.appendChild(acts);
-            return div;
-        }
-
-        function render() {
-            const container = document.getElementById('grid');
-            const query = document.getElementById('search').value.toLowerCase();
-            container.innerHTML = '';
-            
-            const isPicker = document.getElementById('icon-picker').classList.contains('active');
-            document.getElementById('app-overlay').classList.toggle('active', (openFolderId !== null && !query) || isPicker);
-
-            db.forEach(item => {
-                const matchMe = item.name.toLowerCase().includes(query) || (item.desc && item.desc.toLowerCase().includes(query));
-                const matchChildren = item.type === 'folder' && item.children.some(c => c.name.toLowerCase().includes(query) || (c.desc && c.desc.toLowerCase().includes(query)));
-                
-                if (!query || matchMe || matchChildren) {
-                    container.appendChild(createTile(item, null, query && matchMe));
-
-                    if (item.id === openFolderId || (query && matchChildren)) {
-                        const exp = document.createElement('div');
-                        exp.className = 'folder-open';
-                        item.children.forEach(c => {
-                            const childMatch = query && (c.name.toLowerCase().includes(query) || (c.desc && c.desc.toLowerCase().includes(query)));
-                            if (!query || childMatch || item.id === openFolderId) {
-                                exp.appendChild(createTile(c, item.id, childMatch));
-                            }
-                        });
-                        container.appendChild(exp);
-                    }
-                }
-            });
-
-            if (!query) {
-                const add = document.createElement('div');
-                add.className = 'tile btn-add'; add.innerHTML = '<b>+ AGGIUNGI LINK</b>';
-                add.onclick = addItem;
-                container.appendChild(add);
-            }
-        }
-
-        function save() { localStorage.setItem('speed_dial_final_v4', JSON.stringify(db)); render(); }
-        
+        // --- BACKUP ---
         function exportData() {
             const blob = new Blob([JSON.stringify(db, null, 2)], {type: 'application/json'});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `speeddial_backup_${new Date().toLocaleDateString()}.json`;
+            a.download = `speeddial_pro_v5.json`;
             a.click();
         }
 
         function importData() {
             const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
+            input.type = 'file'; input.accept = '.json';
             input.onchange = e => {
                 const reader = new FileReader();
                 reader.onload = ev => {
-                    try {
-                        const imported = JSON.parse(ev.target.result);
-                        if(Array.isArray(imported)) { db = imported; save(); }
-                    } catch(err) { alert("Errore nel caricamento del file."); }
+                    try { const imported = JSON.parse(ev.target.result); if(Array.isArray(imported)) { db = imported; save(); } } 
+                    catch(err) { alert("Errore file."); }
                 };
                 reader.readAsText(e.target.files[0]);
             };
