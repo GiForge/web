@@ -33,7 +33,6 @@
             gap: 20px; padding-bottom: 80px; z-index: 60;
         }
 
-        /* --- MODALE UNIFICATA --- */
         #app-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
@@ -64,11 +63,10 @@
             display: flex; align-items: center; gap: 15px; margin-top: 10px;
             padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px;
         }
-        #current-icon-img { width: 50px; height: 50px; object-fit: contain; border-radius: 8px; }
+        #current-icon-img { width: 50px; height: 50px; object-fit: contain; border-radius: 8px; background: #222; }
 
         .btn-group { display: flex; gap: 8px; margin-top: 20px; }
         
-        /* --- BOTTONI --- */
         .btn {
             flex: 1; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
             font-weight: bold; text-transform: uppercase; font-size: 0.75rem; transition: 0.2s;
@@ -77,9 +75,7 @@
         .btn-primary:hover { filter: brightness(1.2); }
         .btn-secondary { background: var(--glass); color: white; border: 1px solid var(--glass-border); }
         .btn-secondary:hover { background: rgba(255,255,255,0.1); }
-        .btn-danger { background: rgba(255, 77, 77, 0.2); color: #ff4d4d; border: 1px solid #ff4d4d; }
 
-        /* --- TILE & GRID --- */
         .tile {
             aspect-ratio: 16 / 10; border-radius: 18px;
             background: var(--glass); border: 1px solid var(--glass-border);
@@ -143,7 +139,7 @@
         
         <div class="form-group" id="group-url">
             <label>Link (URL)</label>
-            <input type="text" id="field-url" class="input-text" placeholder="https://www.google.com">
+            <input type="text" id="field-url" class="input-text" placeholder="https://www.google.com" oninput="handleUrlInput(this.value)">
         </div>
 
         <div class="form-group">
@@ -165,7 +161,7 @@
                     <button class="btn btn-secondary" style="padding:6px; font-size:0.6rem" onclick="pasteImage()">Incolla Immagine</button>
                 </div>
             </div>
-            <p style="font-size: 0.6rem; color: #888; margin-top: 5px;">* Se lasci vuoto o incollato, verrà usata l'icona automatica.</p>
+            <p style="font-size: 0.6rem; color: #888; margin-top: 5px;">* L'icona si aggiorna automaticamente inserendo l'URL.</p>
         </div>
 
         <div class="btn-group">
@@ -189,11 +185,56 @@
         let openFolderId = null;
         let dragId = null;
         let dragSourceFolderId = null;
-        
-        // Stato modale
         let currentEditId = null;
         let currentParentId = null;
         let tempCustomIcon = null;
+        let fetchTimeout = null;
+
+        // --- AUTOMATIC FETCH LOGIC ---
+        async function handleUrlInput(url) {
+            if (!url || url.length < 5) return;
+            if (document.getElementById('group-url').style.display === 'none') return; // Se è un folder
+
+            clearTimeout(fetchTimeout);
+            fetchTimeout = setTimeout(async () => {
+                const titleElement = document.getElementById('modal-title');
+                const originalTitle = titleElement.innerText;
+                titleElement.innerText = "Recupero informazioni...";
+
+                if (!url.startsWith('http')) url = 'https://' + url;
+                
+                try {
+                    // Usiamo un servizio di analisi meta o semplicemente estraiamo il dominio per l'icona
+                    const domain = new URL(url).hostname;
+                    
+                    // 1. Set Icona High Res via Google Favicon service
+                    const iconUrl = `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
+                    tempCustomIcon = iconUrl;
+                    document.getElementById('current-icon-img').src = iconUrl;
+
+                    // 2. Se il nome è vuoto, proviamo a ricavare un nome pulito dal dominio
+                    const nameField = document.getElementById('field-name');
+                    if (!nameField.value) {
+                        let guessedName = domain.replace('www.', '').split('.')[0];
+                        nameField.value = guessedName.toUpperCase();
+                    }
+
+                    // 3. Proviamo a recuperare Title e Description via DuckDuckGo API (molto veloce e cors-friendly per metadata base)
+                    const response = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(url)}&format=json`);
+                    const data = await response.json();
+                    
+                    if (data.Heading && !nameField.value) nameField.value = data.Heading.toUpperCase();
+                    if (data.AbstractText && !document.getElementById('field-desc').value) {
+                        document.getElementById('field-desc').value = data.AbstractText.substring(0, 60) + "...";
+                    }
+
+                } catch (e) {
+                    console.log("Errore fetch automatico:", e);
+                } finally {
+                    titleElement.innerText = originalTitle;
+                }
+            }, 600);
+        }
 
         // --- CORE LOGIC ---
         async function analyzeIcon(url, customIcon = null) {
@@ -238,7 +279,6 @@
             const overlay = document.getElementById('app-overlay');
             const title = document.getElementById('modal-title');
             
-            // Reset campi
             document.getElementById('field-url').value = '';
             document.getElementById('field-name').value = '';
             document.getElementById('field-desc').value = '';
@@ -284,7 +324,6 @@
 
             let finalData;
             if (!isFolder) {
-                // Se l'utente non ha incollato nulla di nuovo, analizziamo l'URL o teniamo la vecchia
                 const data = await analyzeIcon(url, tempCustomIcon);
                 finalData = { ...data, name, url, desc };
             } else {
@@ -292,7 +331,6 @@
             }
 
             if (currentEditId) {
-                // UPDATE
                 const list = currentParentId ? db.find(f => f.id === currentParentId).children : db;
                 const item = list.find(x => x.id === currentEditId);
                 Object.assign(item, finalData);
@@ -301,7 +339,6 @@
                     p.color = getFolderAverageColor(p.children);
                 }
             } else {
-                // CREATE
                 const newItem = {
                     id: (isFolder ? 'f' : 't') + Date.now(),
                     type: isFolder ? 'folder' : 'link',
@@ -315,7 +352,6 @@
             closeModal();
         }
 
-        // --- ICON HELPERS ---
         function searchOnGoogle() {
             const name = document.getElementById('field-name').value || "App";
             window.open(`https://www.google.com/search?q=${encodeURIComponent(name)}+icon+logo+png&tbm=isch`, '_blank');
@@ -336,13 +372,12 @@
                         return;
                     }
                 }
-                alert("Nessuna immagine trovata negli appunti. Copia un'immagine (Tasto destro -> Copia immagine) da Google e riprova.");
+                alert("Copia un'immagine da Google e riprova.");
             } catch (err) {
-                alert("Errore nell'accesso agli appunti. Assicurati di aver dato i permessi al browser.");
+                alert("Errore accesso appunti.");
             }
         }
 
-        // --- DATABASE OPERATIONS ---
         function deleteItem(id, pId) {
             if (!confirm("Eliminare definitivamente?")) return;
             if (pId) {
@@ -356,7 +391,6 @@
 
         function save() { localStorage.setItem('speed_dial_v5', JSON.stringify(db)); render(); }
 
-        // --- RENDERING ---
         function createTile(item, pId, isMatch) {
             const div = document.createElement('div');
             div.className = 'tile' + (isMatch ? ' search-match' : '');
@@ -377,13 +411,10 @@
 
             const acts = document.createElement('div');
             acts.className = 'actions';
-            
             const editBtn = document.createElement('button'); editBtn.className = 'btn-act'; editBtn.innerHTML = '✎';
             editBtn.onclick = e => { e.stopPropagation(); openModal(item.id, pId, item.type === 'folder'); };
-            
             const delBtn = document.createElement('button'); delBtn.className = 'btn-act'; delBtn.innerHTML = '×';
             delBtn.onclick = e => { e.stopPropagation(); deleteItem(item.id, pId); };
-            
             acts.append(editBtn, delBtn);
 
             if (item.type === 'link') {
@@ -399,7 +430,6 @@
                 (item.children || []).slice(0, 4).forEach(c => icons += `<img src="${c.icon}" class="mini-icon">`);
                 div.innerHTML = icons + `</div><div class="label">${item.name}</div>`;
             }
-            
             div.appendChild(acts);
             return div;
         }
@@ -412,10 +442,8 @@
             db.forEach(item => {
                 const matchMe = item.name.toLowerCase().includes(query) || (item.desc && item.desc.toLowerCase().includes(query));
                 const matchChildren = item.type === 'folder' && item.children.some(c => c.name.toLowerCase().includes(query));
-                
                 if (!query || matchMe || matchChildren) {
                     container.appendChild(createTile(item, null, query && matchMe));
-
                     if (item.id === openFolderId || (query && matchChildren)) {
                         const exp = document.createElement('div');
                         exp.className = 'folder-open';
@@ -429,16 +457,13 @@
                 const addLink = document.createElement('div');
                 addLink.className = 'tile btn-add'; addLink.innerHTML = '<b>+ LINK</b>';
                 addLink.onclick = () => openModal(null, null, false);
-                
                 const addFolder = document.createElement('div');
                 addFolder.className = 'tile btn-add'; addFolder.innerHTML = '<b>+ GRUPPO</b>';
                 addFolder.onclick = () => openModal(null, null, true);
-                
                 container.append(addLink, addFolder);
             }
         }
 
-        // --- DRAG & DROP FOLDER LOGIC ---
         function handleGlobalDrop(e) {
             if ((e.target.id === 'grid' || e.target.tagName === 'BODY') && dragId && dragSourceFolderId) {
                 const f = db.find(x => x.id === dragSourceFolderId);
@@ -461,7 +486,6 @@
             const item = findAndRemove(db, dragId);
             const tIdx = db.findIndex(x => x.id === targetId);
             const target = db[tIdx];
-            
             if (target.type === 'link') {
                 const newF = { id: 'f'+Date.now(), type: 'folder', name: 'NUOVO GRUPPO', children: [target, item] };
                 newF.color = getFolderAverageColor(newF.children);
@@ -473,7 +497,6 @@
             save();
         }
 
-        // --- BACKUP ---
         function exportData() {
             const blob = new Blob([JSON.stringify(db, null, 2)], {type: 'application/json'});
             const a = document.createElement('a');
