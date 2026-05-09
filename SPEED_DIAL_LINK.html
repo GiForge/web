@@ -2,8 +2,8 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speed Dial Pro - Icon Search Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Speed Dial Pro - Ultimate Edition</title>
     <style>
         :root {
             --bg-center: #1a1f2c;
@@ -13,7 +13,7 @@
             --accent: #00f2ff;
         }
 
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
 
         body {
             margin: 0; min-height: 100vh;
@@ -24,125 +24,143 @@
             overflow-x: hidden;
         }
 
-        /* Overlay & Modali */
+        /* --- LAYOUT RESPONSIVE & GRID --- */
+        .header { width: 100%; max-width: 1100px; padding: 30px 20px; z-index: 100; }
+        
+        #grid {
+            display: grid; width: 95%; max-width: 1400px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px; padding-bottom: 80px; z-index: 60;
+        }
+
+        @media (max-width: 600px) {
+            #grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 10px; }
+            .header { padding: 20px 15px; }
+            .tile { border-radius: 12px; }
+            .label { font-size: 0.65rem; }
+            .icon-wrap { width: 40px; height: 40px; }
+            .folder-open { padding: 15px; grid-template-columns: repeat(2, 1fr); }
+            .actions { opacity: 1 !important; transform: scale(0.8); top: 2px; right: 2px; }
+        }
+
+        /* --- TOOLTIP STYLE --- */
+        .tooltip {
+            position: absolute; bottom: 115%; left: 50%; transform: translateX(-50%) translateY(10px);
+            background: rgba(10, 15, 25, 0.98); border: 1px solid var(--accent);
+            padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; width: 180px;
+            pointer-events: none; opacity: 0; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 500;
+            text-transform: none; text-align: center; backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+        }
+        .tile:hover .tooltip { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* --- MODALI & OVERLAYS --- */
         #app-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
             z-index: 50; display: none;
         }
         #app-overlay.active { display: block; }
 
         #icon-picker {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 90%; max-width: 450px; background: #1a1f2c; border: 1px solid var(--accent);
+            width: 90%; max-width: 450px; background: #161b26; border: 1px solid var(--accent);
             border-radius: 20px; padding: 25px; z-index: 200; display: none;
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
+            box-shadow: 0 0 40px rgba(0, 242, 255, 0.2);
         }
-        #icon-picker.active { display: block; }
-        .picker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; max-height: 300px; overflow-y: auto; padding: 10px; }
-        .picker-item { 
-            background: var(--glass); border: 1px solid var(--glass-border); padding: 10px; 
-            border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; justify-content: center;
-        }
-        .picker-item:hover { border-color: var(--accent); transform: scale(1.1); background: rgba(0,242,255,0.1); }
-        .picker-item img { width: 40px; height: 40px; object-fit: contain; }
+        #icon-picker.active { display: block; animation: fadeIn 0.3s ease; }
+        .picker-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; max-height: 280px; overflow-y: auto; padding: 5px; }
+        .picker-item { background: var(--glass); padding: 10px; border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; border: 1px solid transparent; }
+        .picker-item:hover { border-color: var(--accent); background: rgba(0, 242, 255, 0.1); }
+        .picker-item img { width: 35px; height: 35px; object-fit: contain; }
 
-        .header { width: 100%; max-width: 1100px; padding: 40px 20px; z-index: 100; }
+        /* --- ELEMENTI UI --- */
         .search-bar {
             width: 100%; background: var(--glass); border: 1px solid var(--glass-border);
-            padding: 18px 25px; border-radius: 15px; color: white; font-size: 1.1rem;
+            padding: 15px 22px; border-radius: 12px; color: white; font-size: 1rem;
             backdrop-filter: blur(10px); outline: none; transition: 0.3s;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
-        .search-bar:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); }
+        .search-bar:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(0, 242, 255, 0.1); }
 
-        .toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
+        .toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
         .btn-tool {
             background: var(--glass); border: 1px solid var(--glass-border);
-            color: #aaa; padding: 8px 16px; border-radius: 8px; cursor: pointer;
+            color: #ccc; padding: 8px 14px; border-radius: 8px; cursor: pointer;
             font-size: 0.7rem; font-weight: bold; text-transform: uppercase; transition: 0.2s;
         }
         .btn-tool:hover { background: rgba(255,255,255,0.1); color: white; border-color: white; }
-
-        #grid {
-            display: grid; width: 95%; max-width: 1400px;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 25px; padding-bottom: 50px; z-index: 60;
-        }
 
         .tile {
             aspect-ratio: 16 / 10; border-radius: 18px;
             background: var(--glass); border: 1px solid var(--glass-border);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; position: relative; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer; position: relative; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             clip-path: polygon(0 0, 92% 0, 100% 15%, 100% 100%, 8% 100%, 0 85%);
+            user-select: none;
         }
-        .tile:hover { transform: translateY(-8px); border-color: rgba(255,255,255,0.4); }
-        .tile.search-match { border-color: var(--accent) !important; box-shadow: 0 0 15px var(--accent); }
+        .tile:hover { transform: translateY(-6px); border-color: rgba(255,255,255,0.4); }
+        .tile.search-match { border-color: var(--accent) !important; box-shadow: 0 0 20px var(--accent); }
+        .tile.drag-over { background: rgba(0, 242, 255, 0.15) !important; transform: scale(1.05); }
 
-        .icon-wrap { width: 52px; height: 52px; position: relative; margin-bottom: 12px; }
+        .icon-wrap { width: 50px; height: 50px; position: relative; margin-bottom: 10px; }
         .icon-img { width: 100%; height: 100%; object-fit: contain; z-index: 2; position: relative; }
-        .icon-glow {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            filter: blur(18px); opacity: 0.7; z-index: 1; border-radius: 50%;
-        }
+        .icon-glow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; filter: blur(16px); opacity: 0.6; z-index: 1; border-radius: 50%; }
 
-        .label { font-size: 0.75rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #fff; opacity: 0.9; text-align: center; padding: 0 10px; }
+        .label { font-size: 0.72rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; text-align: center; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 90%; }
 
-        .folder-preview { display: grid; grid-template-columns: repeat(2, 22px); gap: 4px; margin-bottom: 10px; }
+        .folder-preview { display: grid; grid-template-columns: repeat(2, 22px); gap: 4px; margin-bottom: 8px; }
         .mini-icon { width: 22px; height: 22px; object-fit: contain; background: rgba(255,255,255,0.05); border-radius: 4px; }
 
         .folder-open {
             grid-column: 1 / -1; background: rgba(255,255,255,0.02);
-            border: 1px solid var(--glass-border); border-radius: 25px;
-            padding: 40px; display: grid; gap: 20px;
+            border: 1px solid var(--glass-border); border-radius: 24px;
+            padding: 35px; display: grid; gap: 20px;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            backdrop-filter: blur(20px); animation: fadeIn 0.3s ease;
+            backdrop-filter: blur(20px); animation: fadeIn 0.4s ease;
         }
 
         .actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; opacity: 0; transition: 0.2s; z-index: 30; }
         .tile:hover .actions { opacity: 1; }
-        .btn-act {
-            width: 26px; height: 26px; border-radius: 6px; border: none;
-            background: rgba(0,0,0,0.7); color: white; cursor: pointer; font-size: 12px;
-        }
+        .btn-act { width: 26px; height: 26px; border-radius: 6px; border: none; background: rgba(0,0,0,0.8); color: white; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; }
         .btn-act:hover { background: var(--accent); color: black; }
 
-        .btn-add { border: 2px dashed var(--glass-border); clip-path: none; opacity: 0.5; }
+        .btn-add { border: 2px dashed var(--glass-border); clip-path: none; opacity: 0.5; cursor: copy; }
         .btn-add:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px) translate(-50%, -50%); } to { opacity: 1; transform: translateY(0) translate(-50%, -50%); } }
+        @keyframes fadeInNormal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body ondragover="event.preventDefault()" ondrop="handleGlobalDrop(event)">
 
     <div id="app-overlay" onclick="closeModals()"></div>
 
-    <!-- Icon Picker Modal -->
+    <!-- Modale Icon Picker -->
     <div id="icon-picker">
-        <h3 style="margin-top:0; color:var(--accent)">Scegli Icona</h3>
-        <input type="text" id="icon-search-input" class="search-bar" placeholder="Nome app o sito..." style="padding:10px; font-size:0.9rem">
+        <h3 style="margin:0 0 15px 0; color:var(--accent); font-size: 1.1rem; text-transform: uppercase;">Trova Icona Digitale</h3>
+        <input type="text" id="icon-search-input" class="search-bar" placeholder="Nome app (es: Netflix, YouTube...)" style="font-size:0.9rem">
         <div class="picker-grid" id="picker-results"></div>
-        <button class="btn-tool" onclick="closeModals()" style="width:100%; margin-top:15px">Annulla</button>
+        <button class="btn-tool" onclick="closeModals()" style="width:100%; margin-top:15px; padding:12px">Annulla</button>
     </div>
 
     <div class="header">
-        <input type="text" class="search-bar" id="search" placeholder="Cerca link o gruppi (esplora anche l'interno)..." oninput="render()">
+        <input type="text" class="search-bar" id="search" placeholder="Cerca link, gruppi o descrizioni..." oninput="render()">
         <div class="toolbar">
-            <button class="btn-tool" onclick="importData()">Importa JSON (+)</button>
-            <button class="btn-tool" onclick="exportData()">Esporta Backup</button>
+            <button class="btn-tool" onclick="importData()">Importa Backup</button>
+            <button class="btn-tool" onclick="exportData()">Salva Backup</button>
         </div>
     </div>
 
     <div id="grid"></div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('speed_dial_chroma')) || [];
+        let db = JSON.parse(localStorage.getItem('speed_dial_final_v4')) || [];
         let openFolderId = null;
         let dragId = null;
         let dragSourceFolderId = null;
-        let pendingIconTarget = null; // Memorizza quale item sta cambiando icona
+        let pendingIconTarget = null;
 
+        // --- ANALISI & LOGICA COLORI ---
         async function analyzeIcon(url, customIcon = null) {
             return new Promise(resolve => {
                 const iconUrl = customIcon || `https://www.google.com/s2/favicons?sz=128&domain=${url}`;
@@ -167,31 +185,32 @@
             });
         }
 
-        // --- ICON SEARCH ENGINE ---
+        function getFolderAverageColor(children) {
+            if (!children || !children.length) return [100, 100, 100];
+            let r = 0, g = 0, b = 0;
+            children.forEach(c => { r += c.color[0]; g += c.color[1]; b += c.color[2]; });
+            return [Math.round(r/children.length), Math.round(g/children.length), Math.round(b/children.length)];
+        }
+
+        // --- GESTIONE ICON PICKER ---
         function openIconPicker(id, pId) {
             pendingIconTarget = { id, pId };
             document.getElementById('app-overlay').classList.add('active');
             document.getElementById('icon-picker').classList.add('active');
             const input = document.getElementById('icon-search-input');
-            input.value = "";
+            const results = document.getElementById('picker-results');
+            input.value = ""; results.innerHTML = "";
             input.focus();
             
             input.oninput = () => {
                 const q = input.value.toLowerCase();
-                const results = document.getElementById('picker-results');
                 results.innerHTML = "";
                 if(q.length < 2) return;
-
-                const domains = [
-                    `${q}.com`, `${q}.it`, `${q}.org`, `${q}.net`,
-                    `github.com/${q}`, `twitter.com/${q}`, `facebook.com/${q}`
-                ];
-
-                domains.forEach(d => {
+                [`${q}.com`, `${q}.it`, `${q}.org`, `github.com/${q}`, `twitter.com/${q}`, `facebook.com/${q}`].forEach(d => {
                     const url = `https://www.google.com/s2/favicons?sz=128&domain=${d}`;
                     const item = document.createElement('div');
                     item.className = 'picker-item';
-                    item.innerHTML = `<img src="${url}" onerror="this.parentElement.remove()">`;
+                    item.innerHTML = `<img src="${url}" onerror="this.remove()">`;
                     item.onclick = () => selectIcon(url);
                     results.appendChild(item);
                 });
@@ -202,46 +221,34 @@
             const { id, pId } = pendingIconTarget;
             const list = pId ? db.find(f => f.id === pId).children : db;
             const item = list.find(x => x.id === id);
-            
             const data = await analyzeIcon(item.url, url);
-            item.icon = data.icon;
-            item.color = data.color;
-            
+            item.icon = data.icon; item.color = data.color;
             if (pId) {
                 const parent = db.find(f => f.id === pId);
                 parent.color = getFolderAverageColor(parent.children);
             }
-            save();
-            closeModals();
+            save(); closeModals();
         }
 
         function closeModals() {
             document.getElementById('app-overlay').classList.remove('active');
             document.getElementById('icon-picker').classList.remove('active');
-            openFolderId = null;
+            openFolderId = null; 
             render();
         }
 
-        function getFolderAverageColor(children) {
-            if (!children.length) return [100, 100, 100];
-            let r = 0, g = 0, b = 0;
-            children.forEach(c => { r += c.color[0]; g += c.color[1]; b += c.color[2]; });
-            return [Math.round(r/children.length), Math.round(g/children.length), Math.round(b/children.length)];
-        }
-
+        // --- CRUD OPERAZIONI ---
         async function addItem() {
-            let url = prompt("Inserisci URL:");
+            let url = prompt("Inserisci URL del sito:");
             if (!url) return;
             if (!url.startsWith('http')) url = 'https://' + url;
             const name = new URL(url).hostname.replace('www.', '').split('.')[0].toUpperCase();
+            const desc = prompt("Descrizione opzionale (comparirà al passaggio del mouse):", "");
             const data = await analyzeIcon(url);
-            const newItem = { id: 't' + Date.now(), type: 'link', name, url, icon: data.icon, color: data.color };
+            const newItem = { id: 't'+Date.now(), type: 'link', name, url, desc: desc || "", icon: data.icon, color: data.color };
             db.push(newItem);
             save();
-            
-            if(confirm("Vuoi cercare un'icona personalizzata per questo link?")) {
-                openIconPicker(newItem.id, null);
-            }
+            if(confirm("Vuoi cercare un'icona specifica per questo sito?")) openIconPicker(newItem.id, null);
         }
 
         async function editItem(id, pId) {
@@ -250,7 +257,9 @@
             if (item.type === 'link') {
                 const n = prompt("Nome:", item.name);
                 const u = prompt("URL:", item.url);
+                const d = prompt("Descrizione:", item.desc);
                 if (n) item.name = n.toUpperCase();
+                if (d !== null) item.desc = d;
                 if (u && u !== item.url) {
                     const data = await analyzeIcon(u);
                     item.url = u; item.icon = data.icon; item.color = data.color;
@@ -267,28 +276,24 @@
         }
 
         function deleteItem(id, pId) {
-            if (!confirm("Eliminare?")) return;
+            if (!confirm("Sei sicuro di voler eliminare questo elemento?")) return;
             if (pId) {
                 const f = db.find(x => x.id === pId);
                 f.children = f.children.filter(c => c.id !== id);
                 if (!f.children.length) db = db.filter(x => x.id !== pId);
                 else f.color = getFolderAverageColor(f.children);
-            } else {
-                db = db.filter(x => x.id !== id);
-            }
+            } else db = db.filter(x => x.id !== id);
             save();
         }
 
-        function startDrag(id, pId) { dragId = id; dragSourceFolderId = pId; }
-
+        // --- DRAG & DROP LOGIC ---
         function handleGlobalDrop(e) {
             if ((e.target.id === 'grid' || e.target.tagName === 'BODY') && dragId && dragSourceFolderId) {
-                const folder = db.find(f => f.id === dragSourceFolderId);
-                const idx = folder.children.findIndex(c => c.id === dragId);
-                const item = folder.children.splice(idx, 1)[0];
-                db.push(item);
-                if (!folder.children.length) db = db.filter(f => f.id !== dragSourceFolderId);
-                else folder.color = getFolderAverageColor(folder.children);
+                const f = db.find(x => x.id === dragSourceFolderId);
+                const idx = f.children.findIndex(c => c.id === dragId);
+                db.push(f.children.splice(idx, 1)[0]);
+                if (!f.children.length) db = db.filter(x => x.id !== dragSourceFolderId);
+                else f.color = getFolderAverageColor(f.children);
                 save();
             }
         }
@@ -298,19 +303,17 @@
             const findAndRemove = (list, id) => {
                 for(let i=0; i<list.length; i++) {
                     if(list[i].id === id) return list.splice(i, 1)[0];
-                    if(list[i].children) {
-                        const res = findAndRemove(list[i].children, id);
-                        if(res) return res;
-                    }
+                    if(list[i].children) { const r = findAndRemove(list[i].children, id); if(r) return r; }
                 }
             };
             const item = findAndRemove(db, dragId);
-            const targetIdx = db.findIndex(x => x.id === targetId);
-            const target = db[targetIdx];
+            const tIdx = db.findIndex(x => x.id === targetId);
+            const target = db[tIdx];
+            
             if (target.type === 'link') {
-                const newFolder = { id: 'f' + Date.now(), type: 'folder', name: 'NUOVO GRUPPO', children: [target, item] };
-                newFolder.color = getFolderAverageColor(newFolder.children);
-                db.splice(targetIdx, 1, newFolder);
+                const newF = { id: 'f'+Date.now(), type: 'folder', name: 'NUOVO GRUPPO', children: [target, item] };
+                newF.color = getFolderAverageColor(newF.children);
+                db.splice(tIdx, 1, newF);
             } else {
                 target.children.push(item);
                 target.color = getFolderAverageColor(target.children);
@@ -318,13 +321,113 @@
             save();
         }
 
+        // --- RENDER UI ---
+        function createTile(item, pId, isMatch) {
+            const div = document.createElement('div');
+            div.className = 'tile' + (isMatch ? ' search-match' : '');
+            const rgb = item.color ? item.color.join(',') : '100,100,100';
+            div.style.background = `rgba(${rgb}, 0.08)`;
+            div.style.borderColor = isMatch ? 'var(--accent)' : `rgba(${rgb}, 0.2)`;
+
+            div.draggable = true;
+            div.ondragstart = () => { dragId = item.id; dragSourceFolderId = pId; };
+            div.ondragover = e => { e.preventDefault(); div.classList.add('drag-over'); };
+            div.ondragleave = () => div.classList.remove('drag-over');
+            div.ondrop = e => { e.preventDefault(); e.stopPropagation(); div.classList.remove('drag-over'); dropOnTile(item.id); };
+
+            div.onclick = () => {
+                if (item.type === 'link') window.open(item.url, '_blank');
+                else { openFolderId = (openFolderId === item.id ? null : item.id); render(); }
+            };
+
+            // Actions Buttons
+            const acts = document.createElement('div');
+            acts.className = 'actions';
+            
+            const editBtn = document.createElement('button'); editBtn.className = 'btn-act'; editBtn.innerHTML = '✎';
+            editBtn.onclick = e => { e.stopPropagation(); editItem(item.id, pId); };
+            
+            const delBtn = document.createElement('button'); delBtn.className = 'btn-act'; delBtn.innerHTML = '×';
+            delBtn.onclick = e => { e.stopPropagation(); deleteItem(item.id, pId); };
+            
+            if(item.type === 'link') {
+                const iconBtn = document.createElement('button'); iconBtn.className = 'btn-act'; iconBtn.innerHTML = '🖼️';
+                iconBtn.onclick = e => { e.stopPropagation(); openIconPicker(item.id, pId); };
+                acts.append(iconBtn);
+
+                if(item.desc) {
+                    const tt = document.createElement('div');
+                    tt.className = 'tooltip';
+                    tt.style.borderColor = `rgb(${rgb})`;
+                    tt.innerHTML = `<strong style="color:rgb(${rgb})">${item.name}</strong><br>${item.desc}`;
+                    div.appendChild(tt);
+                }
+            }
+            
+            acts.prepend(editBtn); acts.append(delBtn);
+
+            if (item.type === 'link') {
+                div.innerHTML += `
+                    <div class="icon-wrap">
+                        <div class="icon-glow" style="background:rgb(${rgb})"></div>
+                        <img src="${item.icon}" class="icon-img" loading="lazy">
+                    </div>
+                    <div class="label">${item.name}</div>
+                `;
+            } else {
+                let icons = '<div class="folder-preview">';
+                (item.children || []).slice(0, 4).forEach(c => icons += `<img src="${c.icon}" class="mini-icon">`);
+                div.innerHTML += icons + `</div><div class="label">${item.name}</div>`;
+            }
+            
+            div.appendChild(acts);
+            return div;
+        }
+
+        function render() {
+            const container = document.getElementById('grid');
+            const query = document.getElementById('search').value.toLowerCase();
+            container.innerHTML = '';
+            
+            const isPicker = document.getElementById('icon-picker').classList.contains('active');
+            document.getElementById('app-overlay').classList.toggle('active', (openFolderId !== null && !query) || isPicker);
+
+            db.forEach(item => {
+                const matchMe = item.name.toLowerCase().includes(query) || (item.desc && item.desc.toLowerCase().includes(query));
+                const matchChildren = item.type === 'folder' && item.children.some(c => c.name.toLowerCase().includes(query) || (c.desc && c.desc.toLowerCase().includes(query)));
+                
+                if (!query || matchMe || matchChildren) {
+                    container.appendChild(createTile(item, null, query && matchMe));
+
+                    if (item.id === openFolderId || (query && matchChildren)) {
+                        const exp = document.createElement('div');
+                        exp.className = 'folder-open';
+                        item.children.forEach(c => {
+                            const childMatch = query && (c.name.toLowerCase().includes(query) || (c.desc && c.desc.toLowerCase().includes(query)));
+                            if (!query || childMatch || item.id === openFolderId) {
+                                exp.appendChild(createTile(c, item.id, childMatch));
+                            }
+                        });
+                        container.appendChild(exp);
+                    }
+                }
+            });
+
+            if (!query) {
+                const add = document.createElement('div');
+                add.className = 'tile btn-add'; add.innerHTML = '<b>+ AGGIUNGI LINK</b>';
+                add.onclick = addItem;
+                container.appendChild(add);
+            }
+        }
+
+        function save() { localStorage.setItem('speed_dial_final_v4', JSON.stringify(db)); render(); }
+        
         function exportData() {
-            const fileName = prompt("Nome del backup:", "my_speed_dial");
-            if (!fileName) return;
-            const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(db, null, 2)], {type: 'application/json'});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = fileName + ".json";
+            a.download = `speeddial_backup_${new Date().toLocaleDateString()}.json`;
             a.click();
         }
 
@@ -335,128 +438,15 @@
             input.onchange = e => {
                 const reader = new FileReader();
                 reader.onload = ev => {
-                    const data = JSON.parse(ev.target.result);
-                    data.forEach(item => {
-                        item.id = item.id + '_' + Math.random().toString(36).substr(2, 4);
-                        db.push(item);
-                    });
-                    save();
+                    try {
+                        const imported = JSON.parse(ev.target.result);
+                        if(Array.isArray(imported)) { db = imported; save(); }
+                    } catch(err) { alert("Errore nel caricamento del file."); }
                 };
                 reader.readAsText(e.target.files[0]);
             };
             input.click();
         }
-
-        // --- UI ---
-        function createTile(item, pId, isMatch) {
-            const div = document.createElement('div');
-            div.className = 'tile' + (isMatch ? ' search-match' : '');
-            const rgb = item.color.join(',');
-            div.style.background = `rgba(${rgb}, 0.08)`;
-            div.style.borderColor = isMatch ? 'var(--accent)' : `rgba(${rgb}, 0.2)`;
-
-            div.draggable = true;
-            div.ondragstart = () => startDrag(item.id, pId);
-            div.ondragover = e => { e.preventDefault(); div.classList.add('drag-over'); };
-            div.ondragleave = () => div.classList.remove('drag-over');
-            div.ondrop = e => { e.preventDefault(); e.stopPropagation(); dropOnTile(item.id); };
-
-            div.onclick = () => {
-                if (item.type === 'link') window.open(item.url, '_blank');
-                else { openFolderId = (openFolderId === item.id ? null : item.id); render(); }
-            };
-
-            const acts = document.createElement('div');
-            acts.className = 'actions';
-            
-            // Bottone Edit
-            const eb = document.createElement('button'); eb.className = 'btn-act'; eb.innerHTML = '✎';
-            eb.onclick = e => { e.stopPropagation(); editItem(item.id, pId); };
-            
-            // Bottone Search Icon (solo per link)
-            if(item.type === 'link') {
-                const ib = document.createElement('button'); ib.className = 'btn-act'; ib.innerHTML = '🖼️';
-                ib.title = "Cambia icona";
-                ib.onclick = e => { e.stopPropagation(); openIconPicker(item.id, pId); };
-                acts.append(ib);
-            }
-
-            const delBtn = document.createElement('button'); delBtn.className = 'btn-act'; delBtn.innerHTML = '×';
-            delBtn.onclick = e => { e.stopPropagation(); deleteItem(item.id, pId); };
-            
-            acts.prepend(eb);
-            acts.append(delBtn);
-
-            if (item.type === 'link') {
-                div.innerHTML += `
-                    <div class="icon-wrap">
-                        <div class="icon-glow" style="background: rgb(${rgb})"></div>
-                        <img src="${item.icon}" class="icon-img">
-                    </div>
-                    <div class="label">${item.name}</div>
-                `;
-            } else {
-                let icons = '<div class="folder-preview">';
-                item.children.slice(0, 4).forEach(c => icons += `<img src="${c.icon}" class="mini-icon">`);
-                icons += '</div>';
-                div.innerHTML += icons + `<div class="label">${item.name}</div>`;
-            }
-            div.appendChild(acts);
-            return div;
-        }
-
-        function render() {
-            const container = document.getElementById('grid');
-            const query = document.getElementById('search').value.toLowerCase();
-            container.innerHTML = '';
-            
-            const isPickerActive = document.getElementById('icon-picker').classList.contains('active');
-            document.getElementById('app-overlay').classList.toggle('active', (openFolderId !== null && !query) || isPickerActive);
-
-            db.forEach(item => {
-                let shouldShow = false;
-                let isMatch = false;
-                let containsMatch = false;
-
-                if (!query) {
-                    shouldShow = true;
-                } else {
-                    if (item.name.toLowerCase().includes(query)) {
-                        shouldShow = true;
-                        isMatch = true;
-                    }
-                    if (item.type === 'folder') {
-                        containsMatch = item.children.some(c => c.name.toLowerCase().includes(query));
-                        if (containsMatch) shouldShow = true;
-                    }
-                }
-
-                if (shouldShow) {
-                    container.appendChild(createTile(item, null, isMatch));
-                    if (item.id === openFolderId || (query && containsMatch)) {
-                        const expanded = document.createElement('div');
-                        expanded.className = 'folder-open';
-                        item.children.forEach(c => {
-                            const childMatch = query && c.name.toLowerCase().includes(query);
-                            if (!query || childMatch || item.id === openFolderId) {
-                                expanded.appendChild(createTile(c, item.id, childMatch));
-                            }
-                        });
-                        container.appendChild(expanded);
-                    }
-                }
-            });
-
-            if (!query) {
-                const add = document.createElement('div');
-                add.className = 'tile btn-add'; add.innerHTML = '<b>+ AGGIUNGI</b>';
-                add.onclick = addItem;
-                container.appendChild(add);
-            }
-        }
-
-        function save() { localStorage.setItem('speed_dial_chroma', JSON.stringify(db)); render(); }
-        function closeFolder() { openFolderId = null; render(); }
 
         render();
     </script>
