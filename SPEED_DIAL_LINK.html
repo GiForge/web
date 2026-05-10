@@ -5,158 +5,176 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Speed Dial Pro - Ultimate Edition</title>
 <style>
-        :root {
-            --bg-center: #1a1f2c;
-            --bg-outer: #080a0f;
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --accent: #00f2ff;
-            --danger: #ff4d4d;
+    :root {
+        --bg-center: #1a1f2c;
+        --bg-outer: #080a0f;
+        --glass: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --accent: #00f2ff;
+        --danger: #ff4d4d;
+    }
+
+    * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+
+    body {
+        margin: 0; min-height: 100vh;
+        background: radial-gradient(circle at center, var(--bg-center) 0%, var(--bg-outer) 100%);
+        background-attachment: fixed;
+        color: white;
+        display: flex; flex-direction: column; align-items: center;
+        overflow-x: hidden;
+    }
+
+    .header { width: 100%; max-width: 1100px; padding: 30px 20px; z-index: 100; }
+    
+    #grid {
+        display: grid; width: 95%; max-width: 1400px;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 20px; padding-bottom: 80px; z-index: 60;
+    }
+
+    /* --- MODALE --- */
+    #app-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+        z-index: 1000; display: none;
+    }
+    #app-overlay.active { display: block; }
+
+    .modal {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 90%; max-width: 450px; background: #161b26; border: 1px solid var(--accent);
+        border-radius: 20px; padding: 25px; z-index: 1001; display: none;
+        box-shadow: 0 0 50px rgba(0, 242, 255, 0.15);
+    }
+    .modal.active { display: block; animation: modalIn 0.3s ease; }
+
+    @keyframes modalIn { from { opacity: 0; transform: translate(-50%, -45%); } to { opacity: 1; transform: translate(-50%, -50%); } }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 0.7rem; color: var(--accent); text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
+    
+    .input-text {
+        width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+        padding: 12px; border-radius: 8px; color: white; outline: none; transition: 0.3s;
+    }
+    .input-text:focus { border-color: var(--accent); background: rgba(255,255,255,0.1); }
+
+    /* --- BOTTONI --- */
+    .btn-group { display: flex; gap: 8px; margin-top: 20px; }
+    .btn {
+        flex: 1; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
+        font-weight: bold; text-transform: uppercase; font-size: 0.75rem; transition: 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: black; }
+    .btn-primary:hover { filter: brightness(1.2); }
+    .btn-secondary { background: var(--glass); color: white; border: 1px solid var(--glass-border); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    /* --- TILE BASE --- */
+    .tile {
+        aspect-ratio: 16 / 10; border-radius: 18px;
+        background: var(--glass); border: 1px solid var(--glass-border);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        cursor: pointer; position: relative; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        clip-path: polygon(0 0, 92% 0, 100% 15%, 100% 100%, 8% 100%, 0 85%);
+        user-select: none;
+        min-width: 0; /* Impedisce l'espansione causata dal testo */
+        overflow: hidden;
+    }
+    .tile:hover { transform: translateY(-6px); border-color: rgba(255,255,255,0.4); }
+    .tile.search-match { border-color: var(--accent) !important; box-shadow: 0 0 20px var(--accent); }
+    .tile.drag-over { background: rgba(0, 242, 255, 0.15) !important; transform: scale(1.05); }
+
+    .icon-wrap { width: 50px; height: 50px; position: relative; margin-bottom: 10px; }
+    .icon-img { width: 100%; height: 100%; object-fit: contain; z-index: 2; position: relative; }
+    .icon-glow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; filter: blur(16px); opacity: 0.6; z-index: 1; border-radius: 50%; }
+
+    /* Fix Testo Lungo */
+    .label { 
+        font-size: 0.72rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; 
+        text-align: center; padding: 0 10px; overflow: hidden; text-overflow: ellipsis; 
+        white-space: nowrap; width: 100%; display: block;
+    }
+
+    /* --- FOLDER --- */
+    .folder-preview { display: grid; grid-template-columns: repeat(2, 22px); gap: 4px; margin-bottom: 8px; }
+    .mini-icon { width: 22px; height: 22px; object-fit: contain; background: rgba(255,255,255,0.05); border-radius: 4px; }
+
+    .folder-open {
+        grid-column: 1 / -1; background: rgba(255,255,255,0.02);
+        border: 1px solid var(--glass-border); border-radius: 24px;
+        padding: 35px; display: grid; gap: 20px;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        backdrop-filter: blur(20px); animation: fadeInNormal 0.4s ease;
+    }
+
+    /* --- PULSANTE "APRI TUTTI" (DENTRO CARTELLA ESPANSA) --- */
+    .folder-open .tile:first-child:not([draggable="true"]) {
+        grid-column: 1 / -1; 
+        width: 100%;
+        aspect-ratio: auto;   
+        height: 55px;         
+        flex-direction: row;  
+        gap: 15px;
+        background: rgba(0, 242, 255, 0.1) !important;
+        border: 1px solid var(--accent) !important;
+        clip-path: none;      
+        border-radius: 12px;
+    }
+    .folder-open .tile:first-child:not([draggable="true"]) .label {
+        text-align: left;
+        width: auto;
+        font-size: 0.85rem;
+    }
+
+    /* --- AZIONI (PULSANTINI SULLE TILE) --- */
+    .actions { 
+        position: absolute; top: 8px; right: 8px; display: flex; 
+        gap: 4px; opacity: 0; transition: 0.2s; z-index: 30; 
+    }
+    .tile:hover .actions { opacity: 1; }
+    .btn-act { 
+        width: 26px; height: 26px; border-radius: 6px; border: none; 
+        background: rgba(0,0,0,0.8); color: white; cursor: pointer; 
+        font-size: 11px; display: flex; align-items: center; justify-content: center; 
+    }
+    .btn-act:hover { background: var(--accent); color: black; }
+
+    .btn-add { border: 2px dashed var(--glass-border); clip-path: none; opacity: 0.5; cursor: copy; }
+    .btn-add:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
+
+    .search-bar {
+        width: 100%; background: var(--glass); border: 1px solid var(--glass-border);
+        padding: 15px 22px; border-radius: 12px; color: white; font-size: 1rem;
+        backdrop-filter: blur(10px); outline: none; transition: 0.3s;
+    }
+    .toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+    .btn-tool { background: var(--glass); border: 1px solid var(--glass-border); color: #ccc; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 600px) {
+        #grid { 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; padding: 10px; width: 100%; overflow-x: hidden;
         }
-
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            margin: 0; min-height: 100vh;
-            background: radial-gradient(circle at center, var(--bg-center) 0%, var(--bg-outer) 100%);
-            background-attachment: fixed;
-            color: white;
-            display: flex; flex-direction: column; align-items: center;
-            overflow-x: hidden;
+        .folder-open { 
+            padding: 15px; grid-template-columns: repeat(2, 1fr); width: 100%; 
         }
-
-        .header { width: 100%; max-width: 1100px; padding: 30px 20px; z-index: 100; }
-        
-        #grid {
-            display: grid; width: 95%; max-width: 1400px;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 20px; padding-bottom: 80px; z-index: 60;
+        /* Rende le azioni sempre visibili su mobile */
+        .actions { 
+            opacity: 1; 
+            transform: scale(0.85); 
+            top: 5px; right: 5px;
         }
-
-        /* --- MODALE --- */
-        #app-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
-            z-index: 1000; display: none;
+        .folder-open .tile:first-child:not([draggable="true"]) { 
+            height: 50px; 
+            max-width: calc(100vw - 50px);
         }
-        #app-overlay.active { display: block; }
+    }
 
-        .modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 90%; max-width: 450px; background: #161b26; border: 1px solid var(--accent);
-            border-radius: 20px; padding: 25px; z-index: 1001; display: none;
-            box-shadow: 0 0 50px rgba(0, 242, 255, 0.15);
-        }
-        .modal.active { display: block; animation: modalIn 0.3s ease; }
-
-        @keyframes modalIn { from { opacity: 0; transform: translate(-50%, -45%); } to { opacity: 1; transform: translate(-50%, -50%); } }
-
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 0.7rem; color: var(--accent); text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
-        
-        .input-text {
-            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-            padding: 12px; border-radius: 8px; color: white; outline: none; transition: 0.3s;
-        }
-        .input-text:focus { border-color: var(--accent); background: rgba(255,255,255,0.1); }
-
-        .icon-preview-area {
-            display: flex; align-items: center; gap: 15px; margin-top: 10px;
-            padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px;
-        }
-        #current-icon-img { width: 50px; height: 50px; object-fit: contain; border-radius: 8px; background: #222; }
-
-        /* --- BOTTONI --- */
-        .btn-group { display: flex; gap: 8px; margin-top: 20px; }
-        .btn {
-            flex: 1; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
-            font-weight: bold; text-transform: uppercase; font-size: 0.75rem; transition: 0.2s;
-        }
-        .btn-primary { background: var(--accent); color: black; }
-        .btn-primary:hover { filter: brightness(1.2); }
-        .btn-secondary { background: var(--glass); color: white; border: 1px solid var(--glass-border); }
-        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
-
-        /* --- TILE BASE --- */
-        .tile {
-            aspect-ratio: 16 / 10; border-radius: 18px;
-            background: var(--glass); border: 1px solid var(--glass-border);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; position: relative; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            clip-path: polygon(0 0, 92% 0, 100% 15%, 100% 100%, 8% 100%, 0 85%);
-            user-select: none;
-        }
-        .tile:hover { transform: translateY(-6px); border-color: rgba(255,255,255,0.4); }
-        .tile.search-match { border-color: var(--accent) !important; box-shadow: 0 0 20px var(--accent); }
-        .tile.drag-over { background: rgba(0, 242, 255, 0.15) !important; transform: scale(1.05); }
-
-        .icon-wrap { width: 50px; height: 50px; position: relative; margin-bottom: 10px; }
-        .icon-img { width: 100%; height: 100%; object-fit: contain; z-index: 2; position: relative; }
-        .icon-glow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; filter: blur(16px); opacity: 0.6; z-index: 1; border-radius: 50%; }
-
-        .label { font-size: 0.72rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; text-align: center; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 90%; }
-
-        /* --- FOLDER --- */
-        .folder-preview { display: grid; grid-template-columns: repeat(2, 22px); gap: 4px; margin-bottom: 8px; }
-        .mini-icon { width: 22px; height: 22px; object-fit: contain; background: rgba(255,255,255,0.05); border-radius: 4px; }
-
-        .folder-open {
-            grid-column: 1 / -1; background: rgba(255,255,255,0.02);
-            border: 1px solid var(--glass-border); border-radius: 24px;
-            padding: 35px; display: grid; gap: 20px;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            backdrop-filter: blur(20px); animation: fadeInNormal 0.4s ease;
-        }
-
-        /* --- STILE SPECIALE PULSANTE "APRI TUTTI" --- */
-        .folder-open .tile:first-child:not([draggable="true"]) {
-            grid-column: 1 / -1; 
-            aspect-ratio: auto;   
-            height: 55px;         
-            flex-direction: row;  
-            gap: 15px;
-            background: rgba(0, 242, 255, 0.1) !important;
-            border: 1px solid var(--accent) !important;
-            clip-path: none;      /* Rimuove l'angolo tagliato per distinguerlo */
-            border-radius: 12px;
-        }
-        .folder-open .tile:first-child:not([draggable="true"]):hover {
-            transform: translateY(-2px);
-            background: rgba(0, 242, 255, 0.2) !important;
-        }
-        .folder-open .tile:first-child:not([draggable="true"]) .label {
-            text-align: left;
-            width: auto;
-            font-size: 0.85rem;
-        }
-
-        /* --- AZIONI E TOOLBAR --- */
-        .actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; opacity: 0; transition: 0.2s; z-index: 30; }
-        .tile:hover .actions { opacity: 1; }
-        .btn-act { width: 26px; height: 26px; border-radius: 6px; border: none; background: rgba(0,0,0,0.8); color: white; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; }
-        .btn-act:hover { background: var(--accent); color: black; }
-
-        .btn-add { border: 2px dashed var(--glass-border); clip-path: none; opacity: 0.5; cursor: copy; }
-        .btn-add:hover { opacity: 1; border-color: var(--accent); color: var(--accent); }
-
-        .search-bar {
-            width: 100%; background: var(--glass); border: 1px solid var(--glass-border);
-            padding: 15px 22px; border-radius: 12px; color: white; font-size: 1rem;
-            backdrop-filter: blur(10px); outline: none; transition: 0.3s;
-        }
-        .toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
-        .btn-tool { background: var(--glass); border: 1px solid var(--glass-border); color: #ccc; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
-
-        /* --- RESPONSIVE --- */
-        @media (max-width: 600px) {
-            #grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 10px; }
-            .folder-open { padding: 15px; grid-template-columns: repeat(2, 1fr); }
-            .actions { opacity: 1; transform: scale(0.8); }
-            .folder-open .tile:first-child:not([draggable="true"]) { height: 50px; }
-        }
-
-        @keyframes fadeInNormal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+    @keyframes fadeInNormal { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 </head>
 <body ondragover="event.preventDefault()" ondrop="handleGlobalDrop(event)">
 
@@ -419,50 +437,79 @@
 
         function save() { localStorage.setItem('speed_dial_v5', JSON.stringify(db)); render(); }
 
-        function createTile(item, pId, isMatch) {
-            const div = document.createElement('div');
-            div.className = 'tile' + (isMatch ? ' search-match' : '');
-            const rgb = item.color ? item.color.join(',') : '100,100,100';
-            div.style.background = `rgba(${rgb}, 0.08)`;
-            div.style.borderColor = isMatch ? 'var(--accent)' : `rgba(${rgb}, 0.2)`;
+function createTile(item, pId, isMatch) {
+    const div = document.createElement('div');
+    div.className = 'tile' + (isMatch ? ' search-match' : '');
+    const rgb = item.color ? item.color.join(',') : '100,100,100';
+    div.style.background = `rgba(${rgb}, 0.08)`;
+    div.style.borderColor = isMatch ? 'var(--accent)' : `rgba(${rgb}, 0.2)`;
 
-            div.draggable = true;
-            div.ondragstart = () => { dragId = item.id; dragSourceFolderId = pId; };
-            div.ondragover = e => { e.preventDefault(); div.classList.add('drag-over'); };
-            div.ondragleave = () => div.classList.remove('drag-over');
-            div.ondrop = e => { e.preventDefault(); e.stopPropagation(); div.classList.remove('drag-over'); dropOnTile(item.id); };
+    div.draggable = true;
+    div.ondragstart = () => { dragId = item.id; dragSourceFolderId = pId; };
+    div.ondragover = e => { e.preventDefault(); div.classList.add('drag-over'); };
+    div.ondragleave = () => div.classList.remove('drag-over');
+    div.ondrop = e => { e.preventDefault(); e.stopPropagation(); div.classList.remove('drag-over'); dropOnTile(item.id); };
 
-            div.onclick = () => {
-                if (item.type === 'link') window.open(item.url, '_blank');
-                else { openFolderId = (openFolderId === item.id ? null : item.id); render(); }
-            };
+    div.onclick = () => {
+        if (item.type === 'link') window.open(item.url, '_blank');
+        else { openFolderId = (openFolderId === item.id ? null : item.id); render(); }
+    };
 
-            const acts = document.createElement('div');
-            acts.className = 'actions';
-            const editBtn = document.createElement('button'); editBtn.className = 'btn-act'; editBtn.innerHTML = '✎';
-            editBtn.onclick = e => { e.stopPropagation(); openModal(item.id, pId, item.type === 'folder'); };
-            const delBtn = document.createElement('button'); delBtn.className = 'btn-act'; delBtn.innerHTML = '×';
-            delBtn.onclick = e => { e.stopPropagation(); deleteItem(item.id, pId); };
-            acts.append(editBtn, delBtn);
+    const acts = document.createElement('div');
+    acts.className = 'actions';
 
-            if (item.type === 'link') {
-                div.innerHTML = `
-                    <div class="icon-wrap">
-                        <div class="icon-glow" style="background:rgb(${rgb})"></div>
-                        <img src="${item.icon}" class="icon-img" loading="lazy">
-                    </div>
-                    <div class="label">${item.name}</div>
-                `;
-            } else {
-                let icons = '<div class="folder-preview">';
-                (item.children || []).slice(0, 4).forEach(c => icons += `<img src="${c.icon}" class="mini-icon">`);
-                div.innerHTML = icons + `</div><div class="label">${item.name}</div>`;
-            }
-            div.appendChild(acts);
-            return div;
-        }
+    // --- AGGIUNTA: Pulsante Apri Tutto per i Gruppi ---
+    if (item.type === 'folder' && item.children && item.children.length > 0) {
+        const playBtn = document.createElement('button');
+        playBtn.className = 'btn-act';
+        playBtn.innerHTML = '▶';
+        playBtn.title = "Apri tutti i link";
+        playBtn.style.color = 'var(--accent)';
+        playBtn.onclick = (e) => {
+            e.stopPropagation(); // Evita l'apertura/chiusura della cartella nel dashboard
+            item.children.forEach((c, index) => {
+                if (c.url) {
+                    setTimeout(() => {
+                        window.open(c.url, '_blank');
+                    }, index * 150);
+                }
+            });
+        };
+        acts.appendChild(playBtn);
+    }
+    // ------------------------------------------------
 
- function render() {
+    const editBtn = document.createElement('button'); 
+    editBtn.className = 'btn-act'; 
+    editBtn.innerHTML = '✎';
+    editBtn.onclick = e => { e.stopPropagation(); openModal(item.id, pId, item.type === 'folder'); };
+    
+    const delBtn = document.createElement('button'); 
+    delBtn.className = 'btn-act'; 
+    delBtn.innerHTML = '×';
+    delBtn.onclick = e => { e.stopPropagation(); deleteItem(item.id, pId); };
+    
+    acts.append(editBtn, delBtn);
+
+    if (item.type === 'link') {
+        div.innerHTML = `
+            <div class="icon-wrap">
+                <div class="icon-glow" style="background:rgb(${rgb})"></div>
+                <img src="${item.icon}" class="icon-img" loading="lazy">
+            </div>
+            <div class="label">${item.name}</div>
+        `;
+    } else {
+        let icons = '<div class="folder-preview">';
+        (item.children || []).slice(0, 4).forEach(c => icons += `<img src="${c.icon}" class="mini-icon">`);
+        div.innerHTML = icons + `</div><div class="label">${item.name}</div>`;
+    }
+    
+    div.appendChild(acts);
+    return div;
+}
+
+function render() {
     const container = document.getElementById('grid');
     const query = document.getElementById('search').value.toLowerCase();
     container.innerHTML = '';
