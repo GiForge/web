@@ -10,12 +10,12 @@
             --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21;
             --primary: #42b72a; --accent: #1877f2; --danger: #fa3e3e;
             --header-bg: #242526;
-            --checked-bg: #e8f5e9; /* Verde chiaro per evidenza */
+            --checked-bg: #e8f5e9; 
         }
         [data-theme="dark"] {
             --bg: #18191a; --card: #242526; --text: #e4e6eb;
             --header-bg: #000000;
-            --checked-bg: #1b3320; /* Verde scuro per Dark Mode */
+            --checked-bg: #1b3320; 
         }
 
         body { 
@@ -56,11 +56,9 @@
             transition: 0.2s; border-left: 6px solid transparent;
         }
 
-        /* STILE PER ELEMENTI CON CHECK (EVIDENZA MAGGIORE) */
         .item-card.checked {
             background-color: var(--checked-bg);
             border-left: 6px solid var(--primary);
-            opacity: 0.9;
         }
 
         .product-img {
@@ -68,7 +66,7 @@
             background: #eee; display: flex; align-items: center; justify-content: center; font-size: 2.2rem;
         }
 
-        .item-main { flex: 1; }
+        .item-main { flex: 1; cursor: pointer; }
         .item-name { font-weight: bold; font-size: 1.2rem; display: block; margin-bottom: 5px; }
         
         .item-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
@@ -94,44 +92,45 @@
         }
         #video-preview { width: 90%; max-width: 500px; border-radius: 15px; }
 
-        .loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 15px; z-index: 3000; color: black; font-weight: bold;}
+        .loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 15px; z-index: 3000; color: black; font-weight: bold; box-shadow: 0 0 20px rgba(0,0,0,0.5);}
 
         .fab-whatsapp {
             position: fixed; bottom: 25px; right: 25px; background: #25D366; color: white;
             width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 999;
+            font-size: 2rem; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 999; cursor: pointer;
         }
     </style>
 </head>
 <body data-theme="light">
 
     <header>
-        <button onclick="toggleTheme()" style="background:none; border:none; font-size:2rem;">🌓</button>
+        <button onclick="toggleTheme()" style="background:none; border:none; font-size:2rem; cursor:pointer;">🌓</button>
         <div class="total-display">€ <span id="grand-total">0.00</span></div>
-        <button onclick="clearList()" style="background:var(--danger); color:white; border-radius:8px; border:none; padding:8px 12px; font-weight:bold;">RESET</button>
+        <button onclick="clearList()" style="background:var(--danger); color:white; border-radius:8px; border:none; padding:8px 12px; font-weight:bold; cursor:pointer;">RESET</button>
     </header>
 
     <div class="file-actions">
-        <button class="btn-tool" style="background: var(--accent);" onclick="exportToFile()">💾 SALVA</button>
-        <button class="btn-tool" style="background: #6c757d;" onclick="document.getElementById('file-input').click()">📂 CARICA</button>
+        <button class="btn-tool" style="background: var(--accent);" onclick="exportToFile()">💾 SALVA FILE</button>
+        <button class="btn-tool" style="background: #6c757d;" onclick="document.getElementById('file-input').click()">📂 CARICA FILE</button>
         <input type="file" id="file-input" style="display:none" accept=".json" onchange="importFromFile(event)">
     </div>
 
     <div class="input-section">
-        <input type="text" id="item-input" placeholder="Cosa devi comprare?" onkeypress="handleKeyPress(event)">
-        <button onclick="startVoice()" style="background:var(--accent); color:white; border:none; padding:15px; border-radius:10px;">🎤</button>
-        <button onclick="addItem()" style="background:var(--primary); color:white; border:none; padding:15px; border-radius:10px; font-weight:bold; font-size:1.2rem;">+</button>
+        <input type="text" id="item-input" placeholder="Aggiungi prodotto..." onkeypress="handleKeyPress(event)">
+        <button onclick="startVoice()" style="background:var(--accent); color:white; border:none; padding:15px; border-radius:10px; cursor:pointer;">🎤</button>
+        <button onclick="addItem()" style="background:var(--primary); color:white; border:none; padding:15px; border-radius:10px; font-weight:bold; font-size:1.2rem; cursor:pointer;">+</button>
     </div>
 
     <div id="shopping-list"></div>
 
-    <button class="fab-whatsapp" onclick="exportWhatsApp()">💬</button>
+    <!-- BOTTONE WHATSAPP RIPRISTINATO -->
+    <button class="fab-whatsapp" onclick="exportWhatsApp()" title="Invia su WhatsApp">💬</button>
 
     <div id="ocr-modal">
         <video id="video-preview" autoplay playsinline></video>
         <div style="margin-top:20px; display:flex; gap:15px;">
-            <button onclick="captureAndScan()" style="background:var(--primary); color:white; padding:18px 25px; border-radius:12px; border:none; font-weight:bold;">SCANSIONA</button>
-            <button onclick="closeOCR()" style="background:var(--danger); color:white; padding:18px 25px; border-radius:12px; border:none; font-weight:bold;">CHIUDI</button>
+            <button onclick="captureAndScan()" style="background:var(--primary); color:white; padding:18px 25px; border-radius:12px; border:none; font-weight:bold; cursor:pointer;">SCANSIONA</button>
+            <button onclick="closeOCR()" style="background:var(--danger); color:white; padding:18px 25px; border-radius:12px; border:none; font-weight:bold; cursor:pointer;">CHIUDI</button>
         </div>
     </div>
 
@@ -145,14 +144,13 @@
             'caffè': { e: '☕', c: 'Dispensa' }, 'caffe': { e: '☕', c: 'Dispensa' },
             'torta': { e: '🍰', c: 'Dolci' }, 'dolce': { e: '🍰', c: 'Dolci' },
             'merendine': { e: '🥐', c: 'Dolci' }, 'cioccolato': { e: '🍫', c: 'Dolci' },
-            'cioccolata': { e: '🍫', c: 'Dolci' }, 'biscotti': { e: '🍪', c: 'Dispensa' },
-            'detersivo': { e: '🧴', c: 'Pulizia Casa' }, 'sapone': { e: '🧼', c: 'Igiene' },
-            'shampoo': { e: '🧴', c: 'Igiene' }, 'pasta': { e: '🍝', c: 'Dispensa' },
-            'pane': { e: '🍞', c: 'Panetteria' }, 'latte': { e: '🥛', c: 'Latticini' },
-            'uova': { e: '🥚', c: 'Latticini' }, 'carne': { e: '🥩', c: 'Macelleria' },
-            'pollo': { e: '🍗', c: 'Macelleria' }, 'birra': { e: '🍺', c: 'Bevande' },
-            'vino': { e: '🍷', c: 'Bevande' }, 'acqua': { e: '💧', c: 'Bevande' },
-            'pizza': { e: '🍕', c: 'Surgelati' }, 'gelato': { e: '🍦', c: 'Surgelati' },
+            'biscotti': { e: '🍪', c: 'Dispensa' }, 'detersivo': { e: '🧴', c: 'Pulizia Casa' },
+            'sapone': { e: '🧼', c: 'Igiene' }, 'shampoo': { e: '🧴', c: 'Igiene' },
+            'pasta': { e: '🍝', c: 'Dispensa' }, 'pane': { e: '🍞', c: 'Panetteria' },
+            'latte': { e: '🥛', c: 'Latticini' }, 'uova': { e: '🥚', c: 'Latticini' },
+            'carne': { e: '🥩', c: 'Macelleria' }, 'pollo': { e: '🍗', c: 'Macelleria' },
+            'birra': { e: '🍺', c: 'Bevande' }, 'vino': { e: '🍷', c: 'Bevande' },
+            'acqua': { e: '💧', c: 'Bevande' }, 'pizza': { e: '🍕', c: 'Surgelati' },
             'riso': { e: '🍚', c: 'Dispensa' }, 'tonno': { e: '🐟', c: 'Dispensa' }
         };
 
@@ -176,7 +174,6 @@
                 
                 grouped[cat].forEach(item => {
                     const card = document.createElement('div');
-                    // Applicazione classe dinamica per evidenza contrastata
                     card.className = `item-card ${item.checked ? 'checked' : ''}`;
                     
                     const imgContent = item.customImg 
@@ -194,13 +191,13 @@
                         </div>
                         <div class="item-actions">
                             <div class="qty-box">
-                                <span onclick="updateQty(${item.id}, -1); event.stopPropagation();">−</span>
+                                <span onclick="updateQty(${item.id}, -1); event.stopPropagation();" style="cursor:pointer">−</span>
                                 <span>${item.qty}</span>
-                                <span onclick="updateQty(${item.id}, 1); event.stopPropagation();">+</span>
+                                <span onclick="updateQty(${item.id}, 1); event.stopPropagation();" style="cursor:pointer">+</span>
                             </div>
                             <div class="price-row">
                                 <input type="number" step="0.01" class="price-input" value="${item.price}" onchange="updatePrice(${item.id}, this.value)">
-                                <button onclick="openOCR(${item.id})" style="border:none; background:none; font-size:1.5rem;">📸</button>
+                                <button onclick="openOCR(${item.id})" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">📸</button>
                                 <button class="btn-del" onclick="deleteItem(${item.id})">🗑️</button>
                             </div>
                         </div>
@@ -213,9 +210,7 @@
             localStorage.setItem('smart_list_final', JSON.stringify(items));
         }
 
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') addItem();
-        }
+        function handleKeyPress(e) { if (e.key === 'Enter') addItem(); }
 
         function addItem(text = '') {
             const input = document.getElementById('item-input');
@@ -261,7 +256,7 @@
                     }
                 }
                 alert("Nessuna immagine negli appunti.");
-            } catch (err) { alert("Consenti l'accesso alla clipboard."); }
+            } catch (err) { alert("Assicurati di aver copiato un'immagine e concesso i permessi."); }
         }
 
         function exportToFile() {
@@ -270,7 +265,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `spesa_${new Date().toISOString().slice(0,10)}.json`;
+            a.download = `lista_spesa_${new Date().toISOString().slice(0,10)}.json`;
             a.click();
         }
 
@@ -287,14 +282,19 @@
             reader.readAsText(file);
         }
 
+        // LOGICA EXPORT WHATSAPP
         function exportWhatsApp() {
-            const text = items.map(i => `${i.checked ? '✅' : '⬜'} ${i.name} (x${i.qty}) - €${(i.price * i.qty).toFixed(2)}`).join('\n');
+            if (items.length === 0) {
+                alert("La lista è vuota!");
+                return;
+            }
+            const text = items.map(i => `${i.checked ? '✅' : '⬜'} *${i.name}* (x${i.qty}) - €${(i.price * i.qty).toFixed(2)}`).join('\n');
             const total = document.getElementById('grand-total').innerText;
-            const msg = `🛒 *LISTA SPESA*\n\n${text}\n\n*TOTALE: €${total}*`;
+            const msg = `🛒 *LA MIA SPESA*\n\n${text}\n\n💰 *TOTALE: €${total}*`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
 
-        function searchGoogle(n) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(n + " prodotto")}`, '_blank'); }
+        function searchGoogle(n) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(n + " prodotto supermercato")}`, '_blank'); }
         function updateQty(id, d) { const i = items.find(it => it.id === id); i.qty = Math.max(1, i.qty + d); render(); }
         function updatePrice(id, v) { items.find(it => it.id === id).price = parseFloat(v) || 0; updateTotal(); }
         function toggleCheck(id) { const i = items.find(it => it.id === id); i.checked = !i.checked; render(); }
@@ -305,7 +305,9 @@
         }
 
         function startVoice() {
-            const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) { alert("Voice non supportata"); return; }
+            const rec = new SpeechRecognition();
             rec.lang = 'it-IT';
             rec.onresult = (e) => addItem(e.results[0][0].transcript);
             rec.start();
@@ -314,8 +316,10 @@
         async function openOCR(id) {
             currentOcrId = id;
             document.getElementById('ocr-modal').style.display = 'flex';
-            const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            document.getElementById('video-preview').srcObject = s;
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                document.getElementById('video-preview').srcObject = s;
+            } catch (err) { alert("Errore fotocamera"); closeOCR(); }
         }
 
         function closeOCR() {
@@ -332,14 +336,14 @@
             document.getElementById('loading').style.display = 'block';
             
             try {
-                const { data: { text } } = await Tesseract.recognize(c, 'eng');
+                const { data: { text } } = await Tesseract.recognize(c, 'ita');
                 const m = text.replace(',', '.').match(/\d+[\.,]\d{2}/);
                 if (m) {
                     updatePrice(currentOcrId, m[0].replace(',', '.'));
                     render();
                     closeOCR();
-                } else { alert("Prezzo non trovato."); }
-            } catch (e) { alert("Errore OCR"); }
+                } else { alert("Nessun prezzo rilevato (formato 0.00 richiesto)"); }
+            } catch (e) { alert("Errore durante l'analisi"); }
             finally { document.getElementById('loading').style.display = 'none'; }
         }
 
@@ -348,8 +352,9 @@
             b.setAttribute('data-theme', b.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
         }
 
-        function clearList() { if(confirm("Cancellare tutta la lista?")) { items = []; render(); } }
+        function clearList() { if(confirm("Vuoi svuotare tutta la lista?")) { items = []; render(); } }
 
+        // Inizializzazione
         render();
     </script>
 </body>
