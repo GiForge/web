@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Spesa Pro - OCR & Foto</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        :root {
+            --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21;
+            --primary: #42b72a; --accent: #1877f2; --danger: #fa3e3e;
+            --header-bg: #242526;
+        }
+        [data-theme="dark"] {
+            --bg: #18191a; --card: #242526; --text: #e4e6eb;
+            --header-bg: #000000;
+        }
+
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 100px; transition: 0.3s; }
+        
+        header { 
+            position: sticky; top: 0; background: var(--header-bg); color: white; 
+            padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1000;
+        }
+
+        .input-section { padding: 15px; display: flex; gap: 5px; background: var(--card); border-bottom: 1px solid #ddd; }
+        input[type="text"] { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
+
+        .category-group { margin: 15px 10px; }
+        .category-title { font-weight: bold; font-size: 0.8rem; text-transform: uppercase; color: #777; margin-bottom: 5px; }
+
+        .item-card {
+            background: var(--card); margin-bottom: 10px; padding: 12px; border-radius: 12px;
+            display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .product-img {
+            width: 50px; height: 50px; border-radius: 8px; object-fit: cover;
+            background: #eee; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+        }
+
+        .item-main { flex: 1; }
+        .item-name { font-weight: bold; display: block; }
+        
+        .item-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+        
+        .qty-box { display: flex; align-items: center; gap: 10px; background: #f0f2f5; padding: 5px 10px; border-radius: 20px; color: black; }
+        
+        .price-row { display: flex; align-items: center; gap: 5px; }
+        .price-input { width: 60px; padding: 5px; border-radius: 5px; border: 1px solid #ccc; text-align: center; }
+
+        .media-btns { display: flex; gap: 5px; margin-top: 5px; }
+        .btn-small { padding: 5px; font-size: 0.7rem; border-radius: 4px; border: none; cursor: pointer; background: #ddd; }
+
+        /* Modal OCR */
+        #ocr-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 2000; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #video-preview { width: 90%; border-radius: 10px; }
+
+        .loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; z-index: 3000; color: black;}
+    </style>
+</head>
+<body data-theme="light">
+
+    <header>
+        <button onclick="toggleTheme()" style="background:none; border:none; font-size:1.5rem;">🌓</button>
+        <div>TOTALE: € <span id="grand-total">0.00</span></div>
+        <button onclick="clearList()" style="background:var(--danger); color:white; border-radius:5px; border:none; padding:5px 10px;">Reset</button>
+    </header>
+
+    <div class="input-section">
+        <input type="text" id="item-input" placeholder="Esempio: Mele, Caffè, Sapone...">
+        <button onclick="startVoice()" style="background:var(--accent); color:white; border:none; padding:10px; border-radius:8px;">🎤</button>
+        <button onclick="addItem()" style="background:var(--primary); color:white; border:none; padding:10px; border-radius:8px;">+</button>
+    </div>
+
+    <div id="shopping-list"></div>
+
+    <div id="ocr-modal">
+        <video id="video-preview" autoplay playsinline></video>
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button onclick="captureAndScan()" style="background:var(--primary); color:white; padding:15px; border-radius:10px; border:none;">SCANSIONA</button>
+            <button onclick="closeOCR()" style="background:var(--danger); color:white; padding:15px; border-radius:10px; border:none;">CHIUDI</button>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">Analisi prezzo...</div>
+
+    <script>
+        // Database esteso
+        const catalog = {
+            'mela': { e: '🍎', c: 'Ortofrutta' },
+            'mele': { e: '🍎', c: 'Ortofrutta' },
+            'banana': { e: '🍌', c: 'Ortofrutta' },
+            'banane': { e: '🍌', c: 'Ortofrutta' },
+            'pera': { e: '🍐', c: 'Ortofrutta' },
+            'pere': { e: '🍐', c: 'Ortofrutta' },
+            'caffè': { e: '☕', c: 'Colazione' },
+            'caffe': { e: '☕', c: 'Colazione' },
+            'torta': { e: '🍰', c: 'Dolci' },
+            'cioccolato': { e: '🍫', c: 'Dolci' },
+            'biscotti': { e: '🍪', c: 'Colazione' },
+            'detersivo': { e: '🧴', c: 'Igiene Casa' },
+            'sapone': { e: '🧼', c: 'Igiene Persona' },
+            'shampoo': { e: '🧴', c: 'Igiene Persona' },
+            'pasta': { e: '🍝', c: 'Dispensa' },
+            'pane': { e: '🍞', c: 'Forno' },
+            'latte': { e: '🥛', c: 'Latticini' },
+            'uova': { e: '🥚', c: 'Latticini' },
+            'carne': { e: '🥩', c: 'Macelleria' },
+            'pollo': { e: '🍗', c: 'Macelleria' },
+            'birra': { e: '🍺', c: 'Bevande' },
+            'vino': { e: '🍷', c: 'Bevande' },
+            'acqua': { e: '💧', c: 'Bevande' },
+            'pizza': { e: '🍕', c: 'Surgelati' }
+        };
+
+        let items = JSON.parse(localStorage.getItem('smart_list_v2')) || [];
+        let currentOcrId = null;
+
+        function render() {
+            const container = document.getElementById('shopping-list');
+            container.innerHTML = '';
+            
+            const grouped = items.reduce((acc, item) => {
+                if (!acc[item.category]) acc[item.category] = [];
+                acc[item.category].push(item);
+                return acc;
+            }, {});
+
+            for (const cat in grouped) {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'category-group';
+                groupDiv.innerHTML = `<div class="category-title">${cat}</div>`;
+                
+                grouped[cat].forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = `item-card`;
+                    card.style.opacity = item.checked ? '0.5' : '1';
+                    
+                    const imgContent = item.customImg 
+                        ? `<img src="${item.customImg}" class="product-img">` 
+                        : `<div class="product-img">${item.emoji}</div>`;
+
+                    card.innerHTML = `
+                        ${imgContent}
+                        <div class="item-main" onclick="toggleCheck(${item.id})">
+                            <span class="item-name">${item.name}</span>
+                            <div class="media-btns">
+                                <button class="btn-small" onclick="searchGoogle('${item.name}'); event.stopPropagation();">🔍 Cerca</button>
+                                <button class="btn-small" onclick="pasteImg(${item.id}); event.stopPropagation();">📋 Incolla</button>
+                            </div>
+                        </div>
+                        <div class="item-actions">
+                            <div class="qty-box">
+                                <span onclick="updateQty(${item.id}, -1)">-</span>
+                                <b>${item.qty}</b>
+                                <span onclick="updateQty(${item.id}, 1)">+</span>
+                            </div>
+                            <div class="price-row">
+                                <input type="number" class="price-input" value="${item.price}" onchange="updatePrice(${item.id}, this.value)">
+                                <button onclick="openOCR(${item.id})" style="border:none; background:none; font-size:1.2rem;">📸</button>
+                            </div>
+                        </div>
+                    `;
+                    groupDiv.appendChild(card);
+                });
+                container.appendChild(groupDiv);
+            }
+            updateTotal();
+            localStorage.setItem('smart_list_v2', JSON.stringify(items));
+        }
+
+        function addItem(text = '') {
+            const input = document.getElementById('item-input');
+            const val = (text || input.value).toLowerCase().trim();
+            if (!val) return;
+
+            let info = { e: '📦', c: 'Altro' };
+            // Ricerca intelligente nel catalogo
+            for (let key in catalog) {
+                if (val.includes(key)) info = catalog[key];
+            }
+
+            items.push({
+                id: Date.now(),
+                name: val.charAt(0).toUpperCase() + val.slice(1),
+                emoji: info.e,
+                category: info.c,
+                qty: 1, price: 0, checked: false, customImg: null
+            });
+            input.value = '';
+            render();
+        }
+
+        // Funzione per incollare l'immagine dalla clipboard
+        async function pasteImg(id) {
+            try {
+                const clipboardItems = await navigator.clipboard.read();
+                for (const clipboardItem of clipboardItems) {
+                    for (const type of clipboardItem.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await clipboardItem.getType(type);
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const item = items.find(i => i.id === id);
+                                item.customImg = e.target.result;
+                                render();
+                            };
+                            reader.readAsDataURL(blob);
+                            return;
+                        }
+                    }
+                }
+                alert("Nessuna immagine trovata negli appunti. Copia un'immagine da Google prima.");
+            } catch (err) {
+                alert("Per incollare, consenti l'accesso agli appunti o usa un browser moderno.");
+            }
+        }
+
+        function searchGoogle(name) {
+            window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(name + " prodotto")}`, '_blank');
+        }
+
+        function updateQty(id, delta) {
+            const item = items.find(i => i.id === id);
+            item.qty = Math.max(1, item.qty + delta);
+            render();
+        }
+
+        function updatePrice(id, val) {
+            const item = items.find(i => i.id === id);
+            item.price = parseFloat(val) || 0;
+            updateTotal();
+        }
+
+        function toggleCheck(id) {
+            const item = items.find(i => i.id === id);
+            item.checked = !item.checked;
+            render();
+        }
+
+        function updateTotal() {
+            const total = items.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            document.getElementById('grand-total').innerText = total.toFixed(2);
+        }
+
+        function startVoice() {
+            const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            rec.lang = 'it-IT';
+            rec.onresult = (e) => addItem(e.results[0][0].transcript);
+            rec.start();
+        }
+
+        async function openOCR(id) {
+            currentOcrId = id;
+            document.getElementById('ocr-modal').style.display = 'flex';
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            document.getElementById('video-preview').srcObject = stream;
+        }
+
+        function closeOCR() {
+            const video = document.getElementById('video-preview');
+            if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+            document.getElementById('ocr-modal').style.display = 'none';
+        }
+
+        async function captureAndScan() {
+            const video = document.getElementById('video-preview');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            document.getElementById('loading').style.display = 'block';
+            const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
+            document.getElementById('loading').style.display = 'none';
+
+            const priceMatch = text.replace(',', '.').match(/\d+[\.,]\d{2}/);
+            if (priceMatch) {
+                updatePrice(currentOcrId, priceMatch[0].replace(',', '.'));
+                render();
+                closeOCR();
+            } else {
+                alert("Prezzo non trovato. Inquadra meglio il cartellino.");
+            }
+        }
+
+        function toggleTheme() {
+            const b = document.body;
+            b.setAttribute('data-theme', b.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+        }
+
+        function clearList() { if(confirm("Svuota?")) { items = []; render(); } }
+
+        render();
+    </script>
+</body>
+</html>
