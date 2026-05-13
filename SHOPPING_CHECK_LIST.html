@@ -260,14 +260,40 @@
             } catch (err) { alert("Assicurati di aver concesso i permessi per la clipboard."); }
         }
 
-        function exportToFile() {
-            const blob = new Blob([JSON.stringify(items)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `spesa_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
-            a.click();
+        async function exportToFile() {
+            const dataStr = JSON.stringify(items, null, 2);
+            const defaultName = `ListaSpesa_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
+
+            // Metodo Moderno: File System Access API
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: defaultName,
+                        types: [{
+                            description: 'File JSON',
+                            accept: {'application/json': ['.json']},
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(dataStr);
+                    await writable.close();
+                } catch (err) {
+                    console.log("Salvataggio annullato o non riuscito");
+                }
+            } 
+            // Metodo di riserva (Download standard)
+            else {
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = defaultName;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
         }
+
+
 
         function importFromFile(event) {
             const file = event.target.files[0];
