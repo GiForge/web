@@ -268,7 +268,6 @@
     	    'gomme': { e: '🦷', c: 'Dolci' },
 
     	    // COLAZIONE E CAFFÈ (Aggiornato)
-    	    'caffe': { e: '☕', c: 'Colazione' },
     	    'caffè': { e: '☕', c: 'Colazione' },
     	    'ginseng': { e: '☕', c: 'Colazione' },
     	    'capsule': { e: '☕', c: 'Colazione' },
@@ -276,6 +275,9 @@
     	    'nespresso': { e: '☕', c: 'Colazione' },
     	    'lavazza': { e: '☕', c: 'Colazione' },
     	    'biscotti': { e: '🍪', c: 'Colazione' }, 
+    	    'waffer': { e: '🍪', c: 'Colazione' }, 
+    	    'ringo': { e: '🍪', c: 'Colazione' }, 
+    	    'oreo': { e: '🍪', c: 'Colazione' }, 
     	    'macine': { e: '🍪', c: 'Colazione' },
     	    'gocciole': { e: '🍪', c: 'Colazione' }, 
     	    'pan di stelle': { e: '⭐', c: 'Colazione' },
@@ -311,6 +313,7 @@
     	    'riso': { e: '🍚', c: 'Dispensa' }, 
     	    'scotti': { e: '🍚', c: 'Dispensa' },
     	    'tonno': { e: '🥫', c: 'Dispensa' }, 
+    	    'riso condimenti inalata ': { e: '🥫', c: 'Dispensa' }, 
     	    'rio mare': { e: '🥫', c: 'Dispensa' },
     	    'simmenthal': { e: '🥫', c: 'Dispensa' }, 
     	    'passata': { e: '🥫', c: 'Dispensa' },
@@ -325,6 +328,7 @@
     	    'legumi': { e: '🫘', c: 'Dispensa' }, 
     	    'ceci': { e: '🫘', c: 'Dispensa' },
     	    'lenticchie': { e: '🫘', c: 'Dispensa' },
+    	    'fagoli': { e: '🫘', c: 'Dispensa' },
 
     	    // FRESCHI E LATTICINI
     	    'latte': { e: '🥛', c: 'Latticini' }, 
@@ -341,10 +345,13 @@
     	    'certosa': { e: '🧀', c: 'Latticini' },
 
     	    // ORTOFRUTTA
-    	    'mela': { e: '🍎', c: 'Ortofrutta' }, 
+    	    'pere': { e: '🍎', c: 'Ortofrutta' }, 
     	    'mele': { e: '🍎', c: 'Ortofrutta' },
     	    'banana': { e: '🍌', c: 'Ortofrutta' }, 
-    	    'arancia': { e: '🍊', c: 'Ortofrutta' },
+    	    'arance': { e: '🍊', c: 'Ortofrutta' },
+    	    'susine': { e: '🍊', c: 'Ortofrutta' },
+    	    'pesche': { e: '🍊', c: 'Ortofrutta' },
+    	    'uva': { e: '🍊', c: 'Ortofrutta' },
     	    'pomodoro': { e: '🍅', c: 'Ortofrutta' }, 
     	    'insalata': { e: '🥬', c: 'Ortofrutta' },
     	    'finocchi': { e: '🥬', c: 'Ortofrutta' },
@@ -428,24 +435,49 @@
         }
 
         // --- GESTIONE AUTOCOMPLETE ---
-        function showSuggestions() {
-            const val = document.getElementById('item-input').value.toLowerCase();
-            const list = document.getElementById('autocomplete-list');
-            list.innerHTML = '';
-            if (!val) return;
+// --- GESTIONE AUTOCOMPLETE (AGGIORNATA) ---
+function showSuggestions() {
+    const val = document.getElementById('item-input').value.toLowerCase().trim();
+    const list = document.getElementById('autocomplete-list');
+    list.innerHTML = '';
+    if (!val) return;
 
-            const filtered = Object.keys(catalog).filter(k => k.startsWith(val));
-            filtered.forEach(k => {
+    // 1. Estrai categorie uniche dal catalogo
+    const categories = [...new Set(Object.values(catalog).map(item => item.c))];
+
+    // 2. Controlla se l'input corrisponde a una categoria
+    const categoryMatch = categories.find(c => c.toLowerCase() === val);
+
+    if (categoryMatch) {
+        // Se l'utente ha scritto esattamente una categoria, suggerisci i prodotti di quella categoria
+        Object.keys(catalog).forEach(k => {
+            if (catalog[k].c === categoryMatch) {
                 const div = document.createElement('div');
                 div.className = 'suggestion-item';
-                div.innerHTML = `<span>${catalog[k].e} ${k}</span><small>${catalog[k].c}</small>`;
+                div.style.borderLeft = "4px solid var(--accent)"; // Evidenzia che è un suggerimento di gruppo
+                div.innerHTML = `<span>📂 ${catalog[k].e} ${k}</span><small>${catalog[k].c}</small>`;
                 div.onclick = () => {
                     addItem(k);
                     list.innerHTML = '';
                 };
                 list.appendChild(div);
-            });
-        }
+            }
+        });
+    } else {
+        // 3. Altrimenti procedi con la ricerca classica per nome prodotto
+        const filtered = Object.keys(catalog).filter(k => k.includes(val));
+        filtered.forEach(k => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = `<span>${catalog[k].e} ${k}</span><small>${catalog[k].c}</small>`;
+            div.onclick = () => {
+                addItem(k);
+                list.innerHTML = '';
+            };
+            list.appendChild(div);
+        });
+    }
+}
 
         function handleKey(e) {
             if (e.key === 'Enter') {
