@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Smart Spesa Pro - Ultra</title>
+    <title>Smart Spesa Pro - Ultra Autocomplete</title>
     <style>
         :root {
             --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21;
             --primary: #42b72a; --accent: #1877f2; --danger: #fa3e3e;
             --header-bg: #242526;
-            /* Contrasto elevato per elementi checkati */
             --checked-bg: #cfd8dc; 
             --checked-text: #546e7a;
         }
@@ -42,7 +41,7 @@
             padding: 12px 15px; display: flex; flex-direction: column; gap: 10px;
         }
 
-        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
 
         .totals-bar {
             display: flex;
@@ -53,26 +52,53 @@
             font-size: 0.9rem;
         }
 
-        .total-item { text-align: center; }
+        .total-item { text-align: center; flex: 1; }
         .total-val { display: block; font-weight: bold; font-size: 1.1rem; color: var(--primary); }
         .total-val.prevision { color: #ffca28; }
 
-        .input-section { 
-            padding: 12px 15px; 
-            display: flex; 
-            gap: 8px; 
-            background: var(--card); 
+        .input-container {
+            background: var(--card);
+            padding: 12px 15px;
             border-bottom: 1px solid rgba(0,0,0,0.1);
+            position: relative;
         }
 
-        .file-actions {
-            display: flex; gap: 8px; padding: 8px 15px; background: var(--bg); 
-            justify-content: center;
-        }
+        .input-row { display: flex; gap: 8px; }
 
         input[type="text"] { 
             flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #ccc; 
             font-size: 16px; outline: none; background: var(--card); color: var(--text);
+        }
+
+        /* Stile Suggerimenti Autocomplete */
+        #autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 15px;
+            right: 15px;
+            background: var(--card);
+            border: 1px solid #ccc;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            z-index: 2000;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .suggestion-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .suggestion-item:hover { background: rgba(0,0,0,0.05); }
+
+        .file-actions {
+            display: flex; gap: 8px; padding: 8px 15px; background: var(--bg); 
+            justify-content: center;
         }
 
         #shopping-list { padding-top: 10px; }
@@ -86,7 +112,6 @@
             transition: 0.2s; border-left: 6px solid transparent;
         }
 
-        /* STILE CONTRASTATO PER PRODOTTI PRESI */
         .item-card.checked {
             background-color: var(--checked-bg);
             color: var(--checked-text);
@@ -101,7 +126,7 @@
         }
 
         .item-main { flex: 1; cursor: pointer; overflow: hidden; }
-        .item-name { font-weight: bold; font-size: 1.1rem; display: block; margin-bottom: 4px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        .item-name { font-weight: bold; font-size: 1.1rem; display: block; margin-bottom: 4px; }
         
         .item-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
         
@@ -111,18 +136,16 @@
         }
         
         .price-row { display: flex; align-items: center; gap: 6px; }
-        .price-input { width: 65px; padding: 8px; border-radius: 8px; border: 1px solid #ccc; text-align: center; font-size: 0.9rem; }
+        .price-input { width: 65px; padding: 8px; border-radius: 8px; border: 1px solid #ccc; text-align: center; }
 
-        .media-btns { display: flex; gap: 5px; }
         .btn-small { padding: 5px 8px; font-size: 0.75rem; border-radius: 6px; border: none; cursor: pointer; background: rgba(0,0,0,0.05); color: var(--text); }
-        
-        .btn-del { background: none; border: none; color: var(--danger); font-size: 1.3rem; padding: 5px; cursor: pointer; }
+        .btn-del { background: none; border: none; color: var(--danger); font-size: 1.3rem; cursor: pointer; }
         .btn-tool { padding: 8px 12px; border-radius: 8px; border: none; font-size: 0.8rem; cursor: pointer; font-weight: bold; color: white; }
 
         .fab-whatsapp {
             position: fixed; bottom: 20px; right: 20px; background: #25D366; color: white;
             width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 1.8rem; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 999; cursor: pointer;
+            font-size: 1.8rem; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 999;
         }
     </style>
 </head>
@@ -132,28 +155,31 @@
         <header>
             <div class="header-top">
                 <button onclick="toggleTheme()" style="background:none; border:none; font-size:1.8rem; cursor:pointer;">🌓</button>
-                <button onclick="clearList()" style="background:var(--danger); color:white; border-radius:8px; border:none; padding:6px 10px; font-weight:bold; cursor:pointer; font-size: 0.8rem;">RESET</button>
+                <button onclick="clearList()" style="background:var(--danger); color:white; border-radius:8px; border:none; padding:6px 10px; font-weight:bold; cursor:pointer;">RESET</button>
             </div>
             <div class="totals-bar">
                 <div class="total-item">
                     <span>Previsione</span>
                     <span class="total-val prevision" id="grand-total">0.00</span>
                 </div>
-                <div class="total-item" style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px;">
+                <div class="total-item" style="border-left: 1px solid rgba(255,255,255,0.2);">
                     <span>Nel Carrello</span>
                     <span class="total-val" id="checked-total">0.00</span>
                 </div>
             </div>
         </header>
 
-        <div class="input-section">
-            <input type="text" id="item-input" placeholder="Aggiungi prodotto..." onkeypress="handleKeyPress(event)">
-            <button onclick="startVoice()" style="background:var(--accent); color:white; border:none; padding:12px; border-radius:10px; cursor:pointer;">🎤</button>
-            <button onclick="addItem()" style="background:var(--primary); color:white; border:none; padding:12px 18px; border-radius:10px; font-weight:bold; cursor:pointer;">+</button>
+        <div class="input-container">
+            <div class="input-row">
+                <input type="text" id="item-input" placeholder="Cerca o aggiungi..." oninput="showSuggestions()" onkeydown="handleKey(event)" autocomplete="off">
+                <button onclick="startVoice()" style="background:var(--accent); color:white; border:none; padding:12px; border-radius:10px;">🎤</button>
+                <button onclick="addItem()" style="background:var(--primary); color:white; border:none; padding:12px 18px; border-radius:10px; font-weight:bold;">+</button>
+            </div>
+            <div id="autocomplete-list"></div>
         </div>
 
         <div class="file-actions">
-            <button class="btn-tool" style="background: var(--accent);" onclick="exportToFile()">💾 SALVA</button>
+            <button class="btn-tool" style="background: var(--accent);" onclick="exportToFile()">💾 SALVA CON NOME</button>
             <button class="btn-tool" style="background: #6c757d;" onclick="document.getElementById('file-input').click()">📂 CARICA</button>
             <input type="file" id="file-input" style="display:none" accept=".json" onchange="importFromFile(event)">
         </div>
@@ -164,20 +190,140 @@
     <button class="fab-whatsapp" onclick="exportWhatsApp()">💬</button>
 
     <script>
-        const catalog = {
-            'mela': { e: '🍎', c: 'Ortofrutta' }, 'mele': { e: '🍎', c: 'Ortofrutta' },
-            'banana': { e: '🍌', c: 'Ortofrutta' }, 'banane': { e: '🍌', c: 'Ortofrutta' },
-            'pomodor': { e: '🍅', c: 'Ortofrutta' }, 'insalata': { e: '🥬', c: 'Ortofrutta' },
-            'caffè': { e: '☕', c: 'Dispensa' }, 'pasta': { e: '🍝', c: 'Dispensa' },
-            'riso': { e: '🍚', c: 'Dispensa' }, 'biscotti': { e: '🍪', c: 'Dispensa' },
-            'pane': { e: '🍞', c: 'Panetteria' }, 'latte': { e: '🥛', c: 'Latticini' },
-            'uova': { e: '🥚', c: 'Latticini' }, 'formaggio': { e: '🧀', c: 'Latticini' },
-            'carne': { e: '🥩', c: 'Macelleria' }, 'pollo': { e: '🍗', c: 'Macelleria' },
-            'detersivo': { e: '🧴', c: 'Pulizia Casa' }, 'carta': { e: '🧻', c: 'Pulizia Casa' },
-            'acqua': { e: '💧', c: 'Bevande' }, 'birra': { e: '🍺', c: 'Bevande' }, 'vino': { e: '🍷', c: 'Bevande' }
-        };
+    const catalog = {
+            // BEVANDE E BRAND ICONICI
+            'coca cola': { e: '🥤', c: 'Bevande' },
+            'fanta': { e: '🍊', c: 'Bevande' }, 
+            'sprite': { e: '🍋', c: 'Bevande' },
+            'pepsi': { e: '🥤', c: 'Bevande' }, 
+            'estathé': { e: '🍹', c: 'Bevande' },
+            'birra': { e: '⚡', c: 'Bevande' },
+            'vino': { e: '⚡', c: 'Bevande' },
+            'succo di frutta': { e: '🧃', c: 'Bevande' }, 
+            'santanna': { e: '💧', c: 'Bevande' },
+            'levissima': { e: '🏔️', c: 'Bevande' }, 
+            'san pellegrino': { e: '🫧', c: 'Bevande' },
+            'chinotto': { e: '🟤', c: 'Bevande' }, 
 
-        let items = JSON.parse(localStorage.getItem('smart_list_final_v3')) || [];
+            // SNACK DOLCI E MERENDINE
+            'nutella': { e: '🍫', c: 'Dolci' }, 
+            'crema pan di stelle': { e: '⭐', c: 'Dolci' },
+            'merendine': { e: '🥐', c: 'Dolci' }, 
+            'kinder brioss': { e: '🍰', c: 'Dolci' },
+            'kinder delice': { e: '🍩', c: 'Dolci' }, 
+            'bueno': { e: '🍫', c: 'Dolci' },
+            'fiesta': { e: '🍰', c: 'Dolci' }, 
+            'nastrine': { e: '🥐', c: 'Dolci' },
+            'plumcake': { e: '🍞', c: 'Dolci' }, 
+            'crostatine': { e: '🥧', c: 'Dolci' },
+            'muffin': { e: '🧁', c: 'Dolci' }, 
+            'cioccolato': { e: '🍫', c: 'Dolci' },
+            'tavoletta': { e: '🍫', c: 'Dolci' }, 
+            'fondente': { e: '🍫', c: 'Dolci' },
+            'lindt': { e: '🍬', c: 'Dolci' }, 
+            'ferrero rocher': { e: '🟡', c: 'Dolci' },
+            'caramelle': { e: '🍬', c: 'Dolci' }, 
+            'gomme': { e: '🦷', c: 'Dolci' },
+
+            // COLAZIONE E BISCOTTI (MARCHE COMUNI)
+            'biscotti': { e: '🍪', c: 'Colazione' }, 
+            'macine': { e: '🍪', c: 'Colazione' },
+            'gocciole': { e: '🍪', c: 'Colazione' }, 
+            'pan di stelle': { e: '⭐', c: 'Colazione' },
+            'tarallucci': { e: '🍪', c: 'Colazione' }, 
+            'abbracci': { e: '🍪', c: 'Colazione' },
+            'galletti': { e: '🍪', c: 'Colazione' }, 
+            'oro saiwa': { e: '🧇', c: 'Colazione' },
+            'cereali': { e: '🥣', c: 'Colazione' }, 
+            'corn flakes': { e: '🥣', c: 'Colazione' },
+            'muesli': { e: '🥣', c: 'Colazione' }, 
+            'nesquik': { e: '🍫', c: 'Colazione' },
+            'fette biscottate': { e: '🍞', c: 'Colazione' }, 
+            'marmellata': { e: '🍯', c: 'Colazione' },
+
+            // SNACK SALATI E APERITIVO
+            'patatine': { e: '🍟', c: 'Snack' }, 
+            'fonzies': { e: '🧀', c: 'Snack' },
+            'pringles': { e: '🥫', c: 'Snack' }, 
+            'san carlo': { e: '🍟', c: 'Snack' },
+            'popcorn': { e: '🍿', c: 'Snack' }, 
+            'salatini': { e: '🥨', c: 'Snack' },
+            'cracker': { e: '🧇', c: 'Snack' }, 
+            'taralli': { e: '🥨', c: 'Snack' },
+            'grissini': { e: '🥖', c: 'Snack' }, 
+            'noccioline': { e: '🥜', c: 'Snack' },
+            'pistacchi': { e: '🟢', c: 'Snack' },
+
+            // DISPENSA E SCATOLAME
+            'pasta': { e: '🍝', c: 'Dispensa' }, 
+            'barilla': { e: '🍝', c: 'Dispensa' },
+            'de cecco': { e: '🍝', c: 'Dispensa' }, 
+            'rummo': { e: '🍝', c: 'Dispensa' },
+            'riso': { e: '🍚', c: 'Dispensa' }, 
+            'scotti': { e: '🍚', c: 'Dispensa' },
+            'tonno': { e: '🥫', c: 'Dispensa' }, 
+            'rio mare': { e: '🥫', c: 'Dispensa' },
+            'simmenthal': { e: '🥫', c: 'Dispensa' }, 
+            'passata': { e: '🥫', c: 'Dispensa' },
+            'mutti': { e: '🥫', c: 'Dispensa' }, 
+            'pesto': { e: '🌿', c: 'Dispensa' },
+            'rana': { e: '🥟', c: 'Fresco' }, 
+            'tortellini': { e: '🥟', c: 'Fresco' },
+            'gnocchi': { e: '🥔', c: 'Fresco' }, 
+            'maionese': { e: '🧴', c: 'Dispensa' },
+            'calvé': { e: '🧴', c: 'Dispensa' }, 
+            'ketchup': { e: '🍅', c: 'Dispensa' },
+            'legumi': { e: '🫘', c: 'Dispensa' }, 
+            'ceci': { e: '🫘', c: 'Dispensa' },
+            'lenticchie': { e: '🫘', c: 'Dispensa' },
+
+            // FRESCHI E LATTICINI
+            'latte': { e: '🥛', c: 'Latticini' }, 
+            'parmalat': { e: '🥛', c: 'Latticini' },
+            'granarolo': { e: '🥛', c: 'Latticini' }, 
+            'yogurt': { e: '🍦', c: 'Latticini' },
+            'muller': { e: '🍦', c: 'Latticini' }, 
+            'danone': { e: '🍦', c: 'Latticini' },
+            'philadelphia': { e: '🥣', c: 'Latticini' }, 
+            'galbani': { e: '🧀', c: 'Latticini' },
+            'mozzarella': { e: '⚪', c: 'Latticini' }, 
+            'uova': { e: '🥚', c: 'Latticini' },
+            'burro': { e: '🧈', c: 'Latticini' }, 
+            'certosa': { e: '🧀', c: 'Latticini' },
+
+            // ORTOFRUTTA
+            'mela': { e: '🍎', c: 'Ortofrutta' }, 
+            'mele': { e: '🍎', c: 'Ortofrutta' },
+            'banana': { e: '🍌', c: 'Ortofrutta' }, 
+            'arancia': { e: '🍊', c: 'Ortofrutta' },
+            'pomodoro': { e: '🍅', c: 'Ortofrutta' }, 
+            'insalata': { e: '🥬', c: 'Ortofrutta' },
+            'finocchi': { e: '🥬', c: 'Ortofrutta' },
+            'patate': { e: '🥔', c: 'Ortofrutta' }, 
+            'carote': { e: '🥕', c: 'Ortofrutta' },
+            'zucchine': { e: '🥒', c: 'Ortofrutta' }, 
+            'cipolla': { e: '🧅', c: 'Ortofrutta' },
+
+            // IGIENE E CASA
+            'carta igienica': { e: '🧻', c: 'Casa' }, 
+            'foxy': { e: '🧻', c: 'Casa' },
+            'regina': { e: '🧻', c: 'Casa' }, 
+            'scottex': { e: '🧻', c: 'Casa' },
+            'detersivo lavatrice': { e: '🧴', c: 'Pulizia' }, 
+            'dash': { e: '🧺', c: 'Pulizia' },
+            'detersivo lavastoviglie': { e: '🧴', c: 'Pulizia' }, 
+            'finish': { e: '🧺', c: 'Pulizia' },
+            'dixan': { e: '🧺', c: 'Pulizia' }, 
+            'ace': { e: '🧪', c: 'Pulizia' },
+            'sgrassatore': { e: '🔫', c: 'Pulizia' },
+            'chantecair': { e: '🐓', c: 'Pulizia' },
+            'fazzoletti': { e: '🤧', c: 'Igiene' }, 
+            'shampoo': { e: '🧴', c: 'Igiene' },
+            'bagnoschiuma': { e: '🧼', c: 'Igiene' }, 
+            'dentifricio': { e: '🪥', c: 'Igiene' },
+            'colgate': { e: '🪥', c: 'Igiene' }
+        };
+        let items = JSON.parse(localStorage.getItem('smart_list_v4')) || [];
 
         function render() {
             const container = document.getElementById('shopping-list');
@@ -228,19 +374,56 @@
                 container.appendChild(groupDiv);
             });
             updateTotal();
-            localStorage.setItem('smart_list_final_v3', JSON.stringify(items));
+            localStorage.setItem('smart_list_v4', JSON.stringify(items));
+        }
+
+        // --- GESTIONE AUTOCOMPLETE ---
+        function showSuggestions() {
+            const val = document.getElementById('item-input').value.toLowerCase();
+            const list = document.getElementById('autocomplete-list');
+            list.innerHTML = '';
+            if (!val) return;
+
+            const filtered = Object.keys(catalog).filter(k => k.startsWith(val));
+            filtered.forEach(k => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerHTML = `<span>${catalog[k].e} ${k}</span><small>${catalog[k].c}</small>`;
+                div.onclick = () => {
+                    addItem(k);
+                    list.innerHTML = '';
+                };
+                list.appendChild(div);
+            });
+        }
+
+        function handleKey(e) {
+            if (e.key === 'Enter') {
+                addItem();
+                document.getElementById('autocomplete-list').innerHTML = '';
+            }
         }
 
         function addItem(text = '') {
             const input = document.getElementById('item-input');
             const val = (text || input.value).toLowerCase().trim();
             if (!val) return;
+
             let info = { e: '📦', c: 'Altro' };
             for (let key in catalog) { if (val.includes(key)) { info = catalog[key]; break; } }
-            items.push({ id: Date.now(), name: val.charAt(0).toUpperCase() + val.slice(1), emoji: info.e, category: info.c, qty: 1, price: 0, checked: false, customImg: null });
-            input.value = ''; render();
+
+            items.push({
+                id: Date.now(),
+                name: val.charAt(0).toUpperCase() + val.slice(1),
+                emoji: info.e,
+                category: info.c,
+                qty: 1, price: 0, checked: false, customImg: null
+            });
+            input.value = '';
+            render();
         }
 
+        // --- FUNZIONI CORE ---
         function toggleCheck(id) {
             const item = items.find(it => it.id === id);
             item.checked = !item.checked;
@@ -250,13 +433,10 @@
         function updateTotal() {
             const forecast = items.reduce((s, i) => s + (i.price * i.qty), 0);
             const inCart = items.filter(i => i.checked).reduce((s, i) => s + (i.price * i.qty), 0);
-            
             document.getElementById('grand-total').innerText = forecast.toFixed(2);
             document.getElementById('checked-total').innerText = inCart.toFixed(2);
         }
 
-        // Funzioni di sistema
-        function handleKeyPress(e) { if (e.key === 'Enter') addItem(); }
         function deleteItem(id) { items = items.filter(i => i.id !== id); render(); }
         function updateQty(id, d) { const i = items.find(it => it.id === id); i.qty = Math.max(1, i.qty + d); render(); }
         function updatePrice(id, v) { items.find(it => it.id === id).price = parseFloat(v) || 0; updateTotal(); }
@@ -278,7 +458,7 @@
                         }
                     }
                 }
-            } catch (err) { alert("Copia prima un'immagine!"); }
+            } catch (err) { alert("Copia un'immagine prima!"); }
         }
 
         async function exportToFile() {
@@ -286,11 +466,14 @@
             const defaultName = `ListaSpesa_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
             if ('showSaveFilePicker' in window) {
                 try {
-                    const handle = await window.showSaveFilePicker({ suggestedName: defaultName, types: [{ description: 'File JSON', accept: {'application/json': ['.json']} }] });
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: defaultName,
+                        types: [{ description: 'File JSON', accept: {'application/json': ['.json']} }]
+                    });
                     const writable = await handle.createWritable();
                     await writable.write(dataStr);
                     await writable.close();
-                } catch (err) {}
+                } catch (e) {}
             } else {
                 const blob = new Blob([dataStr], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
@@ -308,7 +491,6 @@
         }
 
         function exportWhatsApp() {
-            if (items.length === 0) return;
             const text = items.map(i => `${i.checked ? '✅' : '⬜'} *${i.emoji} ${i.name}* (x${i.qty})`).join('\n');
             window.open(`https://wa.me/?text=${encodeURIComponent(`🛒 *LISTA SPESA*\n\n${text}`)}`);
         }
