@@ -421,7 +421,16 @@
                                 <span onclick="updateQty(${item.id}, 1); event.stopPropagation();" style="cursor:pointer;">+</span>
                             </div>
                             <div class="price-row">
-                                <input type="number" step="0.01" class="price-input" value="${item.price}" onchange="updatePrice(${item.id}, this.value)" placeholder="€">
+                                <input 
+                                    type="number" 
+                                    step="0.01" 
+                                    class="price-input" 
+                                    value="${item.price === 0 ? '' : item.price}" 
+                                    onfocus="if(this.value == '0') this.value = ''" 
+                                    onblur="if(this.value == '') { this.value = ''; }"
+                                    oninput="updatePrice(${item.id}, this.value)" 
+                                    placeholder="€"
+                                >
                                 <button class="btn-del" onclick="deleteItem(${item.id})">🗑️</button>
                             </div>
                         </div>
