@@ -9,12 +9,15 @@
             --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21;
             --primary: #42b72a; --accent: #1877f2; --danger: #fa3e3e;
             --header-bg: #242526;
-            --checked-bg: #e8f5e9; 
+            /* Contrasto elevato per elementi checkati */
+            --checked-bg: #cfd8dc; 
+            --checked-text: #546e7a;
         }
         [data-theme="dark"] {
             --bg: #18191a; --card: #242526; --text: #e4e6eb;
             --header-bg: #000000;
-            --checked-bg: #1b3320; 
+            --checked-bg: #37474f; 
+            --checked-text: #90a4ae;
         }
 
         body { 
@@ -22,12 +25,11 @@
             background: var(--bg); 
             color: var(--text); 
             margin: 0; 
-            padding-bottom: 100px; /* Spazio per il FAB */
+            padding-bottom: 100px; 
             transition: 0.3s;
             font-size: 18px;
         }
         
-        /* HEADER E BARRA INSERIMENTO FISSI */
         .sticky-top {
             position: sticky;
             top: 0;
@@ -37,8 +39,23 @@
 
         header { 
             background: var(--header-bg); color: white; 
-            padding: 12px 15px; display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 15px; display: flex; flex-direction: column; gap: 10px;
         }
+
+        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+
+        .totals-bar {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255,255,255,0.1);
+            padding: 8px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        .total-item { text-align: center; }
+        .total-val { display: block; font-weight: bold; font-size: 1.1rem; color: var(--primary); }
+        .total-val.prevision { color: #ffca28; }
 
         .input-section { 
             padding: 12px 15px; 
@@ -47,8 +64,6 @@
             background: var(--card); 
             border-bottom: 1px solid rgba(0,0,0,0.1);
         }
-
-        .total-display { font-size: 1.3rem; font-weight: bold; }
 
         .file-actions {
             display: flex; gap: 8px; padding: 8px 15px; background: var(--bg); 
@@ -60,7 +75,6 @@
             font-size: 16px; outline: none; background: var(--card); color: var(--text);
         }
 
-        /* LAYOUT LISTA */
         #shopping-list { padding-top: 10px; }
 
         .category-group { margin: 15px 10px; }
@@ -72,14 +86,18 @@
             transition: 0.2s; border-left: 6px solid transparent;
         }
 
+        /* STILE CONTRASTATO PER PRODOTTI PRESI */
         .item-card.checked {
             background-color: var(--checked-bg);
-            border-left: 6px solid var(--primary);
+            color: var(--checked-text);
+            border-left: 6px solid var(--checked-text);
+            opacity: 0.8;
         }
 
         .product-img {
             width: 55px; height: 55px; border-radius: 10px; object-fit: cover;
-            background: #eee; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+            background: #eee; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.8rem; cursor: pointer; flex-shrink: 0;
         }
 
         .item-main { flex: 1; cursor: pointer; overflow: hidden; }
@@ -88,7 +106,7 @@
         .item-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
         
         .qty-box { 
-            display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.05); 
+            display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.1); 
             padding: 5px 12px; border-radius: 20px; color: var(--text); font-weight: bold;
         }
         
@@ -96,13 +114,11 @@
         .price-input { width: 65px; padding: 8px; border-radius: 8px; border: 1px solid #ccc; text-align: center; font-size: 0.9rem; }
 
         .media-btns { display: flex; gap: 5px; }
-        .btn-small { padding: 5px 8px; font-size: 0.75rem; border-radius: 6px; border: none; cursor: pointer; background: #eee; color: #333; }
+        .btn-small { padding: 5px 8px; font-size: 0.75rem; border-radius: 6px; border: none; cursor: pointer; background: rgba(0,0,0,0.05); color: var(--text); }
         
         .btn-del { background: none; border: none; color: var(--danger); font-size: 1.3rem; padding: 5px; cursor: pointer; }
-
         .btn-tool { padding: 8px 12px; border-radius: 8px; border: none; font-size: 0.8rem; cursor: pointer; font-weight: bold; color: white; }
 
-        /* FAB WHATSAPP */
         .fab-whatsapp {
             position: fixed; bottom: 20px; right: 20px; background: #25D366; color: white;
             width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
@@ -114,9 +130,20 @@
 
     <div class="sticky-top">
         <header>
-            <button onclick="toggleTheme()" style="background:none; border:none; font-size:1.8rem; cursor:pointer;">🌓</button>
-            <div class="total-display">€ <span id="grand-total">0.00</span></div>
-            <button onclick="clearList()" style="background:var(--danger); color:white; border-radius:8px; border:none; padding:6px 10px; font-weight:bold; cursor:pointer; font-size: 0.8rem;">RESET</button>
+            <div class="header-top">
+                <button onclick="toggleTheme()" style="background:none; border:none; font-size:1.8rem; cursor:pointer;">🌓</button>
+                <button onclick="clearList()" style="background:var(--danger); color:white; border-radius:8px; border:none; padding:6px 10px; font-weight:bold; cursor:pointer; font-size: 0.8rem;">RESET</button>
+            </div>
+            <div class="totals-bar">
+                <div class="total-item">
+                    <span>Previsione</span>
+                    <span class="total-val prevision" id="grand-total">0.00</span>
+                </div>
+                <div class="total-item" style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px;">
+                    <span>Nel Carrello</span>
+                    <span class="total-val" id="checked-total">0.00</span>
+                </div>
+            </div>
         </header>
 
         <div class="input-section">
@@ -140,19 +167,14 @@
         const catalog = {
             'mela': { e: '🍎', c: 'Ortofrutta' }, 'mele': { e: '🍎', c: 'Ortofrutta' },
             'banana': { e: '🍌', c: 'Ortofrutta' }, 'banane': { e: '🍌', c: 'Ortofrutta' },
-            'pera': { e: '🍐', c: 'Ortofrutta' }, 'pere': { e: '🍐', c: 'Ortofrutta' },
             'pomodor': { e: '🍅', c: 'Ortofrutta' }, 'insalata': { e: '🥬', c: 'Ortofrutta' },
-            'caffè': { e: '☕', c: 'Dispensa' }, 'caffe': { e: '☕', c: 'Dispensa' },
-            'pasta': { e: '🍝', c: 'Dispensa' }, 'riso': { e: '🍚', c: 'Dispensa' },
-            'biscotti': { e: '🍪', c: 'Dispensa' }, 'tonno': { e: '🐟', c: 'Dispensa' },
-            'pane': { e: '🍞', c: 'Panetteria' }, 'focaccia': { e: '🍕', c: 'Panetteria' },
-            'latte': { e: '🥛', c: 'Latticini' }, 'uova': { e: '🥚', c: 'Latticini' },
-            'formaggio': { e: '🧀', c: 'Latticini' }, 'yogurt': { e: '🍦', c: 'Latticini' },
+            'caffè': { e: '☕', c: 'Dispensa' }, 'pasta': { e: '🍝', c: 'Dispensa' },
+            'riso': { e: '🍚', c: 'Dispensa' }, 'biscotti': { e: '🍪', c: 'Dispensa' },
+            'pane': { e: '🍞', c: 'Panetteria' }, 'latte': { e: '🥛', c: 'Latticini' },
+            'uova': { e: '🥚', c: 'Latticini' }, 'formaggio': { e: '🧀', c: 'Latticini' },
             'carne': { e: '🥩', c: 'Macelleria' }, 'pollo': { e: '🍗', c: 'Macelleria' },
             'detersivo': { e: '🧴', c: 'Pulizia Casa' }, 'carta': { e: '🧻', c: 'Pulizia Casa' },
-            'sapone': { e: '🧼', c: 'Igiene' }, 'shampoo': { e: '🧴', c: 'Igiene' },
-            'birra': { e: '🍺', c: 'Bevande' }, 'vino': { e: '🍷', c: 'Bevande' },
-            'acqua': { e: '💧', c: 'Bevande' }, 'sugo': { e: '🥫', c: 'Dispensa' }
+            'acqua': { e: '💧', c: 'Bevande' }, 'birra': { e: '🍺', c: 'Bevande' }, 'vino': { e: '🍷', c: 'Bevande' }
         };
 
         let items = JSON.parse(localStorage.getItem('smart_list_final_v3')) || [];
@@ -167,9 +189,7 @@
                 return acc;
             }, {});
 
-            const sortedCats = Object.keys(grouped).sort();
-
-            sortedCats.forEach(cat => {
+            Object.keys(grouped).sort().forEach(cat => {
                 const groupDiv = document.createElement('div');
                 groupDiv.className = 'category-group';
                 groupDiv.innerHTML = `<div class="category-title">${cat}</div>`;
@@ -178,14 +198,14 @@
                     const card = document.createElement('div');
                     card.className = `item-card ${item.checked ? 'checked' : ''}`;
                     
-                    const imgContent = item.customImg 
-                        ? `<img src="${item.customImg}" class="product-img">` 
-                        : `<div class="product-img">${item.emoji}</div>`;
+                    const imgHtml = item.customImg 
+                        ? `<img src="${item.customImg}" class="product-img" onclick="toggleCheck(${item.id})">` 
+                        : `<div class="product-img" onclick="toggleCheck(${item.id})">${item.emoji}</div>`;
 
                     card.innerHTML = `
-                        ${imgContent}
+                        ${imgHtml}
                         <div class="item-main" onclick="toggleCheck(${item.id})">
-                            <span class="item-name" style="${item.checked ? 'text-decoration:line-through; color:#888':''}">${item.name}</span>
+                            <span class="item-name" style="${item.checked ? 'text-decoration:line-through':''}">${item.name}</span>
                             <div class="media-btns">
                                 <button class="btn-small" onclick="searchGoogle('${item.name}'); event.stopPropagation();">🔍 Cerca</button>
                                 <button class="btn-small" onclick="pasteImg(${item.id}); event.stopPropagation();">📋 Foto</button>
@@ -193,9 +213,9 @@
                         </div>
                         <div class="item-actions">
                             <div class="qty-box">
-                                <span onclick="updateQty(${item.id}, -1); event.stopPropagation();" style="padding:0 5px; cursor:pointer;">−</span>
+                                <span onclick="updateQty(${item.id}, -1); event.stopPropagation();" style="cursor:pointer;">−</span>
                                 <span>${item.qty}</span>
-                                <span onclick="updateQty(${item.id}, 1); event.stopPropagation();" style="padding:0 5px; cursor:pointer;">+</span>
+                                <span onclick="updateQty(${item.id}, 1); event.stopPropagation();" style="cursor:pointer;">+</span>
                             </div>
                             <div class="price-row">
                                 <input type="number" step="0.01" class="price-input" value="${item.price}" onchange="updatePrice(${item.id}, this.value)" placeholder="€">
@@ -211,33 +231,38 @@
             localStorage.setItem('smart_list_final_v3', JSON.stringify(items));
         }
 
-        function handleKeyPress(e) { if (e.key === 'Enter') addItem(); }
-
         function addItem(text = '') {
             const input = document.getElementById('item-input');
             const val = (text || input.value).toLowerCase().trim();
             if (!val) return;
-
             let info = { e: '📦', c: 'Altro' };
-            for (let key in catalog) {
-                if (val.includes(key)) { info = catalog[key]; break; }
-            }
+            for (let key in catalog) { if (val.includes(key)) { info = catalog[key]; break; } }
+            items.push({ id: Date.now(), name: val.charAt(0).toUpperCase() + val.slice(1), emoji: info.e, category: info.c, qty: 1, price: 0, checked: false, customImg: null });
+            input.value = ''; render();
+        }
 
-            items.push({
-                id: Date.now(),
-                name: val.charAt(0).toUpperCase() + val.slice(1),
-                emoji: info.e,
-                category: info.c,
-                qty: 1, price: 0, checked: false, customImg: null
-            });
-            input.value = '';
+        function toggleCheck(id) {
+            const item = items.find(it => it.id === id);
+            item.checked = !item.checked;
             render();
         }
 
-        function deleteItem(id) {
-            items = items.filter(i => i.id !== id);
-            render();
+        function updateTotal() {
+            const forecast = items.reduce((s, i) => s + (i.price * i.qty), 0);
+            const inCart = items.filter(i => i.checked).reduce((s, i) => s + (i.price * i.qty), 0);
+            
+            document.getElementById('grand-total').innerText = forecast.toFixed(2);
+            document.getElementById('checked-total').innerText = inCart.toFixed(2);
         }
+
+        // Funzioni di sistema
+        function handleKeyPress(e) { if (e.key === 'Enter') addItem(); }
+        function deleteItem(id) { items = items.filter(i => i.id !== id); render(); }
+        function updateQty(id, d) { const i = items.find(it => it.id === id); i.qty = Math.max(1, i.qty + d); render(); }
+        function updatePrice(id, v) { items.find(it => it.id === id).price = parseFloat(v) || 0; updateTotal(); }
+        function toggleTheme() { const b = document.body; b.setAttribute('data-theme', b.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); }
+        function clearList() { if(confirm("Azzerare la lista?")) { items = []; render(); } }
+        function searchGoogle(n) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(n + " prodotto")}`, '_blank'); }
 
         async function pasteImg(id) {
             try {
@@ -247,100 +272,51 @@
                         if (type.startsWith('image/')) {
                             const blob = await i.getType(type);
                             const reader = new FileReader();
-                            reader.onload = (e) => {
-                                items.find(it => it.id === id).customImg = e.target.result;
-                                render();
-                            };
+                            reader.onload = (e) => { items.find(it => it.id === id).customImg = e.target.result; render(); };
                             reader.readAsDataURL(blob);
                             return;
                         }
                     }
                 }
-                alert("Nessuna immagine negli appunti. Copiala da Google!");
-            } catch (err) { alert("Assicurati di aver concesso i permessi per la clipboard."); }
+            } catch (err) { alert("Copia prima un'immagine!"); }
         }
 
         async function exportToFile() {
             const dataStr = JSON.stringify(items, null, 2);
             const defaultName = `ListaSpesa_${new Date().toLocaleDateString().replace(/\//g,'-')}.json`;
-
-            // Metodo Moderno: File System Access API
             if ('showSaveFilePicker' in window) {
                 try {
-                    const handle = await window.showSaveFilePicker({
-                        suggestedName: defaultName,
-                        types: [{
-                            description: 'File JSON',
-                            accept: {'application/json': ['.json']},
-                        }],
-                    });
+                    const handle = await window.showSaveFilePicker({ suggestedName: defaultName, types: [{ description: 'File JSON', accept: {'application/json': ['.json']} }] });
                     const writable = await handle.createWritable();
                     await writable.write(dataStr);
                     await writable.close();
-                } catch (err) {
-                    console.log("Salvataggio annullato o non riuscito");
-                }
-            } 
-            // Metodo di riserva (Download standard)
-            else {
+                } catch (err) {}
+            } else {
                 const blob = new Blob([dataStr], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
-                a.href = url;
-                a.download = defaultName;
-                a.click();
-                URL.revokeObjectURL(url);
+                a.href = url; a.download = defaultName; a.click();
             }
         }
-
-
 
         function importFromFile(event) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    items = JSON.parse(e.target.result);
-                    render();
-                } catch(err) { alert("File non valido"); }
-            };
+            reader.onload = (e) => { try { items = JSON.parse(e.target.result); render(); } catch(err) { alert("Errore file"); } };
             reader.readAsText(file);
         }
 
         function exportWhatsApp() {
             if (items.length === 0) return;
-            const text = items.map(i => `${i.checked ? '✅' : '⬜'} *${i.emoji} ${i.name}* (x${i.qty}) - €${(i.price * i.qty).toFixed(2)}`).join('\n');
-            const total = document.getElementById('grand-total').innerText;
-            const msg = `🛒 *LA MIA SPESA*\n\n${text}\n\n💰 *TOTALE: €${total}*`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
-        }
-
-        function searchGoogle(n) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(n + " prodotto supermercato")}`, '_blank'); }
-        function updateQty(id, d) { const i = items.find(it => it.id === id); i.qty = Math.max(1, i.qty + d); render(); }
-        function updatePrice(id, v) { items.find(it => it.id === id).price = parseFloat(v) || 0; updateTotal(); }
-        function toggleCheck(id) { const i = items.find(it => it.id === id); i.checked = !i.checked; render(); }
-        
-        function updateTotal() {
-            const t = items.reduce((s, i) => s + (i.price * i.qty), 0);
-            document.getElementById('grand-total').innerText = t.toFixed(2);
+            const text = items.map(i => `${i.checked ? '✅' : '⬜'} *${i.emoji} ${i.name}* (x${i.qty})`).join('\n');
+            window.open(`https://wa.me/?text=${encodeURIComponent(`🛒 *LISTA SPESA*\n\n${text}`)}`);
         }
 
         function startVoice() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) { alert("Vocale non supportato"); return; }
-            const rec = new SpeechRecognition();
-            rec.lang = 'it-IT';
-            rec.onresult = (e) => addItem(e.results[0][0].transcript);
-            rec.start();
+            const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            rec.lang = 'it-IT'; rec.onresult = (e) => addItem(e.results[0][0].transcript); rec.start();
         }
-
-        function toggleTheme() {
-            const b = document.body;
-            b.setAttribute('data-theme', b.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
-        }
-
-        function clearList() { if(confirm("Vuoi azzerare la lista?")) { items = []; render(); } }
 
         render();
     </script>
