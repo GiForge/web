@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Flight Planner Pro - Resize & Route Clear</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f6; overflow: hidden; }
+        
+        /* Header */
+        #top-panel { background: #2c3e50; color: white; padding: 10px 15px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        
+        /* Layout con Resize */
+        #main-container { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
+        
+        #map { flex: 1; min-width: 200px; z-index: 1; }
+        
+        /* Divisore per il resize manuale */
+        #resizer { width: 8px; cursor: col-resize; background: #bdc3c7; z-index: 1000; transition: background 0.2s; }
+        #resizer:hover { background: #7f8c8d; }
+
+        #sidebar { width: 400px; min-width: 250px; background: white; padding: 15px; overflow-y: auto; border-left: 1px solid #ddd; display: flex; flex-direction: column; z-index: 2; }
+        
+        /* Pannello Coordinate Mouse */
+        #mouse-coords {
+            position: absolute; bottom: 25px; left: 10px; background: rgba(44, 62, 80, 0.9);
+            color: white; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 11px; z-index: 1000; pointer-events: none;
+        }
+
+        /* Buttons */
+        button { cursor: pointer; padding: 8px 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .btn-import { background: #f39c12; color: white; }
+        .btn-clear-route { background: #9b59b6; color: white; }
+        .btn-reset-all { background: #e74c3c; color: white; }
+        .btn-copy { background: #3498db; color: white; width: 100%; margin-bottom: 10px; }
+        
+        .param-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px solid #eee; font-size: 11px; }
+        .param-grid input { width: 100%; padding: 4px; box-sizing: border-box; }
+        
+        .search-bar { background: #34495e; padding: 8px 15px; display: flex; gap: 10px; align-items: center; color: white; font-size: 12px; flex-shrink: 0; }
+        .search-bar input { padding: 5px; border-radius: 4px; border: none; }
+
+        pre { background: #1e1e1e; color: #f8f8f2; padding: 12px; font-size: 11px; font-family: 'Courier New', monospace; border-radius: 5px; flex-grow: 1; overflow: auto; border: 1px solid #000; margin-top: 10px; }
+        #file-input { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="top-panel">
+    <div>
+        <strong>Flight Planner Pro</strong>
+        <div style="font-size: 11px; color: #bdc3c7;" id="points-count">Fix: 0</div>
+    </div>
+    <div class="controls">
+        <label class="btn-import" style="cursor:pointer; padding: 8px 15px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+            AGGIUNGI FILE XML/SVG <input type="file" id="file-input" accept=".svg,.xml" onchange="importText4f(this)">
+        </label>
+        <button class="btn-clear-route" onclick="clearRouteOnly()">CANCELLA ROTTA</button>
+        <button class="btn-reset-all" onclick="resetAll()">RESET TOTALE</button>
+    </div>
+</div>
+
+<div class="search-bar">
+    <span>Cerca Fix:</span> <input type="text" id="search-name" placeholder="Es: TNT" onkeyup="searchPoint()">
+    <span style="margin-left: 15px;">Vai a:</span> 
+    <input type="text" id="goto-lat" placeholder="Lat" style="width:60px">
+    <input type="text" id="goto-lon" placeholder="Lon" style="width:60px">
+    <button style="background:#27ae60; color:white; padding: 4px 10px;" onclick="goToCoords()">VAI</button>
+</div>
+
+<div id="main-container">
+    <div id="map"></div>
+    <div id="resizer"></div>
+    <div id="mouse-coords">Mouse: --.----, --.----</div>
+    <div id="sidebar">
+        <div class="param-grid">
+            <div><label>LVL</label><input type="number" id="p-level" value="350"></div>
+            <div><label>HSP</label><input type="number" id="p-hspeed" value="400"></div>
+            <div><label>VSP</label><input type="number" id="p-vspeed" value="0"></div>
+        </div>
+        <button class="btn-copy" onclick="copyToClipboard()">COPIA JSON_DATA</button>
+        <pre id="export-log">JSON_DATA = []</pre>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const map = L.map('map').setView([45.0, 11.0], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    let allPoints = []; 
+    let markersLayer = L.layerGroup().addTo(map);
+    let polyline = L.polyline([], {color: '#e74c3c', weight: 4, opacity: 0.8}).addTo(map);
+    let selectedRoute = [];
+
+    // --- LOGICA RESIZE MANUALE ---
+    const resizer = document.getElementById('resizer');
+    const sidebar = document.getElementById('sidebar');
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        let offsetRight = document.body.offsetWidth - e.clientX;
+        if (offsetRight > 200 && offsetRight < window.innerWidth * 0.8) {
+            sidebar.style.width = offsetRight + 'px';
+            map.invalidateSize(); // Aggiorna la mappa durante il resize
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isResizing = false;
+        document.body.style.cursor = 'default';
+        map.invalidateSize();
+    });
+
+    // --- LOGICA COORDINATE & MAPPATURA ---
+    function decToDms(val, isLat) {
+        const absVal = Math.abs(val);
+        const g = Math.floor(absVal);
+        const m = Math.floor((absVal - g) * 60);
+        const s = Math.round((absVal - g - (m / 60)) * 3600);
+        let dir = isLat ? (val >= 0 ? "N" : "S") : (val >= 0 ? "E" : "W");
+        return [g, m, s, dir];
+    }
+
+    function formatDmsString(dmsArray) {
+        return `${dmsArray[0]}° ${dmsArray[1]}' ${dmsArray[2]}" ${dmsArray[3]}`;
+    }
+
+    map.on('mousemove', function(e) {
+        const lat = e.latlng.lat;
+        const lon = e.latlng.lng;
+        document.getElementById('mouse-coords').innerHTML = 
+            `DEC: ${lat.toFixed(5)}, ${lon.toFixed(5)}<br>` +
+            `DMS: ${formatDmsString(decToDms(lat, true))} | ${formatDmsString(decToDms(lon, false))}`;
+    });
+
+    function importText4f(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+            const textTags = xmlDoc.getElementsByTagName("text4f");
+
+            for (let i = 0; i < textTags.length; i++) {
+                const tag = textTags[i];
+                const nome = tag.textContent.trim() || `P-${allPoints.length}`;
+                const lat = parseFloat(tag.getAttribute("point-lat"));
+                const lon = parseFloat(tag.getAttribute("point-lon"));
+
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    const p = {
+                        id: Date.now() + Math.random(),
+                        nome: nome, lat: lat, lon: lon,
+                        dmsLat: decToDms(lat, true), dmsLon: decToDms(lon, false)
+                    };
+                    allPoints.push(p);
+                    const m = L.marker([lat, lon]).addTo(markersLayer);
+                    m.bindPopup(`
+                        <b>${p.nome}</b><br><hr>
+                        <small>DEC: ${lat.toFixed(6)}, ${lon.toFixed(6)}</small><br>
+                        <small>DMS: ${formatDmsString(p.dmsLat)}</small><br>
+                        <small>DMS: ${formatDmsString(p.dmsLon)}</small><br>
+                        <button onclick="addToRoute(${p.id})" style="margin-top:8px; width:100%; background:#27ae60; color:white;">AGGIUNGI</button>
+                    `);
+                    p.marker = m;
+                }
+            }
+            document.getElementById('points-count').textContent = `Fix: ${allPoints.length}`;
+            input.value = ""; 
+        };
+        reader.readAsText(file);
+    }
+
+    window.addToRoute = function(uniqueId) {
+        const p = allPoints.find(x => x.id === uniqueId);
+        if (p) {
+            selectedRoute.push({
+                name: p.nome, lat: p.dmsLat, lon: p.dmsLon,
+                params: {
+                    level: parseInt(document.getElementById('p-level').value),
+                    hspeed: parseInt(document.getElementById('p-hspeed').value),
+                    vspeed: parseInt(document.getElementById('p-vspeed').value)
+                },
+                _mapCoords: [p.lat, p.lon]
+            });
+            updateUI();
+        }
+    }
+
+    function updateUI() {
+        polyline.setLatLngs(selectedRoute.map(p => p._mapCoords));
+        let output = "JSON_DATA = [";
+        selectedRoute.forEach((p, i) => {
+            const line = `{"name": "${p.name}", "lat": ${JSON.stringify(p.lat)}, "lon": ${JSON.stringify(p.lon)}, "params": ${JSON.stringify(p.params)}}`;
+            output += (i === 0 ? "" : ",\n             ") + line;
+        });
+        output += "]";
+        document.getElementById('export-log').textContent = output;
+    }
+
+    // ELIMINA SOLO LA ROTTA (Mantiene i fix carichi)
+    function clearRouteOnly() {
+        selectedRoute = [];
+        polyline.setLatLngs([]);
+        updateUI();
+    }
+
+    function searchPoint() {
+        const val = document.getElementById('search-name').value.toUpperCase();
+        const found = allPoints.find(p => p.nome.toUpperCase().includes(val));
+        if (found) { map.setView([found.lat, found.lon], 11); found.marker.openPopup(); }
+    }
+
+    function goToCoords() {
+        const lat = parseFloat(document.getElementById('goto-lat').value);
+        const lon = parseFloat(document.getElementById('goto-lon').value);
+        if (!isNaN(lat) && !isNaN(lon)) map.setView([lat, lon], 10);
+    }
+
+    function copyToClipboard() {
+        navigator.clipboard.writeText(document.getElementById('export-log').textContent);
+        alert("JSON copiato negli appunti!");
+    }
+
+    function resetAll() {
+        if(confirm("Vuoi cancellare tutto (Fix e Rotta)?")) {
+            allPoints = []; selectedRoute = []; markersLayer.clearLayers(); polyline.setLatLngs([]);
+            document.getElementById('export-log').textContent = "JSON_DATA = []";
+            document.getElementById('points-count').textContent = "Fix: 0";
+        }
+    }
+</script>
+</body>
+</html>
