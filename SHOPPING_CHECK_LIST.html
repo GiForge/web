@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Smart Spesa Pro - Ultra Autocomplete</title>
-    <style>
+<style>
         :root {
             --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21;
             --primary: #42b72a; --accent: #1877f2; --danger: #fa3e3e;
@@ -26,7 +26,7 @@
             margin: 0; 
             padding-bottom: 100px; 
             transition: 0.3s;
-            font-size: 18px;
+            font-size: 16px;
         }
         
         .sticky-top {
@@ -70,11 +70,11 @@
             font-size: 16px; outline: none; background: var(--card); color: var(--text);
         }
 
-        /* Stile Suggerimenti Autocomplete */
+        /* Stile Suggerimenti Autocomplete - Allineato a destra dopo i pulsanti */
         #autocomplete-list {
             position: absolute;
             top: 100%;
-            left: 15px;
+            left: 110px;
             right: 15px;
             background: var(--card);
             border: 1px solid #ccc;
@@ -87,11 +87,12 @@
         }
 
         .suggestion-item {
-            padding: 12px;
+            padding: 10px 12px;
             cursor: pointer;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
             display: flex;
             justify-content: space-between;
+            font-size: 0.95rem;
         }
 
         .suggestion-item:hover { background: rgba(0,0,0,0.05); }
@@ -101,51 +102,123 @@
             justify-content: center;
         }
 
-        #shopping-list { padding-top: 10px; }
+        #shopping-list { padding-top: 5px; }
 
-        .category-group { margin: 15px 10px; }
-        .category-title { font-weight: bold; font-size: 0.85rem; text-transform: uppercase; color: #888; margin-bottom: 8px; padding-left: 5px; }
+        .category-group { margin: 8px 10px; }
+        
+        .category-title { 
+            font-weight: bold; 
+            font-size: 0.8rem; 
+            text-transform: uppercase; 
+            color: #888; 
+            margin-bottom: 4px; 
+            padding-left: 5px; 
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+        }
 
+        /* CARD COMPATTA (Ottimizzata Smartphone) */
         .item-card {
-            background: var(--card); margin-bottom: 10px; padding: 12px; border-radius: 15px;
-            display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: 0.2s; border-left: 6px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            margin-bottom: 4px;
+            background: var(--card);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: 0.2s; 
+            border-left: 6px solid transparent;
         }
 
         .item-card.checked {
             background-color: var(--checked-bg);
             color: var(--checked-text);
             border-left: 6px solid var(--checked-text);
-            opacity: 0.8;
+            opacity: 0.75;
         }
 
         .product-img {
-            width: 55px; height: 55px; border-radius: 10px; object-fit: cover;
-            background: #eee; display: flex; align-items: center; justify-content: center; 
-            font-size: 1.8rem; cursor: pointer; flex-shrink: 0;
+            width: 34px; 
+            height: 34px; 
+            border-radius: 6px; 
+            object-fit: cover;
+            background: rgba(0,0,0,0.05); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.3rem; 
+            cursor: pointer; 
+            flex-shrink: 0;
         }
 
         .item-main { flex: 1; cursor: pointer; overflow: hidden; }
-        .item-name { font-weight: bold; font-size: 1.1rem; display: block; margin-bottom: 4px; }
         
-        .item-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
-        
-        .qty-box { 
-            display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.1); 
-            padding: 5px 12px; border-radius: 20px; color: var(--text); font-weight: bold;
+        .item-name { 
+            font-weight: bold; 
+            font-size: 0.95rem; 
+            display: block; 
+            margin-bottom: 2px; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
-        .price-row { display: flex; align-items: center; gap: 6px; }
-        .price-input { width: 65px; padding: 8px; border-radius: 8px; border: 1px solid #ccc; text-align: center; }
+        .media-btns { display: flex; gap: 4px; margin-top: 1px; }
 
-        .btn-small { padding: 5px 8px; font-size: 0.75rem; border-radius: 6px; border: none; cursor: pointer; background: rgba(0,0,0,0.05); color: var(--text); }
-        .btn-del { background: none; border: none; color: var(--danger); font-size: 1.3rem; cursor: pointer; }
+        .item-actions { display: flex; flex-direction: row; gap: 8px; align-items: center; }
+        
+        .qty-box { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            background: rgba(0,0,0,0.05); 
+            padding: 3px 8px; 
+            border-radius: 12px; 
+            color: var(--text); 
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        
+        .price-row { display: flex; align-items: center; gap: 4px; }
+        
+        .price-input { 
+            width: 52px; 
+            padding: 4px; 
+            border-radius: 6px; 
+            border: 1px solid #ccc; 
+            text-align: center; 
+            font-size: 0.85rem;
+            background: var(--card);
+            color: var(--text);
+            -moz-appearance: textfield;
+        }
+
+        /* Rimuove freccette native dagli input numerici */
+        .price-input::-webkit-outer-spin-button,
+        .price-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .btn-small { 
+            padding: 2px 6px; 
+            font-size: 0.7rem; 
+            border-radius: 4px; 
+            border: none; 
+            cursor: pointer; 
+            background: rgba(0,0,0,0.05); 
+            color: var(--text); 
+        }
+        
+        .btn-del { background: none; border: none; color: var(--danger); font-size: 1.1rem; cursor: pointer; padding: 2px; }
+        
         .btn-tool { padding: 8px 12px; border-radius: 8px; border: none; font-size: 0.8rem; cursor: pointer; font-weight: bold; color: white; }
 
         .fab-whatsapp {
-            position: fixed; bottom: 20px; right: 20px; background: #25D366; color: white;
-            width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 1.8rem; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 999;
+            position: fixed; bottom: 15px; right: 15px; background: #25D366; color: white;
+            width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.25); z-index: 999;
         }
     </style>
 </head>
