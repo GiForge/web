@@ -2,62 +2,64 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Flight Planner Pro - Resize & Route Clear</title>
+    <title>Flight Planner Pro - Advanced Save/Load & Delete</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f6; overflow: hidden; }
-        
-        /* Header */
         #top-panel { background: #2c3e50; color: white; padding: 10px 15px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .controls { display: flex; gap: 10px; align-items: center; }
-        
-        /* Layout con Resize */
         #main-container { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
-        
-        #map { flex: 1; min-width: 200px; z-index: 1; }
-        
-        /* Divisore per il resize manuale */
-        #resizer { width: 8px; cursor: col-resize; background: #bdc3c7; z-index: 1000; transition: background 0.2s; }
+        #map { flex: 1; min-width: 200px; z-index: 1; cursor: crosshair; }
+        #resizer { width: 8px; cursor: col-resize; background: #bdc3c7; z-index: 1000; }
         #resizer:hover { background: #7f8c8d; }
-
-        #sidebar { width: 400px; min-width: 250px; background: white; padding: 15px; overflow-y: auto; border-left: 1px solid #ddd; display: flex; flex-direction: column; z-index: 2; }
+        #sidebar { width: 420px; min-width: 300px; background: white; padding: 15px; overflow-y: auto; border-left: 1px solid #ddd; display: flex; flex-direction: column; z-index: 2; }
+        #mouse-coords { position: absolute; bottom: 25px; left: 10px; background: rgba(44, 62, 80, 0.9); color: white; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 11px; z-index: 1000; pointer-events: none; }
         
-        /* Pannello Coordinate Mouse */
-        #mouse-coords {
-            position: absolute; bottom: 25px; left: 10px; background: rgba(44, 62, 80, 0.9);
-            color: white; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 11px; z-index: 1000; pointer-events: none;
-        }
-
-        /* Buttons */
-        button { cursor: pointer; padding: 8px 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        button { cursor: pointer; padding: 8px 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 11px; }
         .btn-import { background: #f39c12; color: white; }
-        .btn-clear-route { background: #9b59b6; color: white; }
         .btn-reset-all { background: #e74c3c; color: white; }
         .btn-copy { background: #3498db; color: white; width: 100%; margin-bottom: 10px; }
         
+        .route-manager { background: #f1f2f6; padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #dcdde1; }
+        .route-select-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+        .route-select-row select { flex: 1; padding: 6px; border-radius: 4px; }
+        
         .param-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px solid #eee; font-size: 11px; }
         .param-grid input { width: 100%; padding: 4px; box-sizing: border-box; }
-        
         .search-bar { background: #34495e; padding: 8px 15px; display: flex; gap: 10px; align-items: center; color: white; font-size: 12px; flex-shrink: 0; }
         .search-bar input { padding: 5px; border-radius: 4px; border: none; }
+        pre { background: #1e1e1e; color: #f8f8f2; padding: 12px; font-size: 11px; font-family: 'Courier New', monospace; border-radius: 5px; flex-grow: 1; overflow: auto; border: 1px solid #000; margin-top: 10px; min-height: 150px; }
+        #file-input, #project-input { display: none; }
+        
+        .custom-marker-tag { background: #e67e22; color: white; padding: 2px 5px; font-size: 9px; border-radius: 3px; font-weight: bold; display: inline-block; margin-bottom: 5px; }
+        .legend-indicator { font-size: 11px; margin-left: 15px; display: flex; gap: 10px; }
+        
+        .popup-action-btn { margin-top: 6px; width: 100%; border: none; padding: 6px; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 10px; }
+        .btn-add { background: #27ae60; }
+        .btn-remove { background: #e67e22; }
+        .btn-delete-fix { background: #c0392b; border: 1px solid #962d22; }
 
-        pre { background: #1e1e1e; color: #f8f8f2; padding: 12px; font-size: 11px; font-family: 'Courier New', monospace; border-radius: 5px; flex-grow: 1; overflow: auto; border: 1px solid #000; margin-top: 10px; }
-        #file-input { display: none; }
+        .storage-box { background: #def0ff; padding: 10px; border-radius: 6px; border: 1px solid #b2d6ff; margin-top: auto; display: flex; gap: 8px; }
+        .btn-save-proj { background: #2980b9; color: white; flex: 1; }
+        .btn-load-proj { background: #8e44ad; color: white; flex: 1; display: inline-block; text-align: center; line-height: 26px; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer;}
     </style>
 </head>
 <body>
 
 <div id="top-panel">
     <div>
-        <strong>Flight Planner Pro</strong>
-        <div style="font-size: 11px; color: #bdc3c7;" id="points-count">Fix: 0</div>
+        <strong>Flight Planner Multi-Route Pro</strong>
+        <div style="font-size: 11px; color: #bdc3c7;" id="points-count">Fix totali: 0</div>
+    </div>
+    <div class="legend-indicator">
+        <span>🔹 File XML/SVG</span>
+        <span>🟠 Inseriti a mano</span>
     </div>
     <div class="controls">
-        <label class="btn-import" style="cursor:pointer; padding: 8px 15px; border-radius: 4px; font-size: 12px; font-weight: bold;">
+        <label class="btn-import" style="cursor:pointer; padding: 8px 15px; border-radius: 4px; font-size: 11px; font-weight: bold;">
             AGGIUNGI FILE XML/SVG <input type="file" id="file-input" accept=".svg,.xml" onchange="importText4f(this)">
         </label>
-        <button class="btn-clear-route" onclick="clearRouteOnly()">CANCELLA ROTTA</button>
-        <button class="btn-reset-all" onclick="resetAll()">RESET TOTALE</button>
+        <button class="btn-reset-all" onclick="resetAll()">RESET GENERALE</button>
     </div>
 </div>
 
@@ -67,6 +69,7 @@
     <input type="text" id="goto-lat" placeholder="Lat" style="width:60px">
     <input type="text" id="goto-lon" placeholder="Lon" style="width:60px">
     <button style="background:#27ae60; color:white; padding: 4px 10px;" onclick="goToCoords()">VAI</button>
+    <span style="margin-left: auto; font-style: italic; font-size: 11px; color: #ff9f43;">* Clicca sulla mappa per inserire nuovi punti coordinate</span>
 </div>
 
 <div id="main-container">
@@ -74,13 +77,36 @@
     <div id="resizer"></div>
     <div id="mouse-coords">Mouse: --.----, --.----</div>
     <div id="sidebar">
+        
+        <div class="route-manager">
+            <div style="font-weight: bold; font-size: 12px; color: #2c3e50;">TRAIETTORIE DISPONIBILI</div>
+            <div class="route-select-row">
+                <input type="text" id="new-route-name" placeholder="Nuova Rotta..." style="width: 120px; padding: 5px;">
+                <button style="background: #2ecc71; color: white;" onclick="createNewRoute()">+</button>
+                <button style="background: #e74c3c; color: white;" onclick="deleteActiveRoute()">Elimina attiva</button>
+            </div>
+            <div class="route-select-row">
+                <label style="font-size:11px;">Attiva:</label>
+                <select id="active-route-select" onchange="switchRoute()"></select>
+            </div>
+        </div>
+
         <div class="param-grid">
             <div><label>LVL</label><input type="number" id="p-level" value="350"></div>
             <div><label>HSP</label><input type="number" id="p-hspeed" value="400"></div>
             <div><label>VSP</label><input type="number" id="p-vspeed" value="0"></div>
         </div>
-        <button class="btn-copy" onclick="copyToClipboard()">COPIA JSON_DATA</button>
+        
+        <button class="btn-copy" onclick="copyToClipboard()">COPIA JSON MULTI-ROTTA</button>
         <pre id="export-log">JSON_DATA = []</pre>
+
+        <!-- Box Gestione File di Sessione -->
+        <div class="storage-box">
+            <button class="btn-save-proj" onclick="saveProject()">💾 SALVA PROGETTO</button>
+            <label class="btn-load-proj">
+                📂 RICARICA PROGETTO <input type="file" id="project-input" accept=".json" onchange="loadProject(this)">
+            </label>
+        </div>
     </div>
 </div>
 
@@ -91,35 +117,25 @@
 
     let allPoints = []; 
     let markersLayer = L.layerGroup().addTo(map);
-    let polyline = L.polyline([], {color: '#e74c3c', weight: 4, opacity: 0.8}).addTo(map);
-    let selectedRoute = [];
+    let customFixCounter = 1; 
+    
+    let routes = [{ id: "r1", name: "Traiettoria 1", waypoints: [], polyline: null, color: "#e74c3c" }];
+    let activeRouteId = "r1";
+    routes[0].polyline = L.polyline([], {color: routes[0].color, weight: 4}).addTo(map);
 
-    // --- LOGICA RESIZE MANUALE ---
+    // --- RESIZE ORIZZONTALE ---
     const resizer = document.getElementById('resizer');
     const sidebar = document.getElementById('sidebar');
     let isResizing = false;
-
-    resizer.addEventListener('mousedown', (e) => {
-        isResizing = true;
-        document.body.style.cursor = 'col-resize';
-    });
-
+    resizer.addEventListener('mousedown', () => { isResizing = true; document.body.style.cursor = 'col-resize'; });
     document.addEventListener('mousemove', (e) => {
         if (!isResizing) return;
         let offsetRight = document.body.offsetWidth - e.clientX;
-        if (offsetRight > 200 && offsetRight < window.innerWidth * 0.8) {
-            sidebar.style.width = offsetRight + 'px';
-            map.invalidateSize(); // Aggiorna la mappa durante il resize
-        }
+        if (offsetRight > 250 && offsetRight < window.innerWidth * 0.8) { sidebar.style.width = offsetRight + 'px'; map.invalidateSize(); }
     });
+    document.addEventListener('mouseup', () => { isResizing = false; document.body.style.cursor = 'default'; map.invalidateSize(); });
 
-    document.addEventListener('mouseup', () => {
-        isResizing = false;
-        document.body.style.cursor = 'default';
-        map.invalidateSize();
-    });
-
-    // --- LOGICA COORDINATE & MAPPATURA ---
+    // --- UTILS COORDINATE ---
     function decToDms(val, isLat) {
         const absVal = Math.abs(val);
         const g = Math.floor(absVal);
@@ -134,16 +150,251 @@
     }
 
     map.on('mousemove', function(e) {
-        const lat = e.latlng.lat;
-        const lon = e.latlng.lng;
+        const lat = e.latlng.lat; const lon = e.latlng.lng;
         document.getElementById('mouse-coords').innerHTML = 
             `DEC: ${lat.toFixed(5)}, ${lon.toFixed(5)}<br>` +
             `DMS: ${formatDmsString(decToDms(lat, true))} | ${formatDmsString(decToDms(lon, false))}`;
     });
 
+    // --- CLICK MAPPA CREAZIONE PUNTI ---
+    map.on('click', function(e) {
+        if (e.originalEvent.target.id !== 'map' && !e.originalEvent.target.classList.contains('leaflet-container')) return;
+        const lat = e.latlng.lat;
+        const lon = e.latlng.lng;
+        
+        const defaultName = `WP_${customFixCounter++}`;
+        const nomePunto = prompt("Inserisci il nome per questo punto inserito a mano:", defaultName);
+        
+        if (nomePunto === null) return; 
+        const nomeFinale = nomePunto.trim() || defaultName;
+
+        registerAndBuildMarker(nomeFinale, lat, lon, true);
+    });
+
+    // Costruzione e Binding dinamico popup dei marker
+    function registerAndBuildMarker(nome, lat, lon, isCustom) {
+        const p = {
+            id: Date.now() + Math.random(),
+            nome: nome, lat: lat, lon: lon,
+            isCustom: isCustom,
+            dmsLat: decToDms(lat, true), dmsLon: decToDms(lon, false)
+        };
+        allPoints.push(p);
+        buildMarkerGraphic(p);
+    }
+
+    function buildMarkerGraphic(p) {
+        let m;
+        if (p.isCustom) {
+            m = L.circleMarker([p.lat, p.lon], {
+                radius: 8, fillColor: "#e67e22", color: "#d35400", weight: 2, opacity: 1, fillOpacity: 0.8
+            }).addTo(markersLayer);
+        } else {
+            m = L.marker([p.lat, p.lon]).addTo(markersLayer);
+        }
+        
+        p.marker = m;
+
+        m.on('click', function() { m.setPopupContent(generatePopupContent(p)); });
+        m.bindPopup(generatePopupContent(p));
+        
+        document.getElementById('points-count').textContent = `Fix totali: ${allPoints.length}`;
+        updateRouteSelectOptions();
+    }
+
+    function generatePopupContent(p) {
+        const currentRoute = routes.find(r => r.id === activeRouteId);
+        const isAlreadyInRoute = currentRoute ? currentRoute.waypoints.some(w => w.globalPointId === p.id) : false;
+        const tagCustom = p.isCustom ? `<span class="custom-marker-tag">INSERITO A MANO</span><br>` : '';
+        
+        let actionButton = isAlreadyInRoute 
+            ? `<button onclick="removeFromRoute(${p.id})" class="popup-action-btn btn-remove">➖ RIMUOVI DA TRAIETTORIA</button>`
+            : `<button onclick="addToRoute(${p.id})" class="popup-action-btn btn-add">➕ AGGIUNGI ALLA TRAIETTORIA</button>`;
+
+        // Aggiunge la feature di distruzione totale solo se si tratta di un punto creato manuale
+        let deleteFixButton = p.isCustom 
+            ? `<button onclick="deleteFixDefinitively(${p.id})" class="popup-action-btn btn-delete-fix">🗑️ ELIMINA DA MAPPA DEFINITIVAMENTE</button>` 
+            : '';
+
+        return `
+            <div>
+                ${tagCustom}
+                <b style="font-size:13px; color:#2c3e50;">${p.nome}</b><br><hr style="margin:4px 0; border:0; border-top:1px solid #eee;">
+                <small>DEC: ${p.lat.toFixed(6)}, ${p.lon.toFixed(6)}</small><br>
+                <small>DMS: ${formatDmsString(p.dmsLat)}</small><br>
+                <small>DMS: ${formatDmsString(p.dmsLon)}</small><br>
+                ${actionButton}
+                ${deleteFixButton}
+            </div>
+        `;
+    }
+
+    // --- CANCELLAZIONE DEFINITIVA PUNTO MANUALE ---
+    window.deleteFixDefinitively = function(uniqueId) {
+        const index = allPoints.findIndex(x => x.id === uniqueId);
+        if (index !== -1) {
+            const p = allPoints[index];
+            if(confirm(`Vuoi cancellare definitivamente "${p.nome}" da tutta la mappa e da tutte le traiettorie?`)) {
+                // 1. Rimuovi visivamente il marker grafico
+                if(p.marker) map.removeLayer(p.marker);
+                
+                // 2. Rimuovi a tappeto il punto da TUTTE le traiettorie esistenti
+                routes.forEach(r => {
+                    r.waypoints = r.waypoints.filter(w => w.globalPointId !== uniqueId);
+                });
+
+                // 3. Rimuovi dal database globale dei punti
+                allPoints.splice(index, 1);
+                
+                // 4. Rinfresca interfacce e polilinee
+                updateRouteSelectOptions();
+                updateUI();
+                document.getElementById('points-count').textContent = `Fix totali: ${allPoints.length}`;
+            }
+        }
+    }
+
+    // --- AZIONI TRAIETTORIA ---
+    window.addToRoute = function(uniqueId) {
+        const p = allPoints.find(x => x.id === uniqueId);
+        const currentRoute = routes.find(r => r.id === activeRouteId);
+        if (p && currentRoute) {
+            currentRoute.waypoints.push({
+                globalPointId: p.id,
+                name: p.nome, lat: p.dmsLat, lon: p.dmsLon,
+                params: {
+                    level: parseInt(document.getElementById('p-level').value),
+                    hspeed: parseInt(document.getElementById('p-hspeed').value),
+                    vspeed: parseInt(document.getElementById('p-vspeed').value)
+                },
+                _mapCoords: [p.lat, p.lon]
+            });
+            p.marker.closePopup();
+            updateRouteSelectOptions();
+            updateUI();
+        }
+    }
+
+    window.removeFromRoute = function(uniqueId) {
+        const p = allPoints.find(x => x.id === uniqueId);
+        const currentRoute = routes.find(r => r.id === activeRouteId);
+        if (p && currentRoute) {
+            currentRoute.waypoints = currentRoute.waypoints.filter(w => w.globalPointId !== uniqueId);
+            p.marker.closePopup(); 
+            updateRouteSelectOptions();
+            updateUI();
+        }
+    }
+
+    // --- SALVATAGGIO & CARICAMENTO COMPLETO (SAVE / LOAD SYSTEM) ---
+    function saveProject() {
+        // Prepariamo l'oggetto contenente lo stato completo pulito dai riferimenti Leaflet circolari
+        const structuralProject = {
+            customFixCounter: customFixCounter,
+            activeRouteId: activeRouteId,
+            points: allPoints.map(p => ({
+                id: p.id, nome: p.nome, lat: p.lat, lon: p.lon, isCustom: p.isCustom, dmsLat: p.dmsLat, dmsLon: p.dmsLon
+            })),
+            routes: routes.map(r => ({
+                id: r.id, name: r.name, color: r.color, waypoints: r.waypoints
+            }))
+        };
+
+        const blob = new Blob([JSON.stringify(structuralProject, null, 2)], {type: "application/json"});
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `flight-planner-session-${Date.now()}.json`;
+        link.click();
+    }
+
+    function loadProject(input) {
+        const file = input.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if(!data.points || !data.routes) throw new Error("Formato progetto non valido.");
+
+                // Reset completo dello stato attuale prima del ripristino
+                allPoints = [];
+                routes.forEach(r => { if(r.polyline) map.removeLayer(r.polyline); });
+                markersLayer.clearLayers();
+
+                // Ripristino contatori e ID
+                customFixCounter = data.customFixCounter || 1;
+                activeRouteId = data.activeRouteId;
+
+                // Ripristino Punti e Rigenerazione Marker grafici
+                data.points.forEach(savedP => {
+                    const p = { ...savedP };
+                    allPoints.push(p);
+                    buildMarkerGraphic(p); 
+                });
+
+                // Ripristino Rotte e Polilinee associate
+                routes = data.routes.map(savedR => {
+                    const r = { ...savedR };
+                    r.polyline = L.polyline([], {color: r.color, weight: 4}).addTo(map);
+                    return r;
+                });
+
+                updateRouteSelectOptions();
+                updateUI();
+                alert("Progetto ripristinato con successo!");
+            } catch(err) {
+                alert("Errore nel caricamento del file di progetto: " + err.message);
+            }
+            input.value = "";
+        };
+        reader.readAsText(file);
+    }
+
+    // --- GESTIONE TRAIETTORIE INTERFACCIA ---
+    function updateRouteSelectOptions() {
+        const select = document.getElementById('active-route-select');
+        select.innerHTML = "";
+        routes.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.id;
+            opt.textContent = `${r.name} (${r.waypoints.length} fix)`;
+            if(r.id === activeRouteId) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+
+    function createNewRoute() {
+        const nameInput = document.getElementById('new-route-name');
+        const name = nameInput.value.trim() || `Traiettoria ${routes.length + 1}`;
+        const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+        const newId = 'r_' + Date.now();
+        
+        routes.push({
+            id: newId, name: name, waypoints: [],
+            polyline: L.polyline([], {color: randomColor, weight: 4}).addTo(map), color: randomColor
+        });
+        activeRouteId = newId;
+        nameInput.value = "";
+        updateRouteSelectOptions();
+        updateUI();
+    }
+
+    function switchRoute() { activeRouteId = document.getElementById('active-route-select').value; updateUI(); }
+
+    function deleteActiveRoute() {
+        if(routes.length <= 1) { alert("Devi mantenere almeno una traiettoria attiva!"); return; }
+        const idx = routes.findIndex(r => r.id === activeRouteId);
+        if(idx !== -1) {
+            map.removeLayer(routes[idx].polyline);
+            routes.splice(idx, 1);
+            activeRouteId = routes[0].id; 
+            updateRouteSelectOptions();
+            updateUI();
+        }
+    }
+
+    // --- PARSER FILE INPUT TEXT4F ---
     function importText4f(input) {
-        const file = input.files[0];
-        if (!file) return;
+        const file = input.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             const parser = new DOMParser();
@@ -155,63 +406,29 @@
                 const nome = tag.textContent.trim() || `P-${allPoints.length}`;
                 const lat = parseFloat(tag.getAttribute("point-lat"));
                 const lon = parseFloat(tag.getAttribute("point-lon"));
-
                 if (!isNaN(lat) && !isNaN(lon)) {
-                    const p = {
-                        id: Date.now() + Math.random(),
-                        nome: nome, lat: lat, lon: lon,
-                        dmsLat: decToDms(lat, true), dmsLon: decToDms(lon, false)
-                    };
-                    allPoints.push(p);
-                    const m = L.marker([lat, lon]).addTo(markersLayer);
-                    m.bindPopup(`
-                        <b>${p.nome}</b><br><hr>
-                        <small>DEC: ${lat.toFixed(6)}, ${lon.toFixed(6)}</small><br>
-                        <small>DMS: ${formatDmsString(p.dmsLat)}</small><br>
-                        <small>DMS: ${formatDmsString(p.dmsLon)}</small><br>
-                        <button onclick="addToRoute(${p.id})" style="margin-top:8px; width:100%; background:#27ae60; color:white;">AGGIUNGI</button>
-                    `);
-                    p.marker = m;
+                    registerAndBuildMarker(nome, lat, lon, false);
                 }
             }
-            document.getElementById('points-count').textContent = `Fix: ${allPoints.length}`;
             input.value = ""; 
         };
         reader.readAsText(file);
     }
 
-    window.addToRoute = function(uniqueId) {
-        const p = allPoints.find(x => x.id === uniqueId);
-        if (p) {
-            selectedRoute.push({
-                name: p.nome, lat: p.dmsLat, lon: p.dmsLon,
-                params: {
-                    level: parseInt(document.getElementById('p-level').value),
-                    hspeed: parseInt(document.getElementById('p-hspeed').value),
-                    vspeed: parseInt(document.getElementById('p-vspeed').value)
-                },
-                _mapCoords: [p.lat, p.lon]
-            });
-            updateUI();
-        }
-    }
-
     function updateUI() {
-        polyline.setLatLngs(selectedRoute.map(p => p._mapCoords));
-        let output = "JSON_DATA = [";
-        selectedRoute.forEach((p, i) => {
-            const line = `{"name": "${p.name}", "lat": ${JSON.stringify(p.lat)}, "lon": ${JSON.stringify(p.lon)}, "params": ${JSON.stringify(p.params)}}`;
-            output += (i === 0 ? "" : ",\n             ") + line;
-        });
-        output += "]";
-        document.getElementById('export-log').textContent = output;
-    }
+        routes.forEach(r => { if(r.polyline) r.polyline.setLatLngs(r.waypoints.map(w => w._mapCoords)); });
 
-    // ELIMINA SOLO LA ROTTA (Mantiene i fix carichi)
-    function clearRouteOnly() {
-        selectedRoute = [];
-        polyline.setLatLngs([]);
-        updateUI();
+        let output = "JSON_DATA = [\n";
+        routes.forEach((r, idx) => {
+            output += `  {\n    "route_name": "${r.name}",\n    "waypoints": [`;
+            r.waypoints.forEach((w, wIdx) => {
+                const line = `{"name": "${w.name}", "lat": ${JSON.stringify(w.lat)}, "lon": ${JSON.stringify(w.lon)}, "params": ${JSON.stringify(w.params)}}`;
+                output += (wIdx === 0 ? "" : ",\n                  ") + line;
+            });
+            output += `]\n  }${idx < routes.length - 1 ? ',\n' : ''}`;
+        });
+        output += "\n]";
+        document.getElementById('export-log').textContent = output;
     }
 
     function searchPoint() {
@@ -228,16 +445,25 @@
 
     function copyToClipboard() {
         navigator.clipboard.writeText(document.getElementById('export-log').textContent);
-        alert("JSON copiato negli appunti!");
+        alert("JSON Multi-Traiettoria copiato!");
     }
 
     function resetAll() {
-        if(confirm("Vuoi cancellare tutto (Fix e Rotta)?")) {
-            allPoints = []; selectedRoute = []; markersLayer.clearLayers(); polyline.setLatLngs([]);
-            document.getElementById('export-log').textContent = "JSON_DATA = []";
-            document.getElementById('points-count').textContent = "Fix: 0";
+        if(confirm("Svuotare completamente l'intera sessione di lavoro?")) {
+            allPoints = [];
+            customFixCounter = 1;
+            routes.forEach(r => { if(r.polyline) map.removeLayer(r.polyline); });
+            routes = [{ id: "r1", name: "Traiettoria 1", waypoints: [], polyline: null, color: "#e74c3c" }];
+            routes[0].polyline = L.polyline([], {color: routes[0].color, weight: 4}).addTo(map);
+            activeRouteId = "r1";
+            markersLayer.clearLayers();
+            updateRouteSelectOptions();
+            updateUI();
+            document.getElementById('points-count').textContent = "Fix totali: 0";
         }
     }
+
+    updateRouteSelectOptions();
 </script>
 </body>
 </html>
