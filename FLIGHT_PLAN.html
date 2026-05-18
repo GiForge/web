@@ -319,24 +319,63 @@
     }
 
     // --- SALVATAGGIO & CARICAMENTO COMPLETO ---
-    function saveProject() {
-        const structuralProject = {
-            customFixCounter: customFixCounter,
-            activeRouteId: activeRouteId,
-            points: allPoints.map(p => ({
-                id: p.id, nome: p.nome, lat: p.lat, lon: p.lon, isCustom: p.isCustom, dmsLat: p.dmsLat, dmsLon: p.dmsLon
-            })),
-            routes: routes.map(r => ({
-                id: r.id, name: r.name, color: r.color, waypoints: r.waypoints
-            }))
-        };
+// --- SALVATAGGIO CON SCELTA DI NOME E CARTELLA ---
+async function saveProject() {
+    // Prepariamo la struttura dati del progetto
+    const structuralProject = {
+        customFixCounter: customFixCounter,
+        activeRouteId: activeRouteId,
+        points: allPoints.map(p => ({
+            id: p.id, nome: p.nome, lat: p.lat, lon: p.lon, isCustom: p.isCustom, dmsLat: p.dmsLat, dmsLon: p.dmsLon
+        })),
+        routes: routes.map(r => ({
+            id: r.id, name: r.name, color: r.color, waypoints: r.waypoints
+        }))
+    };
 
-        const blob = new Blob([JSON.stringify(structuralProject, null, 2)], {type: "application/json"});
+    const jsonString = JSON.stringify(structuralProject, null, 2);
+    const defaultFilename = `flight-planner-session-${Date.now()}.json`;
+
+    // 1. Approccio Moderno: File System Access API (Scelta cartella e nome reale)
+    if ('showSaveFilePicker' in window) {
+        try {
+            const options = {
+                suggestedName: defaultFilename,
+                types: [{
+                    description: 'File di progetto JSON',
+                    accept: { 'application/json': ['.json'] }
+                }]
+            };
+            // Apre la finestra nativa del sistema operativo per scegliere cartella e nome
+            const handle = await window.showSaveFilePicker(options);
+            const writable = await handle.createWritable();
+            await writable.write(jsonString);
+            await writable.close();
+            alert("Progetto salvato con successo nella cartella selezionata!");
+        } catch (err) {
+            // Se l'utente chiude la finestra senza salvare, non facciamo nulla
+            if (err.name !== 'AbortError') {
+                alert("Errore durante il salvataggio: " + err.message);
+            }
+        }
+    } 
+    // 2. Approccio Fallback (Per Safari, Firefox o browser datati)
+    else {
+        const userFilename = prompt("Inserisci il nome del file da salvare:", defaultFilename);
+        if (userFilename === null) return; // Utente ha annullato
+
+        let finalName = userFilename.trim();
+        if (!finalName.endsWith('.json')) finalName += '.json';
+
+        const blob = new Blob([jsonString], { type: "application/json" });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = `flight-planner-session-${Date.now()}.json`;
+        link.download = finalName;
         link.click();
+        
+        alert("File generato! Verrà salvato nella cartella dei Download del browser.");
     }
+}
 
     function loadProject(input) {
         const file = input.files[0]; if (!file) return;
