@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Flight Planner Pro - Distinct Shapes for Fixes</title>
+    <title>Flight Planner Pro - Distinct Shapes & Labels for Fixes</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f6; overflow: hidden; }
@@ -23,6 +23,7 @@
         .route-manager { background: #f1f2f6; padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #dcdde1; }
         .route-select-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
         .route-select-row select { flex: 1; padding: 6px; border-radius: 4px; }
+        .route-select-row input { padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
         
         .param-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px solid #eee; font-size: 11px; }
         .param-grid input { width: 100%; padding: 4px; box-sizing: border-box; }
@@ -43,25 +44,51 @@
         .btn-save-proj { background: #2980b9; color: white; flex: 1; }
         .btn-load-proj { background: #8e44ad; color: white; flex: 1; display: inline-block; text-align: center; line-height: 26px; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer;}
 
-        /* --- STILI CSS PER VARIANTI GEOMETRICHE FISSE --- */
-        /* 1. Triangolo Blu (Usa un trucco CSS clip-path per la forma pulita) */
-        .triangle-marker {
-            width: 20px !important;
-            height: 20px !important;
-            background-color: #3498db;
-            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-            box-shadow: 0 0 3px rgba(0,0,0,0.4);
+        /* --- CONTENITORE COMPLESSIVO DEL COSTRUTTO FIX + TESTO --- */
+        .fix-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: visible !important;
         }
 
-        /* 2. Rombo Arancione */
+        /* --- STILI PER LE ETICHETTE DI TESTO SULLA MAPPA --- */
+        .fix-label {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 10px;
+            font-weight: bold;
+            color: #2c3e50;
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; /* Contorno bianco per leggibilità */
+            white-space: nowrap;
+            margin-top: 4px;
+            pointer-events: none; /* Impedisce al testo di intercettare i click destinati al marker */
+        }
+
+        /* --- VARIANTI GEOMETRICHE MODIFICATE --- */
+        .triangle-marker {
+            width: 14px;
+            height: 14px;
+            background-color: #3498db;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            flex-shrink: 0;
+        }
+
+        .diamond-container {
+            width: 12px;
+            height: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
         .diamond-marker {
-            width: 20px !important;
-            height: 20px !important;
+            width: 10px;
+            height: 10px;
             transform: rotate(45deg);
-            border: 2px solid #d35400;
+            border: 1.5px solid #d35400;
             background-color: #e67e22;
             box-sizing: border-box;
-            box-shadow: 0 0 3px rgba(0,0,0,0.4);
         }
     </style>
 </head>
@@ -103,13 +130,19 @@
         <div class="route-manager">
             <div style="font-weight: bold; font-size: 12px; color: #2c3e50;">TRAIETTORIE DISPONIBILI</div>
             <div class="route-select-row">
-                <input type="text" id="new-route-name" placeholder="Nuova Rotta..." style="width: 120px; padding: 5px;">
+                <input type="text" id="new-route-name" placeholder="Nuova Rotta..." style="width: 120px;">
                 <button style="background: #2ecc71; color: white;" onclick="createNewRoute()">+</button>
                 <button style="background: #e74c3c; color: white;" onclick="deleteActiveRoute()">Elimina attiva</button>
             </div>
             <div class="route-select-row">
                 <label style="font-size:11px;">Attiva:</label>
                 <select id="active-route-select" onchange="switchRoute()"></select>
+            </div>
+            <div class="route-select-row" style="margin-top: 10px; background: #e1e4e8; padding: 6px; border-radius: 4px;">
+                <label style="font-size:11px; font-weight:bold;">DEP:</label>
+                <input type="text" id="route-dep" placeholder="Es: LIRF" style="width: 60px; text-transform: uppercase;" oninput="updateActiveRouteAirports()">
+                <label style="font-size:11px; font-weight:bold; margin-left: 10px;">DES:</label>
+                <input type="text" id="route-des" placeholder="Es: LIFE" style="width: 60px; text-transform: uppercase;" oninput="updateActiveRouteAirports()">
             </div>
         </div>
 
@@ -122,7 +155,6 @@
         <button class="btn-copy" onclick="copyToClipboard()">COPIA JSON MULTI-ROTTA</button>
         <pre id="export-log">JSON_DATA = []</pre>
 
-        <!-- Box Gestione File di Sessione -->
         <div class="storage-box">
             <button class="btn-save-proj" onclick="saveProject()">💾 SALVA PROGETTO</button>
             <label class="btn-load-proj">
@@ -142,7 +174,7 @@
     let backgroundLinesLayer = L.layerGroup().addTo(map); 
     let customFixCounter = 1; 
     
-    let routes = [{ id: "r1", name: "Traiettoria 1", waypoints: [], polyline: null, color: "#e74c3c" }];
+    let routes = [{ id: "r1", name: "Traiettoria 1", DEP: "LIRF", DES: "LIFE", waypoints: [], polyline: null, color: "#e74c3c" }];
     let activeRouteId = "r1";
     routes[0].polyline = L.polyline([], {color: routes[0].color, weight: 4}).addTo(map);
 
@@ -205,29 +237,36 @@
         buildMarkerGraphic(p);
     }
 
-    // Costruzione differenziata della forma dell'icona (Triangolo vs Rombo)
+    // --- MODIFICATA: GENERAZIONE GRAFICA DIVICON CON TESTO INTEGRATO ---
     function buildMarkerGraphic(p) {
-        let shapeIcon;
+        let htmlContent = "";
 
         if (p.isCustom) {
-            // Fix manuale -> Rombo arancione
-            shapeIcon = L.divIcon({
-                className: 'diamond-marker',
-                iconSize: [12, 12],
-                iconAnchor: [6, 6],
-                popupAnchor: [0, -6]
-            });
+            // Struttura HTML per l'icona personalizzata a Rombo + Testo
+            htmlContent = `
+                <div class="diamond-container">
+                    <div class="diamond-marker"></div>
+                </div>
+                <div class="fix-label">${p.nome}</div>
+            `;
         } else {
-            // Fix da mappa XML -> Triangolo blu
-            shapeIcon = L.divIcon({
-                className: 'triangle-marker',
-                iconSize: [14, 14],
-                iconAnchor: [7, 7],
-                popupAnchor: [0, -7]
-            });
+            // Struttura HTML per l'icona nativa da file a Triangolo + Testo
+            htmlContent = `
+                <div class="triangle-marker"></div>
+                <div class="fix-label">${p.nome}</div>
+            `;
         }
 
-        const m = L.marker([p.lat, p.lon], { icon: shapeIcon }).addTo(markersLayer);
+        // Creazione dell'icona estesa; allarghiamo le dimensioni complessive della box dell'icona per ospitare la stringa
+        const combinedIcon = L.divIcon({
+            className: 'fix-container',
+            html: htmlContent,
+            iconSize: [60, 32],      // Dimensione della bounding box dell'elemento
+            iconAnchor: [30, 7],     // Centrato orizzontalmente sul simbolo (30) e ancorato sull'asse verticale del simbolo (7)
+            popupAnchor: [0, -10]
+        });
+
+        const m = L.marker([p.lat, p.lon], { icon: combinedIcon }).addTo(markersLayer);
         p.marker = m;
 
         m.on('click', function() { m.setPopupContent(generatePopupContent(p)); });
@@ -265,7 +304,6 @@
         `;
     }
 
-    // --- CANCELLAZIONE DEFINITIVA PUNTO MANUALE ---
     window.deleteFixDefinitively = function(uniqueId) {
         const index = allPoints.findIndex(x => x.id === uniqueId);
         if (index !== -1) {
@@ -286,7 +324,6 @@
         }
     }
 
-    // --- AZIONI TRAIETTORIA ---
     window.addToRoute = function(uniqueId) {
         const p = allPoints.find(x => x.id === uniqueId);
         const currentRoute = routes.find(r => r.id === activeRouteId);
@@ -318,64 +355,57 @@
         }
     }
 
-    // --- SALVATAGGIO & CARICAMENTO COMPLETO ---
-// --- SALVATAGGIO CON SCELTA DI NOME E CARTELLA ---
-async function saveProject() {
-    // Prepariamo la struttura dati del progetto
-    const structuralProject = {
-        customFixCounter: customFixCounter,
-        activeRouteId: activeRouteId,
-        points: allPoints.map(p => ({
-            id: p.id, nome: p.nome, lat: p.lat, lon: p.lon, isCustom: p.isCustom, dmsLat: p.dmsLat, dmsLon: p.dmsLon
-        })),
-        routes: routes.map(r => ({
-            id: r.id, name: r.name, color: r.color, waypoints: r.waypoints
-        }))
-    };
-
-    const jsonString = JSON.stringify(structuralProject, null, 2);
-    const defaultFilename = `flight-planner-session-${Date.now()}.json`;
-
-    // 1. Approccio Moderno: File System Access API (Scelta cartella e nome reale)
-    if ('showSaveFilePicker' in window) {
-        try {
-            const options = {
-                suggestedName: defaultFilename,
-                types: [{
-                    description: 'File di progetto JSON',
-                    accept: { 'application/json': ['.json'] }
-                }]
-            };
-            // Apre la finestra nativa del sistema operativo per scegliere cartella e nome
-            const handle = await window.showSaveFilePicker(options);
-            const writable = await handle.createWritable();
-            await writable.write(jsonString);
-            await writable.close();
-            alert("Progetto salvato con successo nella cartella selezionata!");
-        } catch (err) {
-            // Se l'utente chiude la finestra senza salvare, non facciamo nulla
-            if (err.name !== 'AbortError') {
-                alert("Errore durante il salvataggio: " + err.message);
-            }
+    function updateActiveRouteAirports() {
+        const currentRoute = routes.find(r => r.id === activeRouteId);
+        if (currentRoute) {
+            currentRoute.DEP = document.getElementById('route-dep').value.trim().toUpperCase() || "LIRF";
+            currentRoute.DES = document.getElementById('route-des').value.trim().toUpperCase() || "LIFE";
+            updateUI();
         }
-    } 
-    // 2. Approccio Fallback (Per Safari, Firefox o browser datati)
-    else {
-        const userFilename = prompt("Inserisci il nome del file da salvare:", defaultFilename);
-        if (userFilename === null) return; // Utente ha annullato
-
-        let finalName = userFilename.trim();
-        if (!finalName.endsWith('.json')) finalName += '.json';
-
-        const blob = new Blob([jsonString], { type: "application/json" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = finalName;
-        link.click();
-        
-        alert("File generato! Verrà salvato nella cartella dei Download del browser.");
     }
-}
+
+    async function saveProject() {
+        const structuralProject = {
+            customFixCounter: customFixCounter,
+            activeRouteId: activeRouteId,
+            points: allPoints.map(p => ({
+                id: p.id, nome: p.nome, lat: p.lat, lon: p.lon, isCustom: p.isCustom, dmsLat: p.dmsLat, dmsLon: p.dmsLon
+            })),
+            routes: routes.map(r => ({
+                id: r.id, name: r.name, color: r.color, DEP: r.DEP || "LIRF", DES: r.DES || "LIFE", waypoints: r.waypoints
+            }))
+        };
+
+        const jsonString = JSON.stringify(structuralProject, null, 2);
+        const defaultFilename = `flight-planner-session-${Date.now()}.json`;
+
+        if ('showSaveFilePicker' in window) {
+            try {
+                const options = {
+                    suggestName: defaultFilename,
+                    types: [{ description: 'File di progetto JSON', accept: { 'application/json': ['.json'] } }]
+                };
+                const handle = await window.showSaveFilePicker(options);
+                const writable = await handle.createWritable();
+                await writable.write(jsonString);
+                await writable.close();
+                alert("Progetto salvato con successo!");
+            } catch (err) {
+                if (err.name !== 'AbortError') alert("Errore nel salvataggio: " + err.message);
+            }
+        } else {
+            const userFilename = prompt("Inserisci il nome del file da salvare:", defaultFilename);
+            if (userFilename === null) return;
+            let finalName = userFilename.trim();
+            if (!finalName.endsWith('.json')) finalName += '.json';
+
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = finalName;
+            link.click();
+        }
+    }
 
     function loadProject(input) {
         const file = input.files[0]; if (!file) return;
@@ -401,22 +431,24 @@ async function saveProject() {
 
                 routes = data.routes.map(savedR => {
                     const r = { ...savedR };
+                    r.DEP = savedR.DEP || "LIRF";
+                    r.DES = savedR.DES || "LIFE";
                     r.polyline = L.polyline([], {color: r.color, weight: 4}).addTo(map);
                     return r;
                 });
 
                 updateRouteSelectOptions();
+                switchRouteFields();
                 updateUI();
                 alert("Progetto ripristinato con successo!");
             } catch(err) {
-                alert("Errore nel caricamento del file di progetto: " + err.message);
+                alert("Errore nel caricamento: " + err.message);
             }
             input.value = "";
         };
         reader.readAsText(file);
     }
 
-    // --- GESTIONE TRAIETTORIE INTERFACCIA ---
     function updateRouteSelectOptions() {
         const select = document.getElementById('active-route-select');
         select.innerHTML = "";
@@ -436,16 +468,31 @@ async function saveProject() {
         const newId = 'r_' + Date.now();
         
         routes.push({
-            id: newId, name: name, waypoints: [],
+            id: newId, name: name, DEP: "LIRF", DES: "LIFE", waypoints: [],
             polyline: L.polyline([], {color: randomColor, weight: 4}).addTo(map), color: randomColor
         });
         activeRouteId = newId;
         nameInput.value = "";
         updateRouteSelectOptions();
+        switchRouteFields();
         updateUI();
     }
 
-    function switchRoute() { activeRouteId = document.getElementById('active-route-select').value; updateUI(); }
+    document.getElementById('active-route-select').addEventListener('change', switchRoute);
+
+    function switchRoute() { 
+        activeRouteId = document.getElementById('active-route-select').value; 
+        switchRouteFields();
+        updateUI(); 
+    }
+
+    function switchRouteFields() {
+        const currentRoute = routes.find(r => r.id === activeRouteId);
+        if (currentRoute) {
+            document.getElementById('route-dep').value = currentRoute.DEP || "LIRF";
+            document.getElementById('route-des').value = currentRoute.DES || "LIFE";
+        }
+    }
 
     function deleteActiveRoute() {
         if(routes.length <= 1) { alert("Devi mantenere almeno una traiettoria attiva!"); return; }
@@ -455,11 +502,11 @@ async function saveProject() {
             routes.splice(idx, 1);
             activeRouteId = routes[0].id; 
             updateRouteSelectOptions();
+            switchRouteFields();
             updateUI();
         }
     }
 
-    // --- PARSER FILE INPUT TEXT4F & LINE4F ---
     function importText4f(input) {
         const file = input.files[0]; if (!file) return;
         const reader = new FileReader();
@@ -467,19 +514,15 @@ async function saveProject() {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
             
-            // 1. Parsing dei Punti di rotta intermedi (<text4f>)
             const textTags = xmlDoc.getElementsByTagName("text4f");
             for (let i = 0; i < textTags.length; i++) {
                 const tag = textTags[i];
                 const nome = tag.textContent.trim() || `P-${allPoints.length}`;
                 const lat = parseFloat(tag.getAttribute("point-lat"));
                 const lon = parseFloat(tag.getAttribute("point-lon"));
-                if (!isNaN(lat) && !isNaN(lon)) {
-                    registerAndBuildMarker(nome, lat, lon, false);
-                }
+                if (!isNaN(lat) && !isNaN(lon)) { registerAndBuildMarker(nome, lat, lon, false); }
             }
 
-            // 2. Parsing delle Linee Geografiche di Sfondo (<line4f>)
             const lineTags = xmlDoc.getElementsByTagName("line4f");
             let lineCount = 0;
             for (let j = 0; j < lineTags.length; j++) {
@@ -496,17 +539,11 @@ async function saveProject() {
                     const dashArray = line.getAttribute("stroke-dasharray") || "";
 
                     L.polyline([[startLat, startLon], [endLat, endLon]], {
-                        color: strokeColor,
-                        weight: strokeWidth,
-                        dashArray: dashArray,
-                        interactive: false,
-                        pane: 'tilePane' 
+                        color: strokeColor, weight: strokeWidth, dashArray: dashArray, interactive: false, pane: 'tilePane' 
                     }).addTo(backgroundLinesLayer);
                     lineCount++;
                 }
             }
-            
-            console.log(`Importazione completata: ${textTags.length} marker e ${lineCount} linee di sfondo.`);
             input.value = ""; 
         };
         reader.readAsText(file);
@@ -517,7 +554,7 @@ async function saveProject() {
 
         let output = "JSON_DATA = [\n";
         routes.forEach((r, idx) => {
-            output += `  {\n    "route_name": "${r.name}",\n    "waypoints": [`;
+            output += `  {\n    "route_name": "${r.name}",\n    "DEP": "${r.DEP || 'LIRF'}",\n    "DES": "${r.DES || 'LIFE'}",\n    "waypoints": [`;
             r.waypoints.forEach((w, wIdx) => {
                 const line = `{"name": "${w.name}", "lat": ${JSON.stringify(w.lat)}, "lon": ${JSON.stringify(w.lon)}, "params": ${JSON.stringify(w.params)}}`;
                 output += (wIdx === 0 ? "" : ",\n                  ") + line;
@@ -546,22 +583,25 @@ async function saveProject() {
     }
 
     function resetAll() {
-        if(confirm("Svuotare completamente l'intera sessione di lavoro (inclusi i tracciati di sfondo)?")) {
+        if(confirm("Svuotare completamente la sessione di lavoro attuale?")) {
             allPoints = [];
             customFixCounter = 1;
             routes.forEach(r => { if(r.polyline) map.removeLayer(r.polyline); });
-            routes = [{ id: "r1", name: "Traiettoria 1", waypoints: [], polyline: null, color: "#e74c3c" }];
+            routes = [{ id: "r1", name: "Traiettoria 1", DEP: "LIRF", DES: "LIFE", waypoints: [], polyline: null, color: "#e74c3c" }];
             routes[0].polyline = L.polyline([], {color: routes[0].color, weight: 4}).addTo(map);
             activeRouteId = "r1";
             markersLayer.clearLayers();
             backgroundLinesLayer.clearLayers(); 
             updateRouteSelectOptions();
+            switchRouteFields();
             updateUI();
             document.getElementById('points-count').textContent = "Fix totali: 0";
         }
     }
 
     updateRouteSelectOptions();
+    switchRouteFields();
+    updateUI();
 </script>
 </body>
 </html>
