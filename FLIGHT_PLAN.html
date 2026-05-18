@@ -25,6 +25,10 @@
         .route-select-row select { flex: 1; padding: 6px; border-radius: 4px; }
         .route-select-row input { padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
         
+        /* Layout ottimizzato per i campi di testo DEP/DES */
+        .airport-input-group { display: flex; align-items: center; gap: 5px; flex: 1; }
+        .airport-input-group input { width: 100%; padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; text-transform: uppercase; }
+        
         .param-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px solid #eee; font-size: 11px; }
         .param-grid input { width: 100%; padding: 4px; box-sizing: border-box; }
         .search-bar { background: #34495e; padding: 8px 15px; display: flex; gap: 10px; align-items: center; color: white; font-size: 12px; flex-shrink: 0; }
@@ -94,6 +98,41 @@
 </head>
 <body>
 
+<!-- DATALIST: Contiene il database degli aeroporti italiani per il completamento in tempo reale -->
+<datalist id="aeroporti-italiani">
+    <option value="LIRF">Roma Fiumicino (FCO)</option>
+    <option value="LIRA">Roma Ciampino (CIA)</option>
+    <option value="LIMC">Milano Malpensa (MXP)</option>
+    <option value="LINR">Milano Linate (LIN)</option>
+    <option value="LIME">Bergamo Orio al Serio (BGY)</option>
+    <option value="LIPZ">Venezia Tessera (VCE)</option>
+    <option value="LIRN">Napoli Capodichino (NAP)</option>
+    <option value="LICC">Catania Fontanarossa (CTA)</option>
+    <option value="LICJ">Palermo Punta Raisi (PMO)</option>
+    <option value="LIPE">Bologna Borgo Panigale (BLQ)</option>
+    <option value="LIRP">Pisa San Giusto (PSA)</option>
+    <option value="LIMF">Torino Caselle (TRN)</option>
+    <option value="LIBD">Bari Palese (BRI)</option>
+    <option value="LICA">Lamezia Terme (SUF)</option>
+    <option value="LIEE">Cagliari Elmas (CAG)</option>
+    <option value="LIPK">Forlì (FRL)</option>
+    <option value="LIPH">Treviso Sant'Angelo (TSF)</option>
+    <option value="LIPO">Brescia Montichiari (VBS)</option>
+    <option value="LIPX">Verona Villafranca (VRN)</option>
+    <option value="LIPY">Ancona Falconara (AOI)</option>
+    <option value="LIEO">Olbia Costa Smeralda (OLB)</option>
+    <option value="LIEA">Alghero Fertilia (AHO)</option>
+    <option value="LIBG">Brindisi Casale (BDS)</option>
+    <option value="LIRU">Roma Urbe</option>
+    <option value="LIMG">Genova Sestri (GOA)</option>
+    <option value="LIRQ">Firenze Peretola (FLR)</option>
+    <option value="LIPQ">Trieste Ronchi dei Legionari (TRS)</option>
+    <option value="LIBP">Pescara Abruzzo (PSR)</option>
+    <option value="LICR">Reggio Calabria (REG)</option>
+    <option value="LILN">Vergiate</option>
+    <option value="LIMW">Aosta (AOT)</option>
+</datalist>
+
 <div id="top-panel">
     <div>
         <strong>Flight Planner Multi-Route Pro</strong>
@@ -136,13 +175,18 @@
             </div>
             <div class="route-select-row">
                 <label style="font-size:11px;">Attiva:</label>
-                <select id="active-route-select" onchange="switchRoute()"></select>
+                <select id="active-route-select"></select>
             </div>
-            <div class="route-select-row" style="margin-top: 10px; background: #e1e4e8; padding: 6px; border-radius: 4px;">
-                <label style="font-size:11px; font-weight:bold;">DEP:</label>
-                <input type="text" id="route-dep" placeholder="Es: LIRF" style="width: 60px; text-transform: uppercase;" oninput="updateActiveRouteAirports()">
-                <label style="font-size:11px; font-weight:bold; margin-left: 10px;">DES:</label>
-                <input type="text" id="route-des" placeholder="Es: LIFE" style="width: 60px; text-transform: uppercase;" oninput="updateActiveRouteAirports()">
+            <!-- Campi di testo DEP e DES agganciati al datalist per i suggerimenti degli aeroporti -->
+            <div class="route-select-row" style="margin-top: 10px; background: #e1e4e8; padding: 6px; border-radius: 4px; display: flex; gap: 10px;">
+                <div class="airport-input-group">
+                    <label style="font-size:11px; font-weight:bold;">DEP:</label>
+                    <input type="text" id="route-dep" list="aeroporti-italiani" placeholder="Es: LIRF" oninput="updateActiveRouteAirports()">
+                </div>
+                <div class="airport-input-group">
+                    <label style="font-size:11px; font-weight:bold;">DES:</label>
+                    <input type="text" id="route-des" list="aeroporti-italiani" placeholder="Es: LIFE" oninput="updateActiveRouteAirports()">
+                </div>
             </div>
         </div>
 
@@ -237,12 +281,11 @@
         buildMarkerGraphic(p);
     }
 
-    // --- MODIFICATA: GENERAZIONE GRAFICA DIVICON CON TESTO INTEGRATO ---
+    // --- GENERAZIONE GRAFICA DIVICON CON TESTO INTEGRATO ---
     function buildMarkerGraphic(p) {
         let htmlContent = "";
 
         if (p.isCustom) {
-            // Struttura HTML per l'icona personalizzata a Rombo + Testo
             htmlContent = `
                 <div class="diamond-container">
                     <div class="diamond-marker"></div>
@@ -250,19 +293,17 @@
                 <div class="fix-label">${p.nome}</div>
             `;
         } else {
-            // Struttura HTML per l'icona nativa da file a Triangolo + Testo
             htmlContent = `
                 <div class="triangle-marker"></div>
                 <div class="fix-label">${p.nome}</div>
             `;
         }
 
-        // Creazione dell'icona estesa; allarghiamo le dimensioni complessive della box dell'icona per ospitare la stringa
         const combinedIcon = L.divIcon({
             className: 'fix-container',
             html: htmlContent,
-            iconSize: [60, 32],      // Dimensione della bounding box dell'elemento
-            iconAnchor: [30, 7],     // Centrato orizzontalmente sul simbolo (30) e ancorato sull'asse verticale del simbolo (7)
+            iconSize: [60, 32],      
+            iconAnchor: [30, 7],     
             popupAnchor: [0, -10]
         });
 
@@ -524,7 +565,6 @@
             }
 
             const lineTags = xmlDoc.getElementsByTagName("line4f");
-            let lineCount = 0;
             for (let j = 0; j < lineTags.length; j++) {
                 const line = lineTags[j];
                 const startLat = parseFloat(line.getAttribute("start-lat"));
@@ -541,7 +581,6 @@
                     L.polyline([[startLat, startLon], [endLat, endLon]], {
                         color: strokeColor, weight: strokeWidth, dashArray: dashArray, interactive: false, pane: 'tilePane' 
                     }).addTo(backgroundLinesLayer);
-                    lineCount++;
                 }
             }
             input.value = ""; 
@@ -599,6 +638,7 @@
         }
     }
 
+    // Inizializzazione controlli
     updateRouteSelectOptions();
     switchRouteFields();
     updateUI();
