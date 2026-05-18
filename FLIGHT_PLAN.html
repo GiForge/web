@@ -100,37 +100,155 @@
 
 <!-- DATALIST: Contiene il database degli aeroporti italiani per il completamento in tempo reale -->
 <datalist id="aeroporti-italiani">
-    <option value="LIRF">Roma Fiumicino (FCO)</option>
-    <option value="LIRA">Roma Ciampino (CIA)</option>
-    <option value="LIMC">Milano Malpensa (MXP)</option>
-    <option value="LINR">Milano Linate (LIN)</option>
-    <option value="LIME">Bergamo Orio al Serio (BGY)</option>
-    <option value="LIPZ">Venezia Tessera (VCE)</option>
-    <option value="LIRN">Napoli Capodichino (NAP)</option>
-    <option value="LICC">Catania Fontanarossa (CTA)</option>
-    <option value="LICJ">Palermo Punta Raisi (PMO)</option>
-    <option value="LIPE">Bologna Borgo Panigale (BLQ)</option>
-    <option value="LIRP">Pisa San Giusto (PSA)</option>
-    <option value="LIMF">Torino Caselle (TRN)</option>
-    <option value="LIBD">Bari Palese (BRI)</option>
-    <option value="LICA">Lamezia Terme (SUF)</option>
-    <option value="LIEE">Cagliari Elmas (CAG)</option>
-    <option value="LIPK">Forlì (FRL)</option>
-    <option value="LIPH">Treviso Sant'Angelo (TSF)</option>
-    <option value="LIPO">Brescia Montichiari (VBS)</option>
-    <option value="LIPX">Verona Villafranca (VRN)</option>
-    <option value="LIPY">Ancona Falconara (AOI)</option>
-    <option value="LIEO">Olbia Costa Smeralda (OLB)</option>
-    <option value="LIEA">Alghero Fertilia (AHO)</option>
-    <option value="LIBG">Brindisi Casale (BDS)</option>
-    <option value="LIRU">Roma Urbe</option>
-    <option value="LIMG">Genova Sestri (GOA)</option>
-    <option value="LIRQ">Firenze Peretola (FLR)</option>
-    <option value="LIPQ">Trieste Ronchi dei Legionari (TRS)</option>
-    <option value="LIBP">Pescara Abruzzo (PSR)</option>
-    <option value="LICR">Reggio Calabria (REG)</option>
-    <option value="LILN">Vergiate</option>
-    <option value="LIMW">Aosta (AOT)</option>
+    <!-- ================================================================= -->
+    <!-- AEROPORTI ITALIANI (Principali + Minori/Commerciali)              -->
+    <!-- ================================================================= -->
+    <option value="LIRF">Roma Fiumicino (FCO) - Italia</option>
+    <option value="LIRA">Roma Ciampino (CIA) - Italia</option>
+    <option value="LIMC">Milano Malpensa (MXP) - Italia</option>
+    <option value="LIML">Milano Linate (LIN) - Italia</option>
+    <option value="LIME">Bergamo Orio al Serio (BGY) - Italia</option>
+    <option value="LIPZ">Venezia Tessera (VCE) - Italia</option>
+    <option value="LIRN">Napoli Capodichino (NAP) - Italia</option>
+    <option value="LICC">Catania Fontanarossa (CTA) - Italia</option>
+    <option value="LICJ">Palermo Punta Raisi (PMO) - Italia</option>
+    <option value="LIPE">Bologna Borgo Panigale (BLQ) - Italia</option>
+    <option value="LIRP">Pisa San Giusto (PSA) - Italia</option>
+    <option value="LIMF">Torino Caselle (TRN) - Italia</option>
+    <option value="LIBD">Bari Palese (BRI) - Italia</option>
+    <option value="LICA">Lamezia Terme (SUF) - Italia</option>
+    <option value="LIEE">Cagliari Elmas (CAG) - Italia</option>
+    <option value="LIPK">Forlì (FRL) - Italia</option>
+    <option value="LIPH">Treviso Sant'Angelo (TSF) - Italia</option>
+    <option value="LIPO">Brescia Montichiari (VBS) - Italia</option>
+    <option value="LIPX">Verona Villafranca (VRN) - Italia</option>
+    <option value="LIPY">Ancona Falconara (AOI) - Italia</option>
+    <option value="LIEO">Olbia Costa Smeralda (OLB) - Italia</option>
+    <option value="LIEA">Alghero Fertilia (AHO) - Italia</option>
+    <option value="LIBG">Brindisi Casale (BDS) - Italia</option>
+    <option value="LIRU">Roma Urbe - Italia</option>
+    <option value="LIMG">Genova Sestri (GOA) - Italia</option>
+    <option value="LIRQ">Firenze Peretola (FLR) - Italia</option>
+    <option value="LIPQ">Trieste Ronchi dei Legionari (TRS) - Italia</option>
+    <option value="LIBP">Pescara Abruzzo (PSR) - Italia</option>
+    <option value="LICR">Reggio Calabria (REG) - Italia</option>
+    <option value="LILN">Vergiate - Italia</option>
+    <option value="LIMW">Aosta (AOT) - Italia</option>
+    <option value="LIPB">Bolzano (BZO) - Italia</option>
+    <option value="LILC">Milano Bresso - Italia</option>
+    <option value="LIBC">Crotone Sant'Anna (CRV) - Italia</option>
+    <option value="LIRE">Pratica di Mare - Italia</option>
+    <option value="LIMS">Piacenza San Damiano - Italia</option>
+    <option value="LIPC">Rimini Miramare (RMI) - Italia</option>
+    <option value="LIPA">Aviano Air Base - Italia</option>
+    <option value="LIPD">Verona Boscomantico - Italia</option>
+    <option value="LIPM">Modena Marzaglia - Italia</option>
+    <option value="LIPR">Ravenna - Italia</option>
+    <option value="LIPT">Vicenza - Italia</option>
+    <option value="LICP">Pantelleria (PNL) - Italia</option>
+    <option value="Lampedusa">Lampedusa (LMP) - Italia</option>
+    <option value="LIQL">Lucca Tassignano - Italia</option>
+    <option value="LIQN">Parma (PMF) - Italia</option>
+    <option value="LIRV">Viterbo - Italia</option>
+    <option value="LIRI">Salerno Costa d'Amalfi (QSR) - Italia</option>
+    <option value="LIBV">Gioia del Colle - Italia</option>
+    <option value="LILE">Perugia Sant'Egidio (PEG) - Italia</option>
+    <option value="LIMA">Torino Aeritalia - Italia</option>
+    <option value="LICT">Trapani Birgi (TPS) - Italia</option>
+    <option value="LION">Oristano Fenosu (FNU) - Italia</option>
+    <option value="LIBS">Foggia Gino Lisa (FOG) - Italia</option>
+    <option value="LIBN">Lecce Galatina - Italia</option>
+    <option value="LIRL">Latina - Italia</option>
+    <option value="LIPV">Padova Gino Allegri - Italia</option>
+
+    <!-- ================================================================= -->
+    <!-- AEROPORTI EUROPEI (Principali Hub e Destinazioni)                  -->
+    <!-- ================================================================= -->
+    <!-- REGNO UNITO -->
+    <option value="EGLL">Londra Heathrow (LHR) - Regno Unito</option>
+    <option value="EGKK">Londra Gatwick (LGW) - Regno Unito</option>
+    <option value="EGST">Londra Stansted (STN) - Regno Unito</option>
+    <option value="EGGW">Londra Luton (LTN) - Regno Unito</option>
+    <option value="EGCC">Manchester (MAN) - Regno Unito</option>
+    <option value="EGPH">Edimburgo (EDI) - Regno Unito</option>
+
+    <!-- FRANCIA -->
+    <option value="LFPG">Parigi Charles de Gaulle (CDG) - Francia</option>
+    <option value="LFPO">Parigi Orly (ORY) - Francia</option>
+    <option value="LFMN">Nizza Costa Azzurra (NCE) - Francia</option>
+    <option value="LFLL">Lione Saint Exupéry (LYS) - Francia</option>
+    <option value="LFML">Marsiglia Provenza (MRS) - Francia</option>
+    <option value="LFBO">Tolosa Blagnac (TLS) - Francia</option>
+    <option value="LFLB">Chambéry Aix-les-Bains (CMF) - Francia</option>
+    <option value="LFOB">Beauvais Tillé (BVA) - Francia</option>
+
+    <!-- GERMANIA -->
+    <option value="EDDF">Francoforte sul Meno (FRA) - Germania</option>
+    <option value="EDDM">Monaco di Baviera (MUC) - Germania</option>
+    <option value="EDDB">Berlino Brandeburgo (BER) - Germania</option>
+    <option value="EDDL">Düsseldorf (DUS) - Germania</option>
+    <option value="EDDH">Amburgo (HAM) - Germania</option>
+    <option value="EDDK">Colonia Bonn (CGN) - Germania</option>
+    <option value="EDDS">Stoccarda (STR) - Germania</option>
+    <option value="EDDN">Norimberga (NUE) - Germania</option>
+
+    <!-- SPAGNA e PORTOGALLO -->
+    <option value="LEMD">Madrid Barajas (MAD) - Spagna</option>
+    <option value="LEBL">Barcellona El Prat (BCN) - Spagna</option>
+    <option value="LEPA">Palma di Maiorca (PMI) - Spagna</option>
+    <option value="LEMG">Malaga (AGP) - Spagna</option>
+    <option value="ALIC">Alicante (ALC) - Spagna</option>
+    <option value="LEVC">Valencia (VLC) - Spagna</option>
+    <option value="LPPT">Lisbona Humberto Delgado (LIS) - Portogallo</option>
+    <option value="LPPR">Porto Francisco Sá Carneiro (OPO) - Portogallo</option>
+
+    <!-- OLANDA, BELGIO e LUSSEMBURGO -->
+    <option value="EHAM">Amsterdam Schiphol (AMS) - Paesi Bassi</option>
+    <option value="EHEH">Eindhoven (EIN) - Paesi Bassi</option>
+    <option value="EBBR">Bruxelles National (BRU) - Belgio</option>
+    <option value="ECRL">Charleroi Bruxelles-Sud (CRL) - Belgio</option>
+    <option value="ELLX">Lussemburgo Findel (LUX) - Lussemburgo</option>
+
+    <!-- SVIZZERA e AUSTRIA -->
+    <option value="LSZH">Zurigo Kloten (ZRH) - Svizzera</option>
+    <option value="LSGG">Ginevra Cointrin (GVA) - Svizzera</option>
+    <option value="LFSB">Basilea-Mulhouse-Friburgo (BSL) - Svizzera/Francia</option>
+    <option value="LOWW">Vienna Schwechat (VIE) - Austria</option>
+    <option value="LOWS">Salisburgo W. A. Mozart (SZG) - Austria</option>
+    <option value="LOWI">Innsbruck (INN) - Austria</option>
+
+    <!-- GRECIA e CIPRO -->
+    <option value="LGAV">Atene Eleftherios Venizelos (ATH) - Grecia</option>
+    <option value="LGTS">Salonicco Macedonia (SKG) - Grecia</option>
+    <option value="LGKR">Corfù Giovanni Capodistria (CFU) - Grecia</option>
+    <option value="LGRP">Rodi Diagoras (RHO) - Grecia</option>
+    <option value="LCLK">Larnaca (LCA) - Cipro</option>
+
+    <!-- EUROPA EST e BALCANI -->
+    <option value="EPWA">Varsavia Chopin (WAW) - Polonia</option>
+    <option value="EPKK">Cracovia-Balice (KRK) - Polonia</option>
+    <option value="LKPR">Praga Václav Havel (PRG) - Repubblica Ceca</option>
+    <option value="LHBP">Budapest Ferenc Liszt (BUD) - Ungheria</option>
+    <option value="LROP">Bucarest Henri Coandă (OTP) - Romania</option>
+    <option value="LYBE">Belgrado Nikola Tesla (BEG) - Serbia</option>
+    <option value="LDZA">Zagabria Pleso (ZAG) - Croazia</option>
+    <option value="LJLJ">Lubiana-Brnik (LJU) - Slovenia</option>
+
+    <!-- SCANDINAVIA e BALTICI -->
+    <option value="EKCH">Copenaghen Kastrup (CPH) - Danimarca</option>
+    <option value="ENGM">Oslo Gardermoen (OSL) - Norvegia</option>
+    <option value="ESSA">Stoccolma Arlanda (ARN) - Svezia</option>
+    <option value="EFHK">Helsinki Vantaa (HEL) - Finlandia</option>
+    <option value="EVRA">Riga (RIX) - Lettonia</option>
+
+    <!-- IRLANDA e ISLANDA -->
+    <option value="EIDW">Dublino (DUB) - Irlanda</option>
+    <option value="EIKN">Irlanda Ovest Knock (NOC) - Irlanda</option>
+    <option value="BIKF">Keflavík (KEF) - Islanda</option>
+
+    <!-- TURCHIA (Parte Europea) e MALTA -->
+    <option value="LTFM">Istanbul (IST) - Turchia</option>
+    <option value="LMML">Malta Luqa (MLA) - Malta</option>
 </datalist>
 
 <div id="top-panel">
