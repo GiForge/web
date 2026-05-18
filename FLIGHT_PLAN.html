@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Flight Planner Pro - Advanced Save/Load & Delete</title>
+    <title>Flight Planner Pro - Distinct Shapes for Fixes</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f6; overflow: hidden; }
@@ -32,7 +32,7 @@
         #file-input, #project-input { display: none; }
         
         .custom-marker-tag { background: #e67e22; color: white; padding: 2px 5px; font-size: 9px; border-radius: 3px; font-weight: bold; display: inline-block; margin-bottom: 5px; }
-        .legend-indicator { font-size: 11px; margin-left: 15px; display: flex; gap: 10px; }
+        .legend-indicator { font-size: 11px; margin-left: 15px; display: flex; gap: 12px; align-items: center; }
         
         .popup-action-btn { margin-top: 6px; width: 100%; border: none; padding: 6px; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 10px; }
         .btn-add { background: #27ae60; }
@@ -42,6 +42,27 @@
         .storage-box { background: #def0ff; padding: 10px; border-radius: 6px; border: 1px solid #b2d6ff; margin-top: auto; display: flex; gap: 8px; }
         .btn-save-proj { background: #2980b9; color: white; flex: 1; }
         .btn-load-proj { background: #8e44ad; color: white; flex: 1; display: inline-block; text-align: center; line-height: 26px; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer;}
+
+        /* --- STILI CSS PER VARIANTI GEOMETRICHE FISSE --- */
+        /* 1. Triangolo Blu (Usa un trucco CSS clip-path per la forma pulita) */
+        .triangle-marker {
+            width: 20px !important;
+            height: 20px !important;
+            background-color: #3498db;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            box-shadow: 0 0 3px rgba(0,0,0,0.4);
+        }
+
+        /* 2. Rombo Arancione */
+        .diamond-marker {
+            width: 20px !important;
+            height: 20px !important;
+            transform: rotate(45deg);
+            border: 2px solid #d35400;
+            background-color: #e67e22;
+            box-sizing: border-box;
+            box-shadow: 0 0 3px rgba(0,0,0,0.4);
+        }
     </style>
 </head>
 <body>
@@ -52,8 +73,9 @@
         <div style="font-size: 11px; color: #bdc3c7;" id="points-count">Fix totali: 0</div>
     </div>
     <div class="legend-indicator">
-        <span>🔹 File XML/SVG</span>
-        <span>🟠 Inseriti a mano</span>
+        <span>🔺 Triangolo Blu (Mappe XML)</span>
+        <span>🔸 Rombo Arancio (Manuale)</span>
+        <span>⬛ Linee Sfondo (Nero)</span>
     </div>
     <div class="controls">
         <label class="btn-import" style="cursor:pointer; padding: 8px 15px; border-radius: 4px; font-size: 11px; font-weight: bold;">
@@ -117,6 +139,7 @@
 
     let allPoints = []; 
     let markersLayer = L.layerGroup().addTo(map);
+    let backgroundLinesLayer = L.layerGroup().addTo(map); 
     let customFixCounter = 1; 
     
     let routes = [{ id: "r1", name: "Traiettoria 1", waypoints: [], polyline: null, color: "#e74c3c" }];
@@ -171,7 +194,6 @@
         registerAndBuildMarker(nomeFinale, lat, lon, true);
     });
 
-    // Costruzione e Binding dinamico popup dei marker
     function registerAndBuildMarker(nome, lat, lon, isCustom) {
         const p = {
             id: Date.now() + Math.random(),
@@ -183,16 +205,29 @@
         buildMarkerGraphic(p);
     }
 
+    // Costruzione differenziata della forma dell'icona (Triangolo vs Rombo)
     function buildMarkerGraphic(p) {
-        let m;
+        let shapeIcon;
+
         if (p.isCustom) {
-            m = L.circleMarker([p.lat, p.lon], {
-                radius: 8, fillColor: "#e67e22", color: "#d35400", weight: 2, opacity: 1, fillOpacity: 0.8
-            }).addTo(markersLayer);
+            // Fix manuale -> Rombo arancione
+            shapeIcon = L.divIcon({
+                className: 'diamond-marker',
+                iconSize: [12, 12],
+                iconAnchor: [6, 6],
+                popupAnchor: [0, -6]
+            });
         } else {
-            m = L.marker([p.lat, p.lon]).addTo(markersLayer);
+            // Fix da mappa XML -> Triangolo blu
+            shapeIcon = L.divIcon({
+                className: 'triangle-marker',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7],
+                popupAnchor: [0, -7]
+            });
         }
-        
+
+        const m = L.marker([p.lat, p.lon], { icon: shapeIcon }).addTo(markersLayer);
         p.marker = m;
 
         m.on('click', function() { m.setPopupContent(generatePopupContent(p)); });
@@ -205,13 +240,14 @@
     function generatePopupContent(p) {
         const currentRoute = routes.find(r => r.id === activeRouteId);
         const isAlreadyInRoute = currentRoute ? currentRoute.waypoints.some(w => w.globalPointId === p.id) : false;
+        
+        const tagIcon = p.isCustom ? '🔸' : '🔺';
         const tagCustom = p.isCustom ? `<span class="custom-marker-tag">INSERITO A MANO</span><br>` : '';
         
         let actionButton = isAlreadyInRoute 
             ? `<button onclick="removeFromRoute(${p.id})" class="popup-action-btn btn-remove">➖ RIMUOVI DA TRAIETTORIA</button>`
             : `<button onclick="addToRoute(${p.id})" class="popup-action-btn btn-add">➕ AGGIUNGI ALLA TRAIETTORIA</button>`;
 
-        // Aggiunge la feature di distruzione totale solo se si tratta di un punto creato manuale
         let deleteFixButton = p.isCustom 
             ? `<button onclick="deleteFixDefinitively(${p.id})" class="popup-action-btn btn-delete-fix">🗑️ ELIMINA DA MAPPA DEFINITIVAMENTE</button>` 
             : '';
@@ -219,7 +255,7 @@
         return `
             <div>
                 ${tagCustom}
-                <b style="font-size:13px; color:#2c3e50;">${p.nome}</b><br><hr style="margin:4px 0; border:0; border-top:1px solid #eee;">
+                <b style="font-size:13px; color:#2c3e50;">${tagIcon} Fix: ${p.nome}</b><br><hr style="margin:4px 0; border:0; border-top:1px solid #eee;">
                 <small>DEC: ${p.lat.toFixed(6)}, ${p.lon.toFixed(6)}</small><br>
                 <small>DMS: ${formatDmsString(p.dmsLat)}</small><br>
                 <small>DMS: ${formatDmsString(p.dmsLon)}</small><br>
@@ -235,18 +271,14 @@
         if (index !== -1) {
             const p = allPoints[index];
             if(confirm(`Vuoi cancellare definitivamente "${p.nome}" da tutta la mappa e da tutte le traiettorie?`)) {
-                // 1. Rimuovi visivamente il marker grafico
                 if(p.marker) map.removeLayer(p.marker);
                 
-                // 2. Rimuovi a tappeto il punto da TUTTE le traiettorie esistenti
                 routes.forEach(r => {
                     r.waypoints = r.waypoints.filter(w => w.globalPointId !== uniqueId);
                 });
 
-                // 3. Rimuovi dal database globale dei punti
                 allPoints.splice(index, 1);
                 
-                // 4. Rinfresca interfacce e polilinee
                 updateRouteSelectOptions();
                 updateUI();
                 document.getElementById('points-count').textContent = `Fix totali: ${allPoints.length}`;
@@ -286,9 +318,8 @@
         }
     }
 
-    // --- SALVATAGGIO & CARICAMENTO COMPLETO (SAVE / LOAD SYSTEM) ---
+    // --- SALVATAGGIO & CARICAMENTO COMPLETO ---
     function saveProject() {
-        // Prepariamo l'oggetto contenente lo stato completo pulito dai riferimenti Leaflet circolari
         const structuralProject = {
             customFixCounter: customFixCounter,
             activeRouteId: activeRouteId,
@@ -315,23 +346,20 @@
                 const data = JSON.parse(e.target.result);
                 if(!data.points || !data.routes) throw new Error("Formato progetto non valido.");
 
-                // Reset completo dello stato attuale prima del ripristino
                 allPoints = [];
                 routes.forEach(r => { if(r.polyline) map.removeLayer(r.polyline); });
                 markersLayer.clearLayers();
+                backgroundLinesLayer.clearLayers(); 
 
-                // Ripristino contatori e ID
                 customFixCounter = data.customFixCounter || 1;
                 activeRouteId = data.activeRouteId;
 
-                // Ripristino Punti e Rigenerazione Marker grafici
                 data.points.forEach(savedP => {
                     const p = { ...savedP };
                     allPoints.push(p);
                     buildMarkerGraphic(p); 
                 });
 
-                // Ripristino Rotte e Polilinee associate
                 routes = data.routes.map(savedR => {
                     const r = { ...savedR };
                     r.polyline = L.polyline([], {color: r.color, weight: 4}).addTo(map);
@@ -392,15 +420,16 @@
         }
     }
 
-    // --- PARSER FILE INPUT TEXT4F ---
+    // --- PARSER FILE INPUT TEXT4F & LINE4F ---
     function importText4f(input) {
         const file = input.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+            
+            // 1. Parsing dei Punti di rotta intermedi (<text4f>)
             const textTags = xmlDoc.getElementsByTagName("text4f");
-
             for (let i = 0; i < textTags.length; i++) {
                 const tag = textTags[i];
                 const nome = tag.textContent.trim() || `P-${allPoints.length}`;
@@ -410,6 +439,35 @@
                     registerAndBuildMarker(nome, lat, lon, false);
                 }
             }
+
+            // 2. Parsing delle Linee Geografiche di Sfondo (<line4f>)
+            const lineTags = xmlDoc.getElementsByTagName("line4f");
+            let lineCount = 0;
+            for (let j = 0; j < lineTags.length; j++) {
+                const line = lineTags[j];
+                const startLat = parseFloat(line.getAttribute("start-lat"));
+                const startLon = parseFloat(line.getAttribute("start-lon"));
+                const endLat = parseFloat(line.getAttribute("end-lat"));
+                const endLon = parseFloat(line.getAttribute("end-lon"));
+
+                if (!isNaN(startLat) && !isNaN(startLon) && !isNaN(endLat) && !isNaN(endLon)) {
+                    const strokeColor = "#000000"; 
+                    const fileWidth = parseFloat(line.getAttribute("stroke-width")) || 1.5;
+                    const strokeWidth = Math.max(fileWidth * 2, 2.5); 
+                    const dashArray = line.getAttribute("stroke-dasharray") || "";
+
+                    L.polyline([[startLat, startLon], [endLat, endLon]], {
+                        color: strokeColor,
+                        weight: strokeWidth,
+                        dashArray: dashArray,
+                        interactive: false,
+                        pane: 'tilePane' 
+                    }).addTo(backgroundLinesLayer);
+                    lineCount++;
+                }
+            }
+            
+            console.log(`Importazione completata: ${textTags.length} marker e ${lineCount} linee di sfondo.`);
             input.value = ""; 
         };
         reader.readAsText(file);
@@ -449,7 +507,7 @@
     }
 
     function resetAll() {
-        if(confirm("Svuotare completamente l'intera sessione di lavoro?")) {
+        if(confirm("Svuotare completamente l'intera sessione di lavoro (inclusi i tracciati di sfondo)?")) {
             allPoints = [];
             customFixCounter = 1;
             routes.forEach(r => { if(r.polyline) map.removeLayer(r.polyline); });
@@ -457,6 +515,7 @@
             routes[0].polyline = L.polyline([], {color: routes[0].color, weight: 4}).addTo(map);
             activeRouteId = "r1";
             markersLayer.clearLayers();
+            backgroundLinesLayer.clearLayers(); 
             updateRouteSelectOptions();
             updateUI();
             document.getElementById('points-count').textContent = "Fix totali: 0";
