@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Flight Planner Pro - Advanced Save/Load & Delete</title>
+    <title>Flight Planner Pro - Distinct Shapes & Labels for Fixes</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f6; overflow: hidden; }
@@ -23,6 +23,11 @@
         .route-manager { background: #f1f2f6; padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #dcdde1; }
         .route-select-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
         .route-select-row select { flex: 1; padding: 6px; border-radius: 4px; }
+        .route-select-row input { padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; }
+        
+        /* Layout ottimizzato per i campi di testo DEP/DES */
+        .airport-input-group { display: flex; align-items: center; gap: 5px; flex: 1; }
+        .airport-input-group input { width: 100%; padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 11px; text-transform: uppercase; }
         
         .param-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px solid #eee; font-size: 11px; }
         .param-grid input { width: 100%; padding: 4px; box-sizing: border-box; }
@@ -32,7 +37,7 @@
         #file-input, #project-input { display: none; }
         
         .custom-marker-tag { background: #e67e22; color: white; padding: 2px 5px; font-size: 9px; border-radius: 3px; font-weight: bold; display: inline-block; margin-bottom: 5px; }
-        .legend-indicator { font-size: 11px; margin-left: 15px; display: flex; gap: 10px; }
+        .legend-indicator { font-size: 11px; margin-left: 15px; display: flex; gap: 12px; align-items: center; }
         
         .popup-action-btn { margin-top: 6px; width: 100%; border: none; padding: 6px; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 10px; }
         .btn-add { background: #27ae60; }
@@ -42,9 +47,209 @@
         .storage-box { background: #def0ff; padding: 10px; border-radius: 6px; border: 1px solid #b2d6ff; margin-top: auto; display: flex; gap: 8px; }
         .btn-save-proj { background: #2980b9; color: white; flex: 1; }
         .btn-load-proj { background: #8e44ad; color: white; flex: 1; display: inline-block; text-align: center; line-height: 26px; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer;}
+
+        /* --- CONTENITORE COMPLESSIVO DEL COSTRUTTO FIX + TESTO --- */
+        .fix-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: visible !important;
+        }
+
+        /* --- STILI PER LE ETICHETTE DI TESTO SULLA MAPPA --- */
+        .fix-label {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 10px;
+            font-weight: bold;
+            color: #2c3e50;
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; /* Contorno bianco per leggibilità */
+            white-space: nowrap;
+            margin-top: 4px;
+            pointer-events: none; /* Impedisce al testo di intercettare i click destinati al marker */
+        }
+
+        /* --- VARIANTI GEOMETRICHE MODIFICATE --- */
+        .triangle-marker {
+            width: 14px;
+            height: 14px;
+            background-color: #3498db;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            flex-shrink: 0;
+        }
+
+        .diamond-container {
+            width: 12px;
+            height: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .diamond-marker {
+            width: 10px;
+            height: 10px;
+            transform: rotate(45deg);
+            border: 1.5px solid #d35400;
+            background-color: #e67e22;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
+
+<!-- DATALIST: Contiene il database degli aeroporti italiani per il completamento in tempo reale -->
+<datalist id="aeroporti-italiani">
+    <!-- ================================================================= -->
+    <!-- AEROPORTI ITALIANI (Principali + Minori/Commerciali)              -->
+    <!-- ================================================================= -->
+    <option value="LIRF">Roma Fiumicino (FCO) - Italia</option>
+    <option value="LIRA">Roma Ciampino (CIA) - Italia</option>
+    <option value="LIMC">Milano Malpensa (MXP) - Italia</option>
+    <option value="LIML">Milano Linate (LIN) - Italia</option>
+    <option value="LIME">Bergamo Orio al Serio (BGY) - Italia</option>
+    <option value="LIPZ">Venezia Tessera (VCE) - Italia</option>
+    <option value="LIRN">Napoli Capodichino (NAP) - Italia</option>
+    <option value="LICC">Catania Fontanarossa (CTA) - Italia</option>
+    <option value="LICJ">Palermo Punta Raisi (PMO) - Italia</option>
+    <option value="LIPE">Bologna Borgo Panigale (BLQ) - Italia</option>
+    <option value="LIRP">Pisa San Giusto (PSA) - Italia</option>
+    <option value="LIMF">Torino Caselle (TRN) - Italia</option>
+    <option value="LIBD">Bari Palese (BRI) - Italia</option>
+    <option value="LICA">Lamezia Terme (SUF) - Italia</option>
+    <option value="LIEE">Cagliari Elmas (CAG) - Italia</option>
+    <option value="LIPK">Forlì (FRL) - Italia</option>
+    <option value="LIPH">Treviso Sant'Angelo (TSF) - Italia</option>
+    <option value="LIPO">Brescia Montichiari (VBS) - Italia</option>
+    <option value="LIPX">Verona Villafranca (VRN) - Italia</option>
+    <option value="LIPY">Ancona Falconara (AOI) - Italia</option>
+    <option value="LIEO">Olbia Costa Smeralda (OLB) - Italia</option>
+    <option value="LIEA">Alghero Fertilia (AHO) - Italia</option>
+    <option value="LIBG">Brindisi Casale (BDS) - Italia</option>
+    <option value="LIRU">Roma Urbe - Italia</option>
+    <option value="LIMG">Genova Sestri (GOA) - Italia</option>
+    <option value="LIRQ">Firenze Peretola (FLR) - Italia</option>
+    <option value="LIPQ">Trieste Ronchi dei Legionari (TRS) - Italia</option>
+    <option value="LIBP">Pescara Abruzzo (PSR) - Italia</option>
+    <option value="LICR">Reggio Calabria (REG) - Italia</option>
+    <option value="LILN">Vergiate - Italia</option>
+    <option value="LIMW">Aosta (AOT) - Italia</option>
+    <option value="LIPB">Bolzano (BZO) - Italia</option>
+    <option value="LILC">Milano Bresso - Italia</option>
+    <option value="LIBC">Crotone Sant'Anna (CRV) - Italia</option>
+    <option value="LIRE">Pratica di Mare - Italia</option>
+    <option value="LIMS">Piacenza San Damiano - Italia</option>
+    <option value="LIPC">Rimini Miramare (RMI) - Italia</option>
+    <option value="LIPA">Aviano Air Base - Italia</option>
+    <option value="LIPD">Verona Boscomantico - Italia</option>
+    <option value="LIPM">Modena Marzaglia - Italia</option>
+    <option value="LIPR">Ravenna - Italia</option>
+    <option value="LIPT">Vicenza - Italia</option>
+    <option value="LICP">Pantelleria (PNL) - Italia</option>
+    <option value="Lampedusa">Lampedusa (LMP) - Italia</option>
+    <option value="LIQL">Lucca Tassignano - Italia</option>
+    <option value="LIQN">Parma (PMF) - Italia</option>
+    <option value="LIRV">Viterbo - Italia</option>
+    <option value="LIRI">Salerno Costa d'Amalfi (QSR) - Italia</option>
+    <option value="LIBV">Gioia del Colle - Italia</option>
+    <option value="LILE">Perugia Sant'Egidio (PEG) - Italia</option>
+    <option value="LIMA">Torino Aeritalia - Italia</option>
+    <option value="LICT">Trapani Birgi (TPS) - Italia</option>
+    <option value="LION">Oristano Fenosu (FNU) - Italia</option>
+    <option value="LIBS">Foggia Gino Lisa (FOG) - Italia</option>
+    <option value="LIBN">Lecce Galatina - Italia</option>
+    <option value="LIRL">Latina - Italia</option>
+    <option value="LIPV">Padova Gino Allegri - Italia</option>
+
+    <!-- ================================================================= -->
+    <!-- AEROPORTI EUROPEI (Principali Hub e Destinazioni)                  -->
+    <!-- ================================================================= -->
+    <!-- REGNO UNITO -->
+    <option value="EGLL">Londra Heathrow (LHR) - Regno Unito</option>
+    <option value="EGKK">Londra Gatwick (LGW) - Regno Unito</option>
+    <option value="EGST">Londra Stansted (STN) - Regno Unito</option>
+    <option value="EGGW">Londra Luton (LTN) - Regno Unito</option>
+    <option value="EGCC">Manchester (MAN) - Regno Unito</option>
+    <option value="EGPH">Edimburgo (EDI) - Regno Unito</option>
+
+    <!-- FRANCIA -->
+    <option value="LFPG">Parigi Charles de Gaulle (CDG) - Francia</option>
+    <option value="LFPO">Parigi Orly (ORY) - Francia</option>
+    <option value="LFMN">Nizza Costa Azzurra (NCE) - Francia</option>
+    <option value="LFLL">Lione Saint Exupéry (LYS) - Francia</option>
+    <option value="LFML">Marsiglia Provenza (MRS) - Francia</option>
+    <option value="LFBO">Tolosa Blagnac (TLS) - Francia</option>
+    <option value="LFLB">Chambéry Aix-les-Bains (CMF) - Francia</option>
+    <option value="LFOB">Beauvais Tillé (BVA) - Francia</option>
+
+    <!-- GERMANIA -->
+    <option value="EDDF">Francoforte sul Meno (FRA) - Germania</option>
+    <option value="EDDM">Monaco di Baviera (MUC) - Germania</option>
+    <option value="EDDB">Berlino Brandeburgo (BER) - Germania</option>
+    <option value="EDDL">Düsseldorf (DUS) - Germania</option>
+    <option value="EDDH">Amburgo (HAM) - Germania</option>
+    <option value="EDDK">Colonia Bonn (CGN) - Germania</option>
+    <option value="EDDS">Stoccarda (STR) - Germania</option>
+    <option value="EDDN">Norimberga (NUE) - Germania</option>
+
+    <!-- SPAGNA e PORTOGALLO -->
+    <option value="LEMD">Madrid Barajas (MAD) - Spagna</option>
+    <option value="LEBL">Barcellona El Prat (BCN) - Spagna</option>
+    <option value="LEPA">Palma di Maiorca (PMI) - Spagna</option>
+    <option value="LEMG">Malaga (AGP) - Spagna</option>
+    <option value="ALIC">Alicante (ALC) - Spagna</option>
+    <option value="LEVC">Valencia (VLC) - Spagna</option>
+    <option value="LPPT">Lisbona Humberto Delgado (LIS) - Portogallo</option>
+    <option value="LPPR">Porto Francisco Sá Carneiro (OPO) - Portogallo</option>
+
+    <!-- OLANDA, BELGIO e LUSSEMBURGO -->
+    <option value="EHAM">Amsterdam Schiphol (AMS) - Paesi Bassi</option>
+    <option value="EHEH">Eindhoven (EIN) - Paesi Bassi</option>
+    <option value="EBBR">Bruxelles National (BRU) - Belgio</option>
+    <option value="ECRL">Charleroi Bruxelles-Sud (CRL) - Belgio</option>
+    <option value="ELLX">Lussemburgo Findel (LUX) - Lussemburgo</option>
+
+    <!-- SVIZZERA e AUSTRIA -->
+    <option value="LSZH">Zurigo Kloten (ZRH) - Svizzera</option>
+    <option value="LSGG">Ginevra Cointrin (GVA) - Svizzera</option>
+    <option value="LFSB">Basilea-Mulhouse-Friburgo (BSL) - Svizzera/Francia</option>
+    <option value="LOWW">Vienna Schwechat (VIE) - Austria</option>
+    <option value="LOWS">Salisburgo W. A. Mozart (SZG) - Austria</option>
+    <option value="LOWI">Innsbruck (INN) - Austria</option>
+
+    <!-- GRECIA e CIPRO -->
+    <option value="LGAV">Atene Eleftherios Venizelos (ATH) - Grecia</option>
+    <option value="LGTS">Salonicco Macedonia (SKG) - Grecia</option>
+    <option value="LGKR">Corfù Giovanni Capodistria (CFU) - Grecia</option>
+    <option value="LGRP">Rodi Diagoras (RHO) - Grecia</option>
+    <option value="LCLK">Larnaca (LCA) - Cipro</option>
+
+    <!-- EUROPA EST e BALCANI -->
+    <option value="EPWA">Varsavia Chopin (WAW) - Polonia</option>
+    <option value="EPKK">Cracovia-Balice (KRK) - Polonia</option>
+    <option value="LKPR">Praga Václav Havel (PRG) - Repubblica Ceca</option>
+    <option value="LHBP">Budapest Ferenc Liszt (BUD) - Ungheria</option>
+    <option value="LROP">Bucarest Henri Coandă (OTP) - Romania</option>
+    <option value="LYBE">Belgrado Nikola Tesla (BEG) - Serbia</option>
+    <option value="LDZA">Zagabria Pleso (ZAG) - Croazia</option>
+    <option value="LJLJ">Lubiana-Brnik (LJU) - Slovenia</option>
+
+    <!-- SCANDINAVIA e BALTICI -->
+    <option value="EKCH">Copenaghen Kastrup (CPH) - Danimarca</option>
+    <option value="ENGM">Oslo Gardermoen (OSL) - Norvegia</option>
+    <option value="ESSA">Stoccolma Arlanda (ARN) - Svezia</option>
+    <option value="EFHK">Helsinki Vantaa (HEL) - Finlandia</option>
+    <option value="EVRA">Riga (RIX) - Lettonia</option>
+
+    <!-- IRLANDA e ISLANDA -->
+    <option value="EIDW">Dublino (DUB) - Irlanda</option>
+    <option value="EIKN">Irlanda Ovest Knock (NOC) - Irlanda</option>
+    <option value="BIKF">Keflavík (KEF) - Islanda</option>
+
+    <!-- TURCHIA (Parte Europea) e MALTA -->
+    <option value="LTFM">Istanbul (IST) - Turchia</option>
+    <option value="LMML">Malta Luqa (MLA) - Malta</option>
+</datalist>
 
 <div id="top-panel">
     <div>
@@ -52,8 +257,9 @@
         <div style="font-size: 11px; color: #bdc3c7;" id="points-count">Fix totali: 0</div>
     </div>
     <div class="legend-indicator">
-        <span>🔹 File XML/SVG</span>
-        <span>🟠 Inseriti a mano</span>
+        <span>🔺 Triangolo Blu (Mappe XML)</span>
+        <span>🔸 Rombo Arancio (Manuale)</span>
+        <span>⬛ Linee Sfondo (Nero)</span>
     </div>
     <div class="controls">
         <label class="btn-import" style="cursor:pointer; padding: 8px 15px; border-radius: 4px; font-size: 11px; font-weight: bold;">
@@ -81,13 +287,24 @@
         <div class="route-manager">
             <div style="font-weight: bold; font-size: 12px; color: #2c3e50;">TRAIETTORIE DISPONIBILI</div>
             <div class="route-select-row">
-                <input type="text" id="new-route-name" placeholder="Nuova Rotta..." style="width: 120px; padding: 5px;">
+                <input type="text" id="new-route-name" placeholder="Nuova Rotta..." style="width: 120px;">
                 <button style="background: #2ecc71; color: white;" onclick="createNewRoute()">+</button>
                 <button style="background: #e74c3c; color: white;" onclick="deleteActiveRoute()">Elimina attiva</button>
             </div>
             <div class="route-select-row">
                 <label style="font-size:11px;">Attiva:</label>
-                <select id="active-route-select" onchange="switchRoute()"></select>
+                <select id="active-route-select"></select>
+            </div>
+            <!-- Campi di testo DEP e DES agganciati al datalist per i suggerimenti degli aeroporti -->
+            <div class="route-select-row" style="margin-top: 10px; background: #e1e4e8; padding: 6px; border-radius: 4px; display: flex; gap: 10px;">
+                <div class="airport-input-group">
+                    <label style="font-size:11px; font-weight:bold;">DEP:</label>
+                    <input type="text" id="route-dep" list="aeroporti-italiani" placeholder="Es: LIRF" oninput="updateActiveRouteAirports()">
+                </div>
+                <div class="airport-input-group">
+                    <label style="font-size:11px; font-weight:bold;">DES:</label>
+                    <input type="text" id="route-des" list="aeroporti-italiani" placeholder="Es: LIFE" oninput="updateActiveRouteAirports()">
+                </div>
             </div>
         </div>
 
@@ -100,7 +317,6 @@
         <button class="btn-copy" onclick="copyToClipboard()">COPIA JSON MULTI-ROTTA</button>
         <pre id="export-log">JSON_DATA = []</pre>
 
-        <!-- Box Gestione File di Sessione -->
         <div class="storage-box">
             <button class="btn-save-proj" onclick="saveProject()">💾 SALVA PROGETTO</button>
             <label class="btn-load-proj">
@@ -117,9 +333,10 @@
 
     let allPoints = []; 
     let markersLayer = L.layerGroup().addTo(map);
+    let backgroundLinesLayer = L.layerGroup().addTo(map); 
     let customFixCounter = 1; 
     
-    let routes = [{ id: "r1", name: "Traiettoria 1", waypoints: [], polyline: null, color: "#e74c3c" }];
+    let routes = [{ id: "r1", name: "Traiettoria 1", DEP: "LIRF", DES: "LIFE", waypoints: [], polyline: null, color: "#e74c3c" }];
     let activeRouteId = "r1";
     routes[0].polyline = L.polyline([], {color: routes[0].color, weight: 4}).addTo(map);
 
@@ -171,7 +388,6 @@
         registerAndBuildMarker(nomeFinale, lat, lon, true);
     });
 
-    // Costruzione e Binding dinamico popup dei marker
     function registerAndBuildMarker(nome, lat, lon, isCustom) {
         const p = {
             id: Date.now() + Math.random(),
@@ -183,16 +399,33 @@
         buildMarkerGraphic(p);
     }
 
+    // --- GENERAZIONE GRAFICA DIVICON CON TESTO INTEGRATO ---
     function buildMarkerGraphic(p) {
-        let m;
+        let htmlContent = "";
+
         if (p.isCustom) {
-            m = L.circleMarker([p.lat, p.lon], {
-                radius: 8, fillColor: "#e67e22", color: "#d35400", weight: 2, opacity: 1, fillOpacity: 0.8
-            }).addTo(markersLayer);
+            htmlContent = `
+                <div class="diamond-container">
+                    <div class="diamond-marker"></div>
+                </div>
+                <div class="fix-label">${p.nome}</div>
+            `;
         } else {
-            m = L.marker([p.lat, p.lon]).addTo(markersLayer);
+            htmlContent = `
+                <div class="triangle-marker"></div>
+                <div class="fix-label">${p.nome}</div>
+            `;
         }
-        
+
+        const combinedIcon = L.divIcon({
+            className: 'fix-container',
+            html: htmlContent,
+            iconSize: [60, 32],      
+            iconAnchor: [30, 7],     
+            popupAnchor: [0, -10]
+        });
+
+        const m = L.marker([p.lat, p.lon], { icon: combinedIcon }).addTo(markersLayer);
         p.marker = m;
 
         m.on('click', function() { m.setPopupContent(generatePopupContent(p)); });
@@ -205,13 +438,14 @@
     function generatePopupContent(p) {
         const currentRoute = routes.find(r => r.id === activeRouteId);
         const isAlreadyInRoute = currentRoute ? currentRoute.waypoints.some(w => w.globalPointId === p.id) : false;
+        
+        const tagIcon = p.isCustom ? '🔸' : '🔺';
         const tagCustom = p.isCustom ? `<span class="custom-marker-tag">INSERITO A MANO</span><br>` : '';
         
         let actionButton = isAlreadyInRoute 
             ? `<button onclick="removeFromRoute(${p.id})" class="popup-action-btn btn-remove">➖ RIMUOVI DA TRAIETTORIA</button>`
             : `<button onclick="addToRoute(${p.id})" class="popup-action-btn btn-add">➕ AGGIUNGI ALLA TRAIETTORIA</button>`;
 
-        // Aggiunge la feature di distruzione totale solo se si tratta di un punto creato manuale
         let deleteFixButton = p.isCustom 
             ? `<button onclick="deleteFixDefinitively(${p.id})" class="popup-action-btn btn-delete-fix">🗑️ ELIMINA DA MAPPA DEFINITIVAMENTE</button>` 
             : '';
@@ -219,7 +453,7 @@
         return `
             <div>
                 ${tagCustom}
-                <b style="font-size:13px; color:#2c3e50;">${p.nome}</b><br><hr style="margin:4px 0; border:0; border-top:1px solid #eee;">
+                <b style="font-size:13px; color:#2c3e50;">${tagIcon} Fix: ${p.nome}</b><br><hr style="margin:4px 0; border:0; border-top:1px solid #eee;">
                 <small>DEC: ${p.lat.toFixed(6)}, ${p.lon.toFixed(6)}</small><br>
                 <small>DMS: ${formatDmsString(p.dmsLat)}</small><br>
                 <small>DMS: ${formatDmsString(p.dmsLon)}</small><br>
@@ -229,24 +463,19 @@
         `;
     }
 
-    // --- CANCELLAZIONE DEFINITIVA PUNTO MANUALE ---
     window.deleteFixDefinitively = function(uniqueId) {
         const index = allPoints.findIndex(x => x.id === uniqueId);
         if (index !== -1) {
             const p = allPoints[index];
             if(confirm(`Vuoi cancellare definitivamente "${p.nome}" da tutta la mappa e da tutte le traiettorie?`)) {
-                // 1. Rimuovi visivamente il marker grafico
                 if(p.marker) map.removeLayer(p.marker);
                 
-                // 2. Rimuovi a tappeto il punto da TUTTE le traiettorie esistenti
                 routes.forEach(r => {
                     r.waypoints = r.waypoints.filter(w => w.globalPointId !== uniqueId);
                 });
 
-                // 3. Rimuovi dal database globale dei punti
                 allPoints.splice(index, 1);
                 
-                // 4. Rinfresca interfacce e polilinee
                 updateRouteSelectOptions();
                 updateUI();
                 document.getElementById('points-count').textContent = `Fix totali: ${allPoints.length}`;
@@ -254,7 +483,6 @@
         }
     }
 
-    // --- AZIONI TRAIETTORIA ---
     window.addToRoute = function(uniqueId) {
         const p = allPoints.find(x => x.id === uniqueId);
         const currentRoute = routes.find(r => r.id === activeRouteId);
@@ -286,9 +514,16 @@
         }
     }
 
-    // --- SALVATAGGIO & CARICAMENTO COMPLETO (SAVE / LOAD SYSTEM) ---
-    function saveProject() {
-        // Prepariamo l'oggetto contenente lo stato completo pulito dai riferimenti Leaflet circolari
+    function updateActiveRouteAirports() {
+        const currentRoute = routes.find(r => r.id === activeRouteId);
+        if (currentRoute) {
+            currentRoute.DEP = document.getElementById('route-dep').value.trim().toUpperCase() || "LIRF";
+            currentRoute.DES = document.getElementById('route-des').value.trim().toUpperCase() || "LIFE";
+            updateUI();
+        }
+    }
+
+    async function saveProject() {
         const structuralProject = {
             customFixCounter: customFixCounter,
             activeRouteId: activeRouteId,
@@ -296,15 +531,39 @@
                 id: p.id, nome: p.nome, lat: p.lat, lon: p.lon, isCustom: p.isCustom, dmsLat: p.dmsLat, dmsLon: p.dmsLon
             })),
             routes: routes.map(r => ({
-                id: r.id, name: r.name, color: r.color, waypoints: r.waypoints
+                id: r.id, name: r.name, color: r.color, DEP: r.DEP || "LIRF", DES: r.DES || "LIFE", waypoints: r.waypoints
             }))
         };
 
-        const blob = new Blob([JSON.stringify(structuralProject, null, 2)], {type: "application/json"});
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `flight-planner-session-${Date.now()}.json`;
-        link.click();
+        const jsonString = JSON.stringify(structuralProject, null, 2);
+        const defaultFilename = `flight-planner-session-${Date.now()}.json`;
+
+        if ('showSaveFilePicker' in window) {
+            try {
+                const options = {
+                    suggestName: defaultFilename,
+                    types: [{ description: 'File di progetto JSON', accept: { 'application/json': ['.json'] } }]
+                };
+                const handle = await window.showSaveFilePicker(options);
+                const writable = await handle.createWritable();
+                await writable.write(jsonString);
+                await writable.close();
+                alert("Progetto salvato con successo!");
+            } catch (err) {
+                if (err.name !== 'AbortError') alert("Errore nel salvataggio: " + err.message);
+            }
+        } else {
+            const userFilename = prompt("Inserisci il nome del file da salvare:", defaultFilename);
+            if (userFilename === null) return;
+            let finalName = userFilename.trim();
+            if (!finalName.endsWith('.json')) finalName += '.json';
+
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = finalName;
+            link.click();
+        }
     }
 
     function loadProject(input) {
@@ -315,41 +574,40 @@
                 const data = JSON.parse(e.target.result);
                 if(!data.points || !data.routes) throw new Error("Formato progetto non valido.");
 
-                // Reset completo dello stato attuale prima del ripristino
                 allPoints = [];
                 routes.forEach(r => { if(r.polyline) map.removeLayer(r.polyline); });
                 markersLayer.clearLayers();
+                backgroundLinesLayer.clearLayers(); 
 
-                // Ripristino contatori e ID
                 customFixCounter = data.customFixCounter || 1;
                 activeRouteId = data.activeRouteId;
 
-                // Ripristino Punti e Rigenerazione Marker grafici
                 data.points.forEach(savedP => {
                     const p = { ...savedP };
                     allPoints.push(p);
                     buildMarkerGraphic(p); 
                 });
 
-                // Ripristino Rotte e Polilinee associate
                 routes = data.routes.map(savedR => {
                     const r = { ...savedR };
+                    r.DEP = savedR.DEP || "LIRF";
+                    r.DES = savedR.DES || "LIFE";
                     r.polyline = L.polyline([], {color: r.color, weight: 4}).addTo(map);
                     return r;
                 });
 
                 updateRouteSelectOptions();
+                switchRouteFields();
                 updateUI();
                 alert("Progetto ripristinato con successo!");
             } catch(err) {
-                alert("Errore nel caricamento del file di progetto: " + err.message);
+                alert("Errore nel caricamento: " + err.message);
             }
             input.value = "";
         };
         reader.readAsText(file);
     }
 
-    // --- GESTIONE TRAIETTORIE INTERFACCIA ---
     function updateRouteSelectOptions() {
         const select = document.getElementById('active-route-select');
         select.innerHTML = "";
@@ -369,16 +627,31 @@
         const newId = 'r_' + Date.now();
         
         routes.push({
-            id: newId, name: name, waypoints: [],
+            id: newId, name: name, DEP: "LIRF", DES: "LIFE", waypoints: [],
             polyline: L.polyline([], {color: randomColor, weight: 4}).addTo(map), color: randomColor
         });
         activeRouteId = newId;
         nameInput.value = "";
         updateRouteSelectOptions();
+        switchRouteFields();
         updateUI();
     }
 
-    function switchRoute() { activeRouteId = document.getElementById('active-route-select').value; updateUI(); }
+    document.getElementById('active-route-select').addEventListener('change', switchRoute);
+
+    function switchRoute() { 
+        activeRouteId = document.getElementById('active-route-select').value; 
+        switchRouteFields();
+        updateUI(); 
+    }
+
+    function switchRouteFields() {
+        const currentRoute = routes.find(r => r.id === activeRouteId);
+        if (currentRoute) {
+            document.getElementById('route-dep').value = currentRoute.DEP || "LIRF";
+            document.getElementById('route-des').value = currentRoute.DES || "LIFE";
+        }
+    }
 
     function deleteActiveRoute() {
         if(routes.length <= 1) { alert("Devi mantenere almeno una traiettoria attiva!"); return; }
@@ -388,26 +661,44 @@
             routes.splice(idx, 1);
             activeRouteId = routes[0].id; 
             updateRouteSelectOptions();
+            switchRouteFields();
             updateUI();
         }
     }
 
-    // --- PARSER FILE INPUT TEXT4F ---
     function importText4f(input) {
         const file = input.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+            
             const textTags = xmlDoc.getElementsByTagName("text4f");
-
             for (let i = 0; i < textTags.length; i++) {
                 const tag = textTags[i];
                 const nome = tag.textContent.trim() || `P-${allPoints.length}`;
                 const lat = parseFloat(tag.getAttribute("point-lat"));
                 const lon = parseFloat(tag.getAttribute("point-lon"));
-                if (!isNaN(lat) && !isNaN(lon)) {
-                    registerAndBuildMarker(nome, lat, lon, false);
+                if (!isNaN(lat) && !isNaN(lon)) { registerAndBuildMarker(nome, lat, lon, false); }
+            }
+
+            const lineTags = xmlDoc.getElementsByTagName("line4f");
+            for (let j = 0; j < lineTags.length; j++) {
+                const line = lineTags[j];
+                const startLat = parseFloat(line.getAttribute("start-lat"));
+                const startLon = parseFloat(line.getAttribute("start-lon"));
+                const endLat = parseFloat(line.getAttribute("end-lat"));
+                const endLon = parseFloat(line.getAttribute("end-lon"));
+
+                if (!isNaN(startLat) && !isNaN(startLon) && !isNaN(endLat) && !isNaN(endLon)) {
+                    const strokeColor = "#000000"; 
+                    const fileWidth = parseFloat(line.getAttribute("stroke-width")) || 1.5;
+                    const strokeWidth = Math.max(fileWidth * 2, 2.5); 
+                    const dashArray = line.getAttribute("stroke-dasharray") || "";
+
+                    L.polyline([[startLat, startLon], [endLat, endLon]], {
+                        color: strokeColor, weight: strokeWidth, dashArray: dashArray, interactive: false, pane: 'tilePane' 
+                    }).addTo(backgroundLinesLayer);
                 }
             }
             input.value = ""; 
@@ -420,7 +711,7 @@
 
         let output = "JSON_DATA = [\n";
         routes.forEach((r, idx) => {
-            output += `  {\n    "route_name": "${r.name}",\n    "waypoints": [`;
+            output += `  {\n    "route_name": "${r.name}",\n    "DEP": "${r.DEP || 'LIRF'}",\n    "DES": "${r.DES || 'LIFE'}",\n    "waypoints": [`;
             r.waypoints.forEach((w, wIdx) => {
                 const line = `{"name": "${w.name}", "lat": ${JSON.stringify(w.lat)}, "lon": ${JSON.stringify(w.lon)}, "params": ${JSON.stringify(w.params)}}`;
                 output += (wIdx === 0 ? "" : ",\n                  ") + line;
@@ -449,21 +740,26 @@
     }
 
     function resetAll() {
-        if(confirm("Svuotare completamente l'intera sessione di lavoro?")) {
+        if(confirm("Svuotare completamente la sessione di lavoro attuale?")) {
             allPoints = [];
             customFixCounter = 1;
             routes.forEach(r => { if(r.polyline) map.removeLayer(r.polyline); });
-            routes = [{ id: "r1", name: "Traiettoria 1", waypoints: [], polyline: null, color: "#e74c3c" }];
+            routes = [{ id: "r1", name: "Traiettoria 1", DEP: "LIRF", DES: "LIFE", waypoints: [], polyline: null, color: "#e74c3c" }];
             routes[0].polyline = L.polyline([], {color: routes[0].color, weight: 4}).addTo(map);
             activeRouteId = "r1";
             markersLayer.clearLayers();
+            backgroundLinesLayer.clearLayers(); 
             updateRouteSelectOptions();
+            switchRouteFields();
             updateUI();
             document.getElementById('points-count').textContent = "Fix totali: 0";
         }
     }
 
+    // Inizializzazione controlli
     updateRouteSelectOptions();
+    switchRouteFields();
+    updateUI();
 </script>
 </body>
 </html>
