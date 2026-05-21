@@ -62,7 +62,7 @@
             gap: 20px;
         }
 
-        /* Sezione di ricerca tattica */
+        /* Sezione di ricerca tattica con reset */
         .search-container {
             position: relative;
             flex-grow: 1;
@@ -70,7 +70,7 @@
             margin: 0 20px;
         }
 
-        .search-container i {
+        .search-container .search-icon {
             position: absolute;
             left: 12px;
             top: 50%;
@@ -78,11 +78,12 @@
             color: rgba(0, 242, 255, 0.5);
             font-size: 0.9rem;
             transition: color 0.2s;
+            pointer-events: none;
         }
 
         .hud-search {
             width: 100%;
-            padding: 8px 12px 8px 35px;
+            padding: 8px 35px 8px 35px; /* Spazio a destra per la X e a sinistra per la lente */
             background: rgba(0, 0, 0, 0.6);
             border: 1px solid var(--border-dim);
             color: #fff;
@@ -100,12 +101,30 @@
             background: rgba(0, 242, 255, 0.05);
         }
 
-        .hud-search:focus + i {
+        .hud-search:focus ~ .search-icon {
             color: var(--neon-cyan);
         }
 
         .hud-search::placeholder {
             color: rgba(0, 242, 255, 0.3);
+        }
+
+        /* Bottone Clear (X) annidato */
+        .search-clear-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(0, 242, 255, 0.4);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: color 0.2s, transform 0.2s;
+            display: none; /* Nascosto di default, gestito via JS */
+        }
+
+        .search-clear-btn:hover {
+            color: var(--neon-red);
+            transform: translateY(-50%) scale(1.1);
         }
 
         .hud-grid {
@@ -226,7 +245,8 @@
     
     <div class="search-container">
         <input type="text" id="hudSearchInput" class="hud-search" placeholder="FILTER_ITEMS...">
-        <i class="fas fa-terminal"></i>
+        <i class="fas fa-terminal search-icon"></i>
+        <i class="fas fa-times search-clear-btn" id="hudSearchClear" title="RESET FILTER"></i>
     </div>
 
     <h1 style="font-family: var(--font-hud); font-size: 1.1rem; letter-spacing: 3px; margin: 0;">TERMINAL HUB V9</h1>
@@ -333,10 +353,20 @@
         document.getElementById('uptime').innerText = `UPTIME: ${h}:${m}:${s}`;
     }, 1000);
 
-    // Tactical Real-Time Filter System
-    document.getElementById('hudSearchInput').addEventListener('input', function(e) {
-        const query = e.target.value.toLowerCase().trim();
+    // Tactical Real-Time Filter & Reset System
+    const searchInput = document.getElementById('hudSearchInput');
+    const clearBtn = document.getElementById('hudSearchClear');
+
+    function filterHUD() {
+        const query = searchInput.value.toLowerCase().trim();
         const panels = document.querySelectorAll('.tactical-panel');
+
+        // Mostra o nasconde la "X" in base al contenuto dell'input
+        if (query.length > 0) {
+            clearBtn.style.display = 'block';
+        } else {
+            clearBtn.style.display = 'none';
+        }
 
         panels.forEach(panel => {
             const buttons = panel.querySelectorAll('.combat-btn');
@@ -346,7 +376,6 @@
                 const mainLabel = btn.querySelector('.m-lab').innerText.toLowerCase();
                 const subLabel = btn.querySelector('.s-lab').innerText.toLowerCase();
 
-                // Verifica se il testo corrisponde al tag principale o secondario
                 if (mainLabel.includes(query) || subLabel.includes(query)) {
                     btn.style.display = 'flex';
                     visibleButtonsInPanel++;
@@ -355,13 +384,22 @@
                 }
             });
 
-            // Se nessun elemento del pannello corrisponde, nascondi l'intero blocco
             if (visibleButtonsInPanel > 0 || query === '') {
                 panel.style.display = 'flex';
             } else {
                 panel.style.display = 'none';
             }
         });
+    }
+
+    // Event listener per la digitazione
+    searchInput.addEventListener('input', filterHUD);
+
+    // Event listener per il click sulla "X" (Ripulitura)
+    clearBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        filterHUD();
+        searchInput.focus(); // Rimette il focus sul campo per una nuova ricerca
     });
 </script>
 
