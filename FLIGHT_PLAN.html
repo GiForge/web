@@ -587,6 +587,11 @@
             </div>
         </div>
 
+<!-- INSERISCI QUESTO PULSANTE QUI SOTTO -->
+<button style="background: linear-gradient(135deg, #00f3ff, #0891b2); color: #000; border: none; width: 100%; margin-top: 5px; padding: 8px; font-size: 11px; font-weight: bold;" onclick="generateAutoRoute()">
+    ⚡ GENERA ROTTA AUTOMATICA
+</button>
+
         <div class="param-grid">
             <div><label>CRZ LVL (FL)</label><input type="number" id="p-level" value="350"></div>
             <div><label>H-SPEED (KT)</label><input type="number" id="p-hspeed" value="400"></div>
@@ -699,6 +704,346 @@ const mapLayers = {
         registerAndBuildMarker(nomeFinale, lat, lon, true);
     });
 
+
+// 1. Database delle coordinate degli aeroporti italiani presenti nel datalist
+const AIRPORT_DATABASE = {
+    // ==========================================
+    //                  ITALIA                  
+    // ==========================================
+    // Hub Nazionali e Principali Commerciali
+    "LIRF": [41.8003, 12.2389], // Roma Fiumicino (FCO)
+    "LIRA": [41.7994, 12.5949], // Roma Ciampino (CIA)
+    "LIRU": [41.9514, 12.5011], // Roma Urbe
+    "LIMC": [45.6301, 8.7231],  // Milano Malpensa (MXP)
+    "LIML": [45.4451, 9.2772],  // Milano Linate (LIN)
+    "LIME": [45.6739, 9.7042],  // Bergamo Orio al Serio (BGY)
+    "LIPZ": [45.5053, 12.3519], // Venezia Tessera (VCE)
+    "LIPH": [45.6484, 12.1944], // Treviso Sant'Angelo (TSF)
+    "LIPX": [45.3957, 10.8885], // Verona Villafranca (VRN)
+    "LIPO": [45.4289, 10.3306], // Brescia Montichiari (VBS)
+    "LIPQ": [45.8275, 13.4722], // Trieste Ronchi dei Legionari (TRS)
+    "LIMG": [44.4125, 8.8375],  // Genova Sestri (GOA)
+    "LIMF": [45.2008, 7.6496],  // Torino Caselle (TRN)
+    "LIPE": [44.5354, 11.2887], // Bologna Borgo Panigale (BLQ)
+    "LIPK": [44.2064, 12.0700], // Forlì (FRL)
+    "LIPY": [43.6167, 13.3602], // Ancona Falconara (AOI)
+    "LIRQ": [43.8100, 11.2051], // Firenze Peretola (FLR)
+    "LIRP": [43.6839, 10.3928], // Pisa San Giusto (PSA)
+    "LIRN": [40.8860, 14.2908], // Napoli Capodichino (NAP)
+    "LIBD": [41.1389, 16.7606], // Bari Palese (BRI)
+    "LIBG": [40.6576, 17.9470], // Brindisi Casale (BDS)
+    "LIBP": [42.4320, 14.1850], // Pescara Abruzzo (PSR)
+    "LIRI": [40.6203, 14.9117], // Salerno Costa d'Amalfi (QSR)
+    "LICA": [38.9054, 16.2422], // Lamezia Terme (SUF)
+    "LICR": [38.0712, 15.6514], // Reggio Calabria (REG)
+    "LICC": [37.4668, 15.0664], // Catania Fontanarossa (CTA)
+    "LICJ": [38.1760, 13.0910], // Palermo Punta Raisi (PMO)
+    "LIEE": [39.2515, 9.0543],  // Cagliari Elmas (CAG)
+    "LIEO": [40.8987, 9.5176],  // Olbia Costa Smeralda (OLB)
+    "LIEA": [40.6321, 8.2907],  // Alghero Fertilia (AHO)
+
+    // Scali Regionali, Minori e Isole Minori
+    "LIMW": [45.7387, 7.3630],  // Aosta (AOT)
+    "LILN": [45.7139, 8.6872],  // Vergiate
+    "LIPB": [46.4608, 11.3260], // Bolzano Dolomiti (BZO)
+    "LIPD": [46.0319, 13.1883], // Udine Campoformido
+    "LIPM": [44.6225, 10.8256], // Modena Marzaglia
+    "LIPR": [44.0203, 12.6117], // Rimini Miramare (RMI)
+    "LIPT": [46.0211, 11.1239], // Trento Mattarello
+    "LIPV": [45.3956, 11.8483], // Padova Gino Allegri
+    "LIRG": [40.5161, 17.4019], // Grottaglie Taranto (TAR)
+    "LIRV": [42.4361, 12.0617], // Viterbo Roma
+    "LICB": [36.9947, 14.6072], // Comiso Vincenzo Magliocco (CIY)
+    "LICD": [35.4983, 12.6183], // Lampedusa (LMP)
+    "LIBC": [38.9972, 17.0803], // Crotone Sant'Anna (CRV)
+    "LICP": [36.8165, 11.9688], // Pantelleria (PNL)
+    "LIBF": [41.4328, 15.5350], // Foggia Gino Lisa (FOG)
+
+    // Scali Militari di Rilievo Strategico / Alternati
+    "LIRE": [41.6544, 12.4417], // Pratica di Mare (Militare)
+    "LIZM": [37.4011, 14.9225], // Sigonella (Militare/NATO)
+    "LIPA": [46.0319, 12.5964], // Aviano (Militare/USAF)
+
+    // ==========================================
+    //         REGNO UNITO & IRLANDA          
+    // ==========================================
+    // Inghilterra
+    "EGLL": [51.4700, -0.4543], // Londra Heathrow (LHR)
+    "EGKK": [51.1481, -0.1903], // Londra Gatwick (LGW)
+    "EGSS": [51.8850, 0.2350],  // Londra Stansted (STN)
+    "EGGW": [51.8747, -0.3683], // Londra Luton (LTN)
+    "EGLC": [51.5053, 0.0553],  // Londra City (LCY)
+    "EGCC": [53.3539, -2.2750], // Manchester (MAN)
+    "EGBB": [52.4539, -1.7481], // Birmingham (BHX)
+    "EGGP": [53.3336, -2.8497], // Liverpool John Lennon (LPL)
+    "EGNT": [55.0375, -1.6917], // Newcastle (NCL)
+    "EGNX": [52.8311, -1.3281], // East Midlands (EMA) - Hub Cargo
+
+    // Scozia, Galles e Irlanda del Nord
+    "EGPH": [55.9500, -3.3725], // Edimburgo (EDI)
+    "EGPF": [55.8719, -4.4331], // Glasgow (GLA)
+    "EGPD": [57.2019, -2.1978], // Aberdeen Dyce (ABZ)
+    "EGFF": [51.3967, -3.3433], // Cardiff (CWL)
+    "EGAA": [54.6575, -6.2158], // Belfast International (BFS)
+
+    // Irlanda ed ETOPS Nord Atlantico
+    "EIDW": [53.4214, -6.2701], // Dublino (DUB)
+    "EICK": [51.8414, -8.4911], // Cork (ORK)
+    "EINN": [52.7019, -8.9247], // Shannon (SNN) - Transatlantico
+
+    // ==========================================
+    //        SCANDINAVIA & PAESI NORDICI       
+    // ==========================================
+    // Danimarca
+    "EKCH": [55.6179, 12.6560], // Copenaghen Kastrup (CPH)
+    "EKBK": [55.7403, 9.1518],  // Billund (BLL)
+    "EKAAL": [57.0928, 9.8492], // Aalborg (AAL)
+
+    // Svezia
+    "ESSA": [59.6519, 17.9186], // Stoccolma Arlanda (ARN)
+    "ESSB": [59.3544, 17.9417], // Stoccolma Bromma (BMA)
+    "ESGG": [57.6628, 12.2797], // Göteborg Landvetter (GOT)
+    "ESMS": [55.5303, 13.3725], // Malmö Sturup (MMX)
+    "ESPA": [65.5439, 22.1219], // Luleå Kallax (LLA)
+
+    // Norvegia
+    "ENGM": [60.1939, 11.1003], // Oslo Gardermoen (OSL)
+    "ENBR": [60.2933, 5.2181],  // Bergen Flesland (BGO)
+    "ENVA": [63.4575, 10.9242], // Trondheim Værnes (TRD)
+    "ENZV": [58.8767, 5.6378],  // Stavanger Sola (SVG)
+    "ENTC": [69.6833, 18.9189], // Tromsø Langnes (TOS)
+
+    // Finlandia
+    "EFHK": [60.3172, 24.9633], // Helsinki Vantaa (HEL)
+    "EFOU": [64.9300, 25.3547], // Oulu (OUL)
+    "EFRO": [66.5647, 25.8303], // Rovaniemi (RVN) - Circolo Polare
+
+    // Islanda (Nodo ETOPS Critico)
+    "BIKF": [63.9850, -22.6056], // Keflavík (KEF) - Hub Atlantico
+
+    // ==========================================
+    //          TURCHIA (HUB STRATEGICI)         
+    // ==========================================
+    "LTFM": [41.2753, 28.7519], // Istanbul Airport (IST) - Hub Principale
+    "LTBA": [40.9769, 28.8144], // Istanbul Atatürk (ISL) - Cargo/Privati
+    "LTFJ": [40.8986, 29.3092], // Istanbul Sabiha Gökçen (SAW)
+    "LTAC": [40.1281, 32.9950], // Ankara Esenboğa (ESB)
+    "LTAI": [36.9014, 30.7928], // Antalya (AYT)
+    "LTBS": [36.7131, 28.7925], // Dalaman (DLM)
+    "LTFE": [37.2506, 27.6644], // Milas-Bodrum (BJV)
+    "LTBJ": [38.2925, 27.1569], // Smirne Adnan Menderes (ADB)
+    "LTAF": [36.9822, 35.2803], // Adana Şakirpaşa (ADA)
+    "LTCG": [41.0022, 39.7897], // Trabzon/Trebisonda (TZX)
+
+    // ==========================================
+    //             SPAGNA & PORTOGALLO            
+    // ==========================================
+    "LEMD": [40.4719, -3.5608], // Madrid Barajas (MAD)
+    "LEBL": [41.2969, 2.0783],  // Barcellona El Prat (BCN)
+    "LEVC": [39.4894, -0.4814], // Valencia (VLC)
+    "LEMG": [36.6750, -4.4992], // Malaga Costa del Sol (AGP)
+    "LEAL": [38.2822, -0.5581], // Alicante Elche (ALC)
+    "LEST": [42.8964, -8.4153], // Santiago de Compostela (SCQ)
+    "LEBB": [43.3011, -2.9106], // Bilbao (BIO)
+    "LEPA": [39.5517, 2.7388],  // Palma di Maiorca (PMI)
+    "LEVV": [41.7061, -4.8519], // Valladolid (VLL)
+    "LECO": [43.3019, -8.3772], // Coruña (LCG)
+    "LEIB": [38.8728, 1.3731],  // Ibiza (IBZ)
+    "LEMH": [39.8625, 4.2186],  // Minorca (MAH)
+    "LEZL": [37.4181, -5.8931], // Siviglia (SVQ)
+    "LPPT": [38.7742, -9.1342], // Lisbona Humberto Delgado (LIS)
+    "LPPR": [41.2422, -8.6814], // Porto Francisco Sá Carneiro (OPO)
+    "LPFR": [37.0144, -7.9658], // Faro Algarve (FAO)
+
+    // ==========================================
+    //                   FRANCIA                  
+    // ==========================================
+    "LFPG": [49.0097, 2.5478],  // Parigi Charles de Gaulle (CDG)
+    "LFPO": [48.7253, 2.3594],  // Parigi Orly (ORY)
+    "LFMN": [43.6581, 7.2158],  // Nizza Côte d'Azur (NCE)
+    "LFLL": [45.7264, 5.0908],  // Lione Saint Exupéry (LYS)
+    "LFML": [43.4367, 5.2150],  // Marsiglia Provence (MRS)
+    "LFBD": [44.8283, -0.7156], // Bordeaux Mérignac (BOD)
+    "LFST": [48.5383, 7.6281],  // Strasburgo (SXB)
+    "LFRS": [48.0719, -1.7319], // Rennes Saint-Jacques (REN)
+    "LFKB": [48.4478, -4.4186], // Brest Guipavas (BES)
+    "LFRN": [47.1531, -1.6108], // Nantes Atlantique (NTE)
+    "LFBO": [43.6350, 1.3678],  // Toulouse Blagnac (TLS)
+    "LFLS": [45.9269, 6.1008],  // Annecy-Haute-Savoie (NCY)
+    "LFOB": [49.4544, 2.1128],  // Beauvais Tillé (BVA)
+    "LFSB": [47.5900, 7.5292],  // Basilea-Mulhouse (BSL)
+    "LFKJ": [41.9236, 8.8028],  // Ajaccio Napoleone Bonaparte (AJA)
+
+    // ==========================================
+    //                  GERMANIA                  
+    // ==========================================
+    "EDDF": [50.0333, 8.5706],  // Francoforte sul Meno (FRA)
+    "EDDM": [48.3539, 11.7861], // Monaco di Baviera (MUC)
+    "EDDH": [53.6303, 9.9883],  // Amburgo (HAM)
+    "EDDL": [51.2894, 6.7667],  // Düsseldorf (DUS)
+    "EDDK": [50.8658, 7.1428],  // Colonia/Bonn (CGN)
+    "EDDB": [52.3667, 13.5033], // Berlino Brandeburgo (BER)
+    "EDDN": [49.4986, 11.0669], // Norimberga (NUE)
+    "EDDS": [48.6897, 9.2219],  // Stoccarda (STR)
+    "EDDV": [53.0475, 8.7867],  // Brema (BRE)
+    "EDDC": [51.1328, 13.7672], // Dresda (DRS)
+    "EDDP": [51.4239, 12.2364], // Lipsia/Halle (LEJ)
+    "EDFH": [49.9486, 7.2639],  // Francoforte Hahn (HHN)
+
+    // ==========================================
+    //             BENELUX & SVIZZERA            
+    // ==========================================
+    "EHAM": [52.3081, 4.7642],  // Amsterdam Schiphol (AMS)
+    "EBBR": [50.9014, 4.4844],  // Bruxelles National (BRU)
+    "EBCI": [50.4592, 4.4539],  // Charleroi Bruxelles Sud (CRL)
+    "ELLX": [49.6233, 6.2044],  // Lussemburgo Findel (LUX)
+    "LSZH": [47.4581, 8.5481],  // Zurigo Kloten (ZRH)
+    "LSGG": [46.2381, 6.1089],  // Ginevra Cointrin (GVA)
+    "LSZA": [46.0042, 8.9106],  // Lugano Agno (LUG)
+
+    // ==========================================
+    //    CENTRO-EST EUROPA, BALCANI & GRECIA     
+    // ==========================================
+    "LOWW": [48.1103, 16.5697], // Vienna Schwechat (VIE)
+    "LOWS": [47.7933, 13.0042], // Salisburgo W.A. Mozart (SZG)
+    "LOWI": [47.2603, 11.3439], // Innsbruck Kranebitten (INN)
+    "LGAV": [37.9364, 23.9444], // Atene Eleftherios Venizelos (ATH)
+    "LGTS": [40.5197, 22.9708], // Salonicco Macedonia (SKG)
+    "LGRP": [36.4053, 28.0861], // Rodi Diagoras (RHO)
+    "LCLK": [34.8750, 33.6250], // Larnaca - Cipro (LCA)
+    "LBSF": [42.6953, 23.4061], // Sofia (SOF)
+    "LYBE": [44.8183, 20.3092], // Belgrado Nikola Tesla (BEG)
+    "EPWA": [52.1658, 20.9672], // Varsavia Chopin (WAW)
+    "EPKK": [50.0778, 19.7847], // Cracovia Giovanni Paolo II (KRK)
+    "LKPR": [50.1008, 14.2600], // Praga Václav Havel (PRG)
+    "LHBP": [47.4297, 19.2611], // Budapest Ferenc Liszt (BUD)
+    "LROP": [44.5711, 26.0850]  // Bucarest Henri Coandă (OTP)
+};
+
+// Funzione Helper per calcolare la distanza planare tra due punti cartesiani/geografici
+function calculateDistance(coord1, coord2) {
+    return Math.sqrt(Math.pow(coord1[0] - coord2[0], 2) + Math.pow(coord1[1] - coord2[1], 2));
+}
+
+// 2. Core Engine di Generazione Rotta Automatica
+// Funzione ausiliaria: Calcola l'angolo (in gradi) tra il vettore (corrente -> destinazione) e il vettore (corrente -> fix candidato)
+function calculateBearingDifference(currentCoord, nextFixCoord, destCoord) {
+    // Vettore verso la destinazione finale
+    const vDestX = destCoord[1] - currentCoord[1];
+    const vDestY = destCoord[0] - currentCoord[0];
+    
+    // Vettore verso il Fix candidato
+    const vFixX = nextFixCoord[1] - currentCoord[1];
+    const vFixY = nextFixCoord[0] - currentCoord[0];
+    
+    // Calcolo dell'angolo di sbandamento rispetto alla retta ideale usando l'arcotangente2
+    const angleDest = Math.atan2(vDestY, vDestX);
+    const angleFix = Math.atan2(vFixY, vFixX);
+    
+    let diff = Math.abs(angleDest - angleFix) * (180 / Math.PI);
+    if (diff > 180) diff = 360 - diff; // Normalizzazione tra 0 e 180 gradi
+    
+    return diff;
+}
+
+function generateAutoRoute() {
+    const currentRoute = routes.find(r => r.id === activeRouteId);
+    if (!currentRoute) return alert("Nessuna traiettoria attiva selezionata.");
+
+    const depCode = document.getElementById('route-dep').value.trim().toUpperCase();
+    const desCode = document.getElementById('route-des').value.trim().toUpperCase();
+
+    if (!AIRPORT_DATABASE[depCode] || !AIRPORT_DATABASE[desCode]) {
+        return alert("Assicurarsi che DEP e DES siano codici ICAO validi nel Database.");
+    }
+
+    const depCoords = AIRPORT_DATABASE[depCode];
+    const desCoords = AIRPORT_DATABASE[desCode];
+
+    currentRoute.waypoints = [];
+
+    // Assicurati che DEP e DES esistano nei punti globali
+    let depFix = allPoints.find(p => p.nome === depCode) || (registerAndBuildMarker(depCode, depCoords[0], depCoords[1], false), allPoints[allPoints.length - 1]);
+    let desFix = allPoints.find(p => p.nome === desCode) || (registerAndBuildMarker(desCode, desCoords[0], desCoords[1], false), allPoints[allPoints.length - 1]);
+
+    // Modificato: accetta un customName opzionale per forzare stringhe come "wp_nn"
+    const createWaypointObject = (fix, customName = null) => ({
+        globalPointId: fix.id,
+        name: customName || fix.nome, // Se c'è un customName usa quello, altrimenti il nome del fix
+        lat: fix.dmsLat,
+        lon: fix.dmsLon,
+        params: {
+            level: parseInt(document.getElementById('p-level').value) || 350,
+            hspeed: parseInt(document.getElementById('p-hspeed').value) || 400,
+            vspeed: parseInt(document.getElementById('p-vspeed').value) || 0
+        },
+        _mapCoords: [fix.lat, fix.lon]
+    });
+
+    // 1. Inizializzazione della catena - Forza "wp_nn" sul punto di partenza
+    currentRoute.waypoints.push(createWaypointObject(depFix, "WP_auto"));
+    
+    let currentCoords = [depFix.lat, depFix.lon];
+    const visitedFixNames = new Set([depCode, desCode]); // Evita loop infiniti
+
+    // CONFIGURAZIONE PARAMETRI AVANZATI DI ROTTA
+    const MAX_CONE_ANGLE = 25; 
+    const MAX_STEP_DISTANCE = calculateDistance(depCoords, desCoords) * 0.4; 
+
+    // 2. Loop di navigazione iterativo (Greedy Step-by-Step)
+    let searching = true;
+    while (searching) {
+        let bestNextFix = null;
+        let minDistance = Infinity;
+
+        const distanceToDestination = calculateDistance(currentCoords, desCoords);
+
+        allPoints.forEach(p => {
+            if (visitedFixNames.has(p.nome)) return;
+
+            const fixCoords = [p.lat, p.lon];
+            const distFromCurrent = calculateDistance(currentCoords, fixCoords);
+
+            if (distFromCurrent > distanceToDestination) return;
+
+            if (distFromCurrent < MAX_STEP_DISTANCE) {
+                const angularDeviation = calculateBearingDifference(currentCoords, fixCoords, desCoords);
+                
+                if (angularDeviation <= MAX_CONE_ANGLE) {
+                    if (distFromCurrent < minDistance) {
+                        minDistance = distFromCurrent;
+                        bestNextFix = p;
+                    }
+                }
+            }
+        });
+
+        if (bestNextFix) {
+            // I punti intermedi mantengono il loro nome standard (es. KOVAR, TIBRO, ecc.)
+            currentRoute.waypoints.push(createWaypointObject(bestNextFix));
+            visitedFixNames.add(bestNextFix.nome);
+            currentCoords = [bestNextFix.lat, bestNextFix.lon]; 
+        } else {
+            searching = false;
+        }
+    }
+
+    // 3. Inietta la Destinazione finale - Forza "wp_nn" sul punto di arrivo
+    currentRoute.waypoints.push(createWaypointObject(desFix, "WP_auto"));
+
+    // Renderizza e aggiorna la mappa
+    const bounds = L.latLngBounds([depCoords, desCoords]);
+    map.fitBounds(bounds, { padding: [50, 50] });
+    updateRouteSelectOptions();
+    
+    if (typeof updateUI === "function") {
+        updateUI();
+    } else if (currentRoute.polyline) {
+        const pathCoords = currentRoute.waypoints.map(w => w._mapCoords);
+        currentRoute.polyline.setLatLngs(pathCoords);
+        document.getElementById('export-log').textContent = "JSON_DATA = " + JSON.stringify(routes, null, 2);
+    }
+} 
     function registerAndBuildMarker(nome, lat, lon, isCustom) {
         const p = {
             id: Date.now() + Math.random(),
