@@ -9,14 +9,14 @@
             --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21;
             --primary: #42b72a; --accent: #1877f2; --danger: #fa3e3e;
             --header-bg: #242526;
---checked-bg: #5c0000;   /* era #cfd8dc */
---checked-text: #cc0000; /* era #546e7a */
+            --checked-bg: #cfd8dc; 
+            --checked-text: #546e7a;
         }
         [data-theme="dark"] {
             --bg: #18191a; --card: #242526; --text: #e4e6eb;
             --header-bg: #000000;
---checked-bg: #4a0000;   /* era #37474f */
---checked-text: #ff6b6b; /* era #90a4ae */
+            --checked-bg: #37474f; 
+            --checked-text: #90a4ae;
         }
 
         body { 
@@ -213,11 +213,32 @@
         
         .btn-tool { padding: 8px 12px; border-radius: 8px; border: none; font-size: 0.8rem; cursor: pointer; font-weight: bold; color: white; }
 
-        .fab-whatsapp {
-            position: fixed; bottom: 15px; right: 15px; background: #25D366; color: white;
-            width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.25); z-index: 999;
+        .fab-group {
+            position: fixed; bottom: 15px; right: 15px; z-index: 999;
+            display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
         }
+        .fab-whatsapp {
+            background: #25D366; color: white;
+            width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.35); cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .fab-whatsapp:active { transform: scale(0.92); }
+        .fab-options {
+            display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+            overflow: hidden; max-height: 0; opacity: 0;
+            transition: max-height 0.3s ease, opacity 0.25s ease;
+        }
+        .fab-options.open { max-height: 200px; opacity: 1; }
+        .fab-option-btn {
+            display: flex; align-items: center; gap: 8px;
+            background: #128C7E; color: white; border: none; border-radius: 24px;
+            padding: 9px 16px 9px 12px; font-size: 0.85rem; font-weight: bold;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3); cursor: pointer; white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .fab-option-btn:hover { background: #075E54; }
+        .fab-option-btn .icon { font-size: 1.1rem; }
     </style>
 </head>
 <body data-theme="dark">
@@ -258,7 +279,17 @@
 
     <div id="shopping-list"></div>
 
-    <button class="fab-whatsapp" onclick="exportWhatsApp()">💬</button>
+    <div class="fab-group">
+        <div class="fab-options" id="fab-options">
+            <button class="fab-option-btn" onclick="exportWhatsApp()">
+                <span class="icon">📋</span> Invia lista testo
+            </button>
+            <button class="fab-option-btn" onclick="exportWhatsAppJson()">
+                <span class="icon">📁</span> Condividi file JSON
+            </button>
+        </div>
+        <button class="fab-whatsapp" onclick="toggleFab()">💬</button>
+    </div>
 
     <script>
     // Prezzi stimati medi italiani 2025 (€)
@@ -436,6 +467,7 @@
         'philadelphia':     { e: '🥣', c: 'Latticini',   p: 2.29 },
         'galbani':          { e: '🧀', c: 'Latticini',   p: 2.99 },
         'mozzarella':       { e: '⚪', c: 'Latticini',   p: 1.49 },
+	'ricotta':	    { e: '🫕', c: 'Latticini', p: 1.19 },
         'uova':             { e: '🥚', c: 'Latticini',   p: 2.49 },
         'burro':            { e: '🧈', c: 'Latticini',   p: 1.89 },
         'certosa':          { e: '🧀', c: 'Latticini',   p: 1.79 },
@@ -526,7 +558,6 @@
         'lamette':          { e: '🪒', c: 'Igiene',      p: 4.99 },
         'salviettine':      { e: '🧻', c: 'Igiene',      p: 1.99 }
     };
-    
         let items = JSON.parse(localStorage.getItem('smart_list_v4')) || [];
 
         function render() {
@@ -724,6 +755,31 @@
         function exportWhatsApp() {
             const text = items.map(i => `${i.checked ? '✅' : '⬜'} *${i.emoji} ${i.name}* (x${i.qty})`).join('\n');
             window.open(`https://wa.me/?text=${encodeURIComponent(`🛒 *LISTA SPESA*\n\n${text}`)}`);
+            closeFab();
+        }
+
+        function exportWhatsAppJson() {
+            const dataStr = JSON.stringify(items, null, 2);
+            const fileName = `ListaSpesa_${new Date().toLocaleDateString('it-IT').replace(/\//g,'-')}.json`;
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            // 1. Scarica subito il file
+            const a = document.createElement('a');
+            a.href = url; a.download = fileName; a.click();
+            // 2. Dopo un attimo apre WhatsApp con istruzioni
+            setTimeout(() => {
+                const msg = `🛒 *Ti mando la mia lista della spesa!*\n\n📎 Allega il file *${fileName}* che hai appena scaricato.\n\nIl destinatario lo apre con Smart Spesa Pro → pulsante 📂 CARICA.`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+            }, 800);
+            closeFab();
+        }
+
+        function toggleFab() {
+            document.getElementById('fab-options').classList.toggle('open');
+        }
+
+        function closeFab() {
+            document.getElementById('fab-options').classList.remove('open');
         }
 
         function startVoice() {
