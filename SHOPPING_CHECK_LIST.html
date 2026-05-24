@@ -9,14 +9,14 @@
             --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21;
             --primary: #42b72a; --accent: #1877f2; --danger: #fa3e3e;
             --header-bg: #242526;
-            --checked-bg: #cfd8dc; 
-            --checked-text: #546e7a;
+--checked-bg: #5c0000;   /* era #cfd8dc */
+--checked-text: #cc0000; /* era #546e7a */
         }
         [data-theme="dark"] {
             --bg: #18191a; --card: #242526; --text: #e4e6eb;
             --header-bg: #000000;
-            --checked-bg: #37474f; 
-            --checked-text: #90a4ae;
+--checked-bg: #4a0000;   /* era #37474f */
+--checked-text: #ff6b6b; /* era #90a4ae */
         }
 
         body { 
@@ -457,7 +457,7 @@
         'lenticchie':       { e: '🫘', c: 'Dispensa',    p: 0.99 },
         'fagoli':           { e: '🫘', c: 'Dispensa',    p: 0.89 },
 
-        // FRESCHI E LATTICINI
+     // FRESCHI E LATTICINI
         'latte':            { e: '🥛', c: 'Latticini',   p: 1.39 },
         'parmalat':         { e: '🥛', c: 'Latticini',   p: 1.49 },
         'granarolo':        { e: '🥛', c: 'Latticini',   p: 1.49 },
@@ -467,12 +467,35 @@
         'philadelphia':     { e: '🥣', c: 'Latticini',   p: 2.29 },
         'galbani':          { e: '🧀', c: 'Latticini',   p: 2.99 },
         'mozzarella':       { e: '⚪', c: 'Latticini',   p: 1.49 },
-	'ricotta':	    { e: '🫕', c: 'Latticini', p: 1.19 },
+        'ricotta':          { e: '🫕', c: 'Latticini',   p: 1.19 },
         'uova':             { e: '🥚', c: 'Latticini',   p: 2.49 },
         'burro':            { e: '🧈', c: 'Latticini',   p: 1.89 },
         'certosa':          { e: '🧀', c: 'Latticini',   p: 1.79 },
+        // FORMAGGI STAGIONATI E SEMISTAGIONATI
+        'parmigiano':       { e: '🧀', c: 'Latticini',   p: 4.49 },
+        'reggiano':         { e: '🧀', c: 'Latticini',   p: 4.49 },
+        'grana padano':     { e: '🧀', c: 'Latticini',   p: 3.99 },
+        'pecorino':         { e: '🧀', c: 'Latticini',   p: 3.79 },
+        'provolone':        { e: '🧀', c: 'Latticini',   p: 2.89 },
+        'caciocavallo':     { e: '🧀', c: 'Latticini',   p: 3.29 },
+        'asiago':           { e: '🧀', c: 'Latticini',   p: 2.49 },
+        'fontina':          { e: '🧀', c: 'Latticini',   p: 2.99 },
+        'formaggio':          { e: '🧀', c: 'Latticini',   p: 2.99 },
+        'formaggio fresco':          { e: '🧀', c: 'Latticini',   p: 2.99 },
+        'gorgonzola':       { e: '🧀', c: 'Latticini',   p: 2.69 },
+        'taleggio':         { e: '🧀', c: 'Latticini',   p: 2.59 },
+        'scamorza':         { e: '🧀', c: 'Latticini',   p: 2.29 },
+        'emmental':         { e: '🧀', c: 'Latticini',   p: 2.19 },
+        // ALTRI FORMAGGI FRESCHI E SPALMABILI
+        'stracchino':       { e: '🥣', c: 'Latticini',   p: 1.69 },
+        'crescenza':        { e: '🥣', c: 'Latticini',   p: 1.69 },
+        'robbiola':         { e: '🥣', c: 'Latticini',   p: 1.59 },
+        'burrata':          { e: '⚪', c: 'Latticini',   p: 2.49 },
+        'mascarpone':       { e: '🥣', c: 'Latticini',   p: 2.39 },
+        'fiocchi di latte': { e: '🥣', c: 'Latticini',   p: 1.29 },
+        'formaggio fuso':   { e: '🧀', c: 'Latticini',   p: 1.49 },
 
-        // ORTOFRUTTA
+     // ORTOFRUTTA
         'frutta':           { e: '🍐🍎', c: 'Ortofrutta', p: 2.99 },
         'fragole':          { e: '🍓', c: 'Ortofrutta',  p: 2.99 },
         'mele':             { e: '🍎', c: 'Ortofrutta',  p: 2.49 },
@@ -502,6 +525,19 @@
         'peperoncino':      { e: '🌶️', c: 'Ortofrutta', p: 0.79 },
         'funghi':           { e: '🍄', c: 'Ortofrutta',  p: 2.49 },
         'zucca':            { e: '🎃', c: 'Ortofrutta',  p: 1.99 },
+        'spinaci':          { e: '🥬', c: 'Ortofrutta',  p: 1.79 },
+        'asparagi':         { e: '🌱', c: 'Ortofrutta',  p: 3.49 },
+        'olive':            { e: '🫒', c: 'Ortofrutta',  p: 2.19 },
+        'broccoli':         { e: '🥦', c: 'Ortofrutta',  p: 1.99 },
+        'cavolfiore':       { e: '🥦', c: 'Ortofrutta',  p: 1.89 },
+        'carciofi':         { e: '🥬', c: 'Ortofrutta',  p: 2.99 },
+        'sedano':           { e: '🥬', c: 'Ortofrutta',  p: 1.19 },
+        'piselli':          { e: '🫛', c: 'Ortofrutta',  p: 1.99 },
+        'fagiolini':        { e: '🫛', c: 'Ortofrutta',  p: 2.29 },
+        'fagioli':          { e: '🫛', c: 'Ortofrutta',  p: 1.69 },
+        'porri':            { e: '🥬', c: 'Ortofrutta',  p: 1.59 },
+        'ravanelli':        { e: '🥕', c: 'Ortofrutta',  p: 0.99 },
+        'rape':             { e: '🥕', c: 'Ortofrutta',  p: 1.29 },
 
         // IGIENE E CASA
         'carta igienica':   { e: '🧻', c: 'Casa',        p: 3.99 },
