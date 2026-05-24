@@ -70,7 +70,6 @@
             font-size: 16px; outline: none; background: var(--card); color: var(--text);
         }
 
-        /* Stile Suggerimenti Autocomplete - Allineato a destra dopo i pulsanti */
         #autocomplete-list {
             position: absolute;
             top: 100%;
@@ -117,7 +116,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* CARD COMPATTA (Ottimizzata Smartphone) */
         .item-card {
             display: flex;
             align-items: center;
@@ -194,7 +192,6 @@
             -moz-appearance: textfield;
         }
 
-        /* Rimuove freccette native dagli input numerici */
         .price-input::-webkit-outer-spin-button,
         .price-input::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -263,271 +260,269 @@
     <button class="fab-whatsapp" onclick="exportWhatsApp()">💬</button>
 
     <script>
+    // Prezzi stimati medi italiani 2025 (€)
     const catalog = {
-    	    // BEVANDE E BRAND ICONICI
-    	    'coca cola': { e: '🥤', c: 'Bevande' },
-    	    'fanta': { e: '🍊', c: 'Bevande' }, 
-    	    'sprite': { e: '🍋', c: 'Bevande' },
-    	    'pepsi': { e: '🥤', c: 'Bevande' }, 
-    	    'estathé': { e: '🍹', c: 'Bevande' },
-    	    'birra': { e: '🍺', c: 'Bevande' },
-    	    'vino': { e: '🍷', c: 'Bevande' },
-    	    'succo di frutta': { e: '🧃', c: 'Bevande' }, 
-    	    'santanna': { e: '💧', c: 'Bevande' },
-    	    'levissima': { e: '🏔️', c: 'Bevande' }, 
-    	    'san pellegrino': { e: '🫧', c: 'Bevande' },
-    	    'chinotto': { e: '🟤', c: 'Bevande' }, 
+        // BEVANDE E BRAND ICONICI
+        'coca cola':        { e: '🥤', c: 'Bevande',    p: 1.99 },
+        'fanta':            { e: '🍊', c: 'Bevande',    p: 1.79 },
+        'sprite':           { e: '🍋', c: 'Bevande',    p: 1.79 },
+        'pepsi':            { e: '🥤', c: 'Bevande',    p: 1.79 },
+        'estathé':          { e: '🍹', c: 'Bevande',    p: 1.39 },
+        'birra':            { e: '🍺', c: 'Bevande',    p: 1.49 },
+        'vino':             { e: '🍷', c: 'Bevande',    p: 5.99 },
+        'succo di frutta':  { e: '🧃', c: 'Bevande',    p: 1.89 },
+        'santanna':         { e: '💧', c: 'Bevande',    p: 0.49 },
+        'levissima':        { e: '🏔️', c: 'Bevande',   p: 0.59 },
+        'san pellegrino':   { e: '🫧', c: 'Bevande',    p: 0.89 },
+        'chinotto':         { e: '🟤', c: 'Bevande',    p: 1.29 },
 
-    	    // GASTRONOMIA E PIATTI PRONTI
-    	    'lasagna': { e: '🥘', c: 'Gastronomia' },
-    	    'lasagne': { e: '🥘', c: 'Gastronomia' },
-    	    'pollo arrosto': { e: '🍗', c: 'Gastronomia' },
-    	    'patate arrosto': { e: '🥔', c: 'Gastronomia' },
-    	    'pomodori ripieni': { e: '🍅', c: 'Gastronomia' },
-    	    'riso freddo': { e: '🍚', c: 'Gastronomia' },
-    	    'insalata di riso': { e: '🍚', c: 'Gastronomia' },
-    	    'arrosto': { e: '🍖', c: 'Gastronomia' },
-    	    'vitello tonnato': { e: '🍱', c: 'Gastronomia' },
-    	    'parmigiana': { e: '🍆', c: 'Gastronomia' },
-    	    'insalata russa': { e: '🥣', c: 'Gastronomia' },
-    	    'oliva ascolana': { e: '🫒', c: 'Gastronomia' },
-    	    'supplì': { e: '🍘', c: 'Gastronomia' },
-    	    'arancino': { e: '🍊', c: 'Gastronomia' },
-    	    'cous cous': { e: '🥣', c: 'Gastronomia' },
-    	    'baccalà': { e: '🐟', c: 'Gastronomia' },
-    	    'pizza': { e: '🍕', c: 'Gastronomia' },
-    	    'focaccia': { e: '🍞', c: 'Gastronomia' },
-    	    'pizzette': { e: '🍕', c: 'Gastronomia' },
-    	    'calzone': { e: '🥟', c: 'Gastronomia' },
-    	    'panino': { e: '🍔', c: 'Gastronomia' },
-    	    'piadina': { e: '🫓', c: 'Gastronomia' },
-    	    'rosticceria': { e: '🥐', c: 'Gastronomia' },
+        // GASTRONOMIA E PIATTI PRONTI
+        'lasagna':          { e: '🥘', c: 'Gastronomia', p: 6.90 },
+        'lasagne':          { e: '🥘', c: 'Gastronomia', p: 6.90 },
+        'pollo arrosto':    { e: '🍗', c: 'Gastronomia', p: 7.90 },
+        'patate arrosto':   { e: '🥔', c: 'Gastronomia', p: 3.50 },
+        'pomodori ripieni': { e: '🍅', c: 'Gastronomia', p: 4.90 },
+        'riso freddo':      { e: '🍚', c: 'Gastronomia', p: 3.90 },
+        'insalata di riso': { e: '🍚', c: 'Gastronomia', p: 3.90 },
+        'arrosto':          { e: '🍖', c: 'Gastronomia', p: 9.90 },
+        'vitello tonnato':  { e: '🍱', c: 'Gastronomia', p: 8.90 },
+        'parmigiana':       { e: '🍆', c: 'Gastronomia', p: 5.90 },
+        'insalata russa':   { e: '🥣', c: 'Gastronomia', p: 4.50 },
+        'oliva ascolana':   { e: '🫒', c: 'Gastronomia', p: 5.50 },
+        'supplì':           { e: '🍘', c: 'Gastronomia', p: 4.00 },
+        'arancino':         { e: '🍊', c: 'Gastronomia', p: 3.50 },
+        'cous cous':        { e: '🥣', c: 'Gastronomia', p: 4.50 },
+        'baccalà':          { e: '🐟', c: 'Gastronomia', p: 8.90 },
+        'pizza':            { e: '🍕', c: 'Gastronomia', p: 4.90 },
+        'focaccia':         { e: '🍞', c: 'Gastronomia', p: 2.50 },
+        'pizzette':         { e: '🍕', c: 'Gastronomia', p: 3.50 },
+        'calzone':          { e: '🥟', c: 'Gastronomia', p: 3.90 },
+        'panino':           { e: '🍔', c: 'Gastronomia', p: 2.90 },
+        'piadina':          { e: '🫓', c: 'Gastronomia', p: 3.50 },
+        'rosticceria':      { e: '🥐', c: 'Gastronomia', p: 5.00 },
 
-    	 // PESCHERIA E PRODOTTI ITTICI (Novità)
-    	    'pesce': { e: '🐟', c: 'Pescheria' },
-    	    'salmone': { e: '🍣', c: 'Pescheria' },
-    	    'tonno': { e: '🐟', c: 'Pescheria' },
-    	    'merluzzo': { e: '🐟', c: 'Pescheria' },
-    	    'orata': { e: '🐟', c: 'Pescheria' },
-    	    'branzino': { e: '🐟', c: 'Pescheria' },
-    	    'gamberi': { e: '🍤', c: 'Pescheria' },
-    	    'gamberetti': { e: '🍤', c: 'Pescheria' },
-    	    'calamari': { e: '🦑', c: 'Pescheria' },
-    	    'polpo': { e: '🐙', c: 'Pescheria' },
-    	    'cozze': { e: '🦪', c: 'Pescheria' },
-    	    'vongole': { e: '🦪', c: 'Pescheria' },
-    	    'bastoncini': { e: '🐟', c: 'Pescheria' }, // Surgelati stile Findus
-    	    'fritto misto': { e: '🍤', c: 'Gastronomia' }, // Versione già cotta
-    	    
-    	    // MACELLERIA E CARNE
-    	    'carne': { e: '🥩', c: 'Macelleria' },
-    	    'manzo': { e: '🥩', c: 'Macelleria' },
-    	    'vitello': { e: '🥩', c: 'Macelleria' },
-    	    'maiale': { e: '🐖', c: 'Macelleria' },
-    	    'pollo': { e: '🍗', c: 'Macelleria' },
-    	    'tacchino': { e: '🦃', c: 'Macelleria' },
-    	    'hamburger': { e: '🍔', c: 'Macelleria' },
-    	    'macinato': { e: '🥩', c: 'Macelleria' },
-    	    'fettine': { e: '🥩', c: 'Macelleria' },
-    	    'petto di pollo': { e: '🍗', c: 'Macelleria' },
-    	    'cosce di pollo': { e: '🍗', c: 'Macelleria' },
-    	    'salsiccia': { e: '🌭', c: 'Macelleria' },
-    	    'costine': { e: '🦴', c: 'Macelleria' },
-    	    'bistecca': { e: '🥩', c: 'Macelleria' },
-    	    'fiorentina': { e: '🥩', c: 'Macelleria' },
-    	    'cotoletta': { e: '🍞', c: 'Macelleria' },
-    	    'nuggets': { e: '🍗', c: 'Macelleria' },
-    	    'arista': { e: '🥩', c: 'Macelleria' },
-    	    'spezzatino': { e: '🍲', c: 'Macelleria' },
-    	    'spiedini': { e: '🍢', c: 'Macelleria' },
-    	    'coniglio': { e: '🐇', c: 'Macelleria' },
-    	    'fegato': { e: '🥩', c: 'Macelleria' },
+        // PESCHERIA E PRODOTTI ITTICI
+        'pesce':            { e: '🐟', c: 'Pescheria',   p: 7.90 },
+        'salmone':          { e: '🍣', c: 'Pescheria',   p: 9.90 },
+        'tonno':            { e: '🐟', c: 'Pescheria',   p: 7.50 },
+        'merluzzo':         { e: '🐟', c: 'Pescheria',   p: 6.90 },
+        'orata':            { e: '🐟', c: 'Pescheria',   p: 8.90 },
+        'branzino':         { e: '🐟', c: 'Pescheria',   p: 9.50 },
+        'gamberi':          { e: '🍤', c: 'Pescheria',   p: 10.90 },
+        'gamberetti':       { e: '🍤', c: 'Pescheria',   p: 7.90 },
+        'calamari':         { e: '🦑', c: 'Pescheria',   p: 8.50 },
+        'polpo':            { e: '🐙', c: 'Pescheria',   p: 9.90 },
+        'cozze':            { e: '🦪', c: 'Pescheria',   p: 4.90 },
+        'vongole':          { e: '🦪', c: 'Pescheria',   p: 5.90 },
+        'bastoncini':       { e: '🐟', c: 'Pescheria',   p: 3.50 },
+        'fritto misto':     { e: '🍤', c: 'Gastronomia', p: 7.90 },
 
-    	    // SNACK DOLCI E MERENDINE
-    	    'nutella': { e: '🍫', c: 'Dolci' }, 
-    	    'crema pan di stelle': { e: '⭐', c: 'Dolci' },
-    	    'merendine': { e: '🥐', c: 'Dolci' }, 
-    	    'kinder brioss': { e: '🍰', c: 'Dolci' },
-    	    'kinder delice': { e: '🍩', c: 'Dolci' }, 
-    	    'bueno': { e: '🍫', c: 'Dolci' },
-    	    'fiesta': { e: '🍰', c: 'Dolci' }, 
-    	    'nastrine': { e: '🥐', c: 'Dolci' },
-    	    'plumcake': { e: '🍞', c: 'Dolci' }, 
-    	    'crostatine': { e: '🥧', c: 'Dolci' },
-    	    'muffin': { e: '🧁', c: 'Dolci' }, 
-    	    'cioccolato': { e: '🍫', c: 'Dolci' },
-    	    'tavoletta': { e: '🍫', c: 'Dolci' }, 
-    	    'fondente': { e: '🍫', c: 'Dolci' },
-    	    'lindt': { e: '🍬', c: 'Dolci' }, 
-    	    'ferrero rocher': { e: '🟡', c: 'Dolci' },
-    	    'caramelle': { e: '🍬', c: 'Dolci' }, 
-    	    'gomme': { e: '🦷', c: 'Dolci' },
+        // MACELLERIA E CARNE
+        'carne':            { e: '🥩', c: 'Macelleria',  p: 9.90 },
+        'manzo':            { e: '🥩', c: 'Macelleria',  p: 12.90 },
+        'vitello':          { e: '🥩', c: 'Macelleria',  p: 14.90 },
+        'maiale':           { e: '🐖', c: 'Macelleria',  p: 8.90 },
+        'pollo':            { e: '🍗', c: 'Macelleria',  p: 5.90 },
+        'tacchino':         { e: '🦃', c: 'Macelleria',  p: 7.90 },
+        'hamburger':        { e: '🍔', c: 'Macelleria',  p: 4.90 },
+        'macinato':         { e: '🥩', c: 'Macelleria',  p: 7.90 },
+        'fettine':          { e: '🥩', c: 'Macelleria',  p: 9.90 },
+        'petto di pollo':   { e: '🍗', c: 'Macelleria',  p: 6.90 },
+        'cosce di pollo':   { e: '🍗', c: 'Macelleria',  p: 5.50 },
+        'salsiccia':        { e: '🌭', c: 'Macelleria',  p: 4.90 },
+        'costine':          { e: '🦴', c: 'Macelleria',  p: 6.90 },
+        'bistecca':         { e: '🥩', c: 'Macelleria',  p: 13.90 },
+        'fiorentina':       { e: '🥩', c: 'Macelleria',  p: 22.00 },
+        'cotoletta':        { e: '🍞', c: 'Macelleria',  p: 8.90 },
+        'nuggets':          { e: '🍗', c: 'Macelleria',  p: 3.90 },
+        'arista':           { e: '🥩', c: 'Macelleria',  p: 8.50 },
+        'spezzatino':       { e: '🍲', c: 'Macelleria',  p: 9.90 },
+        'spiedini':         { e: '🍢', c: 'Macelleria',  p: 5.90 },
+        'coniglio':         { e: '🐇', c: 'Macelleria',  p: 7.90 },
+        'fegato':           { e: '🥩', c: 'Macelleria',  p: 5.90 },
 
-    	    // COLAZIONE E CAFFÈ (Aggiornato)
-    	    'caffè': { e: '☕', c: 'Colazione' },
-    	    'ginseng': { e: '☕', c: 'Colazione' },
-    	    'capsule': { e: '☕', c: 'Colazione' },
-    	    'cialde': { e: '☕', c: 'Colazione' },
-    	    'nespresso': { e: '☕', c: 'Colazione' },
-    	    'lavazza': { e: '☕', c: 'Colazione' },
-    	    'biscotti': { e: '🍪', c: 'Colazione' }, 
-    	    'waffer': { e: '🍪', c: 'Colazione' }, 
-    	    'ringo': { e: '🍪', c: 'Colazione' }, 
-    	    'oreo': { e: '🍪', c: 'Colazione' }, 
-    	    'macine': { e: '🍪', c: 'Colazione' },
-    	    'gocciole': { e: '🍪', c: 'Colazione' }, 
-    	    'pan di stelle': { e: '⭐', c: 'Colazione' },
-    	    'tarallucci': { e: '🍪', c: 'Colazione' }, 
-    	    'abbracci': { e: '🍪', c: 'Colazione' },
-    	    'galletti': { e: '🍪', c: 'Colazione' }, 
-    	    'oro saiwa': { e: ' waffle', c: 'Colazione' },
-    	    'cereali': { e: '🥣', c: 'Colazione' }, 
-    	    'corn flakes': { e: '🥣', c: 'Colazione' },
-    	    'muesli': { e: '🥣', c: 'Colazione' }, 
-    	    'nesquik': { e: '🍫', c: 'Colazione' },
-    	    'fette biscottate': { e: '🍞', c: 'Colazione' }, 
-    	    'marmellata': { e: '🍯', c: 'Colazione' },
+        // SNACK DOLCI E MERENDINE
+        'nutella':          { e: '🍫', c: 'Dolci',       p: 3.49 },
+        'crema pan di stelle': { e: '⭐', c: 'Dolci',    p: 3.29 },
+        'merendine':        { e: '🥐', c: 'Dolci',       p: 2.49 },
+        'kinder brioss':    { e: '🍰', c: 'Dolci',       p: 2.99 },
+        'kinder delice':    { e: '🍩', c: 'Dolci',       p: 2.89 },
+        'bueno':            { e: '🍫', c: 'Dolci',       p: 1.49 },
+        'fiesta':           { e: '🍰', c: 'Dolci',       p: 2.49 },
+        'nastrine':         { e: '🥐', c: 'Dolci',       p: 2.29 },
+        'plumcake':         { e: '🍞', c: 'Dolci',       p: 1.89 },
+        'crostatine':       { e: '🥧', c: 'Dolci',       p: 2.49 },
+        'muffin':           { e: '🧁', c: 'Dolci',       p: 1.99 },
+        'cioccolato':       { e: '🍫', c: 'Dolci',       p: 2.49 },
+        'tavoletta':        { e: '🍫', c: 'Dolci',       p: 2.49 },
+        'fondente':         { e: '🍫', c: 'Dolci',       p: 2.69 },
+        'lindt':            { e: '🍬', c: 'Dolci',       p: 3.99 },
+        'ferrero rocher':   { e: '🟡', c: 'Dolci',       p: 4.99 },
+        'caramelle':        { e: '🍬', c: 'Dolci',       p: 1.49 },
+        'gomme':            { e: '🦷', c: 'Dolci',       p: 0.99 },
 
-    	    // SNACK SALATI E APERITIVO
-    	    'patatine': { e: '🍟', c: 'Snack' }, 
-    	    'fonzies': { e: '🧀', c: 'Snack' },
-    	    'pringles': { e: '🥫', c: 'Snack' }, 
-    	    'san carlo': { e: '🍟', c: 'Snack' },
-    	    'popcorn': { e: '🍿', c: 'Snack' }, 
-    	    'salatini': { e: '🥨', c: 'Snack' },
-    	    'cracker': { e: '🧇', c: 'Snack' }, 
-    	    'taralli': { e: '🥨', c: 'Snack' },
-    	    'grissini': { e: '🥖', c: 'Snack' }, 
-    	    'noccioline': { e: '🥜', c: 'Snack' },
-    	    'pistacchi': { e: '🟢', c: 'Snack' },
+        // COLAZIONE E CAFFÈ
+        'caffè':            { e: '☕', c: 'Colazione',   p: 3.29 },
+        'ginseng':          { e: '☕', c: 'Colazione',   p: 3.49 },
+        'capsule':          { e: '☕', c: 'Colazione',   p: 4.99 },
+        'cialde':           { e: '☕', c: 'Colazione',   p: 4.49 },
+        'nespresso':        { e: '☕', c: 'Colazione',   p: 5.99 },
+        'lavazza':          { e: '☕', c: 'Colazione',   p: 3.99 },
+        'biscotti':         { e: '🍪', c: 'Colazione',   p: 1.99 },
+        'waffer':           { e: '🍪', c: 'Colazione',   p: 1.49 },
+        'ringo':            { e: '🍪', c: 'Colazione',   p: 1.79 },
+        'oreo':             { e: '🍪', c: 'Colazione',   p: 2.29 },
+        'macine':           { e: '🍪', c: 'Colazione',   p: 1.89 },
+        'gocciole':         { e: '🍪', c: 'Colazione',   p: 1.89 },
+        'pan di stelle':    { e: '⭐', c: 'Colazione',   p: 2.19 },
+        'tarallucci':       { e: '🍪', c: 'Colazione',   p: 1.69 },
+        'abbracci':         { e: '🍪', c: 'Colazione',   p: 1.79 },
+        'galletti':         { e: '🍪', c: 'Colazione',   p: 1.59 },
+        'oro saiwa':        { e: '🍪', c: 'Colazione',   p: 1.79 },
+        'cereali':          { e: '🥣', c: 'Colazione',   p: 2.99 },
+        'corn flakes':      { e: '🥣', c: 'Colazione',   p: 2.79 },
+        'muesli':           { e: '🥣', c: 'Colazione',   p: 3.29 },
+        'nesquik':          { e: '🍫', c: 'Colazione',   p: 3.49 },
+        'fette biscottate': { e: '🍞', c: 'Colazione',   p: 1.49 },
+        'marmellata':       { e: '🍯', c: 'Colazione',   p: 2.49 },
 
-    	    // DISPENSA E SCATOLAME
-    	    'sale': { e: '🧂', c: 'Pulizia' },
-    	    'pasta': { e: '🍝', c: 'Dispensa' }, 
-    	    'barilla': { e: '🍝', c: 'Dispensa' },
-    	    'de cecco': { e: '🍝', c: 'Dispensa' }, 
-    	    'rummo': { e: '🍝', c: 'Dispensa' },
-    	    'riso': { e: '🍚', c: 'Dispensa' }, 
-    	    'scotti': { e: '🍚', c: 'Dispensa' },
-    	    'tonno': { e: '🥫', c: 'Dispensa' }, 
-    	    'riso condimenti inalata ': { e: '🥫', c: 'Dispensa' }, 
-    	    'rio mare': { e: '🥫', c: 'Dispensa' },
-    	    'simmenthal': { e: '🥫', c: 'Dispensa' }, 
-    	    'passata': { e: '🥫', c: 'Dispensa' },
-    	    'mutti': { e: '🥫', c: 'Dispensa' }, 
-    	    'pesto': { e: '🌿', c: 'Dispensa' },
-    	    'rana': { e: '🥟', c: 'Fresco' }, 
-    	    'tortellini': { e: '🥟', c: 'Fresco' },
-    	    'gnocchi': { e: '🥔', c: 'Fresco' }, 
-    	    'maionese': { e: '🧴', c: 'Dispensa' },
-    	    'calvé': { e: '🧴', c: 'Dispensa' }, 
-    	    'ketchup': { e: '🍅', c: 'Dispensa' },
-    	    'legumi': { e: '🫘', c: 'Dispensa' }, 
-    	    'ceci': { e: '🫘', c: 'Dispensa' },
-    	    'lenticchie': { e: '🫘', c: 'Dispensa' },
-    	    'fagoli': { e: '🫘', c: 'Dispensa' },
+        // SNACK SALATI E APERITIVO
+        'patatine':         { e: '🍟', c: 'Snack',       p: 1.89 },
+        'fonzies':          { e: '🧀', c: 'Snack',       p: 1.49 },
+        'pringles':         { e: '🥫', c: 'Snack',       p: 2.79 },
+        'san carlo':        { e: '🍟', c: 'Snack',       p: 1.89 },
+        'popcorn':          { e: '🍿', c: 'Snack',       p: 1.29 },
+        'salatini':         { e: '🥨', c: 'Snack',       p: 1.49 },
+        'cracker':          { e: '🧇', c: 'Snack',       p: 1.39 },
+        'taralli':          { e: '🥨', c: 'Snack',       p: 1.99 },
+        'grissini':         { e: '🥖', c: 'Snack',       p: 1.29 },
+        'noccioline':       { e: '🥜', c: 'Snack',       p: 1.79 },
+        'pistacchi':        { e: '🟢', c: 'Snack',       p: 3.99 },
+        'gelato':           { e: '🍨', c: 'Snack',       p: 4.99 },
+        // DISPENSA E SCATOLAME
+        'sale':             { e: '🧂', c: 'Pulizia',     p: 0.49 },
+        'pasta':            { e: '🍝', c: 'Dispensa',    p: 1.29 },
+        'barilla':          { e: '🍝', c: 'Dispensa',    p: 1.39 },
+        'de cecco':         { e: '🍝', c: 'Dispensa',    p: 1.69 },
+        'rummo':            { e: '🍝', c: 'Dispensa',    p: 1.79 },
+        'riso':             { e: '🍚', c: 'Dispensa',    p: 1.49 },
+        'scotti':           { e: '🍚', c: 'Dispensa',    p: 1.59 },
+        'rio mare':         { e: '🥫', c: 'Dispensa',    p: 2.49 },
+        'simmenthal':       { e: '🥫', c: 'Dispensa',    p: 2.99 },
+        'passata':          { e: '🥫', c: 'Dispensa',    p: 0.99 },
+        'mutti':            { e: '🥫', c: 'Dispensa',    p: 1.39 },
+        'pesto':            { e: '🌿', c: 'Dispensa',    p: 2.29 },
+        'rana':             { e: '🥟', c: 'Fresco',      p: 3.49 },
+        'tortellini':       { e: '🥟', c: 'Fresco',      p: 2.99 },
+        'gnocchi':          { e: '🥔', c: 'Fresco',      p: 1.59 },
+        'maionese':         { e: '🧴', c: 'Dispensa',    p: 1.79 },
+        'calvé':            { e: '🧴', c: 'Dispensa',    p: 1.89 },
+        'ketchup':          { e: '🍅', c: 'Dispensa',    p: 1.49 },
+        'legumi':           { e: '🫘', c: 'Dispensa',    p: 0.89 },
+        'ceci':             { e: '🫘', c: 'Dispensa',    p: 0.89 },
+        'lenticchie':       { e: '🫘', c: 'Dispensa',    p: 0.99 },
+        'fagoli':           { e: '🫘', c: 'Dispensa',    p: 0.89 },
 
-    	    // FRESCHI E LATTICINI
-    	    'latte': { e: '🥛', c: 'Latticini' }, 
-    	    'parmalat': { e: '🥛', c: 'Latticini' },
-    	    'granarolo': { e: '🥛', c: 'Latticini' }, 
-    	    'yogurt': { e: '🍦', c: 'Latticini' },
-    	    'muller': { e: '🍦', c: 'Latticini' }, 
-    	    'danone': { e: '🍦', c: 'Latticini' },
-    	    'philadelphia': { e: '🥣', c: 'Latticini' }, 
-    	    'galbani': { e: '🧀', c: 'Latticini' },
-    	    'mozzarella': { e: '⚪', c: 'Latticini' }, 
-    	    'uova': { e: '🥚', c: 'Latticini' },
-    	    'burro': { e: '🧈', c: 'Latticini' }, 
-    	    'certosa': { e: '🧀', c: 'Latticini' },
+        // FRESCHI E LATTICINI
+        'latte':            { e: '🥛', c: 'Latticini',   p: 1.39 },
+        'parmalat':         { e: '🥛', c: 'Latticini',   p: 1.49 },
+        'granarolo':        { e: '🥛', c: 'Latticini',   p: 1.49 },
+        'yogurt':           { e: '🍦', c: 'Latticini',   p: 0.89 },
+        'muller':           { e: '🍦', c: 'Latticini',   p: 0.99 },
+        'danone':           { e: '🍦', c: 'Latticini',   p: 0.99 },
+        'philadelphia':     { e: '🥣', c: 'Latticini',   p: 2.29 },
+        'galbani':          { e: '🧀', c: 'Latticini',   p: 2.99 },
+        'mozzarella':       { e: '⚪', c: 'Latticini',   p: 1.49 },
+        'uova':             { e: '🥚', c: 'Latticini',   p: 2.49 },
+        'burro':            { e: '🧈', c: 'Latticini',   p: 1.89 },
+        'certosa':          { e: '🧀', c: 'Latticini',   p: 1.79 },
 
-    	 // ORTOFRUTTA
-    	    'frutta': { e: '🍐🍎', c: 'Ortofrutta' },
-    	    'fragole': { e: '🍓', c: 'Ortofrutta' },
-    	    'mele': { e: '🍎', c: 'Ortofrutta' },
-    	    'pere': { e: '🍐', c: 'Ortofrutta' }, 
-    	    'banana': { e: '🍌', c: 'Ortofrutta' }, 
-    	    'arance': { e: '🍊', c: 'Ortofrutta' },
-    	    'limoni': { e: '🍋', c: 'Ortofrutta' },
-    	    'pesche': { e: '🍑', c: 'Ortofrutta' },
-    	    'susine': { e: '🫐', c: 'Ortofrutta' },
-    	    'uva': { e: '🍇', c: 'Ortofrutta' },
-    	    'kiwi': { e: '🥝', c: 'Ortofrutta' },
-    	    'melone': { e: '🍈', c: 'Ortofrutta' },
-    	    'anguria': { e: '🍉', c: 'Ortofrutta' },
-    	    'cocomero': { e: '🍉', c: 'Ortofrutta' },
-    	    'frutta secca': { e: '🥜', c: 'Ortofrutta' },
+        // ORTOFRUTTA
+        'frutta':           { e: '🍐🍎', c: 'Ortofrutta', p: 2.99 },
+        'fragole':          { e: '🍓', c: 'Ortofrutta',  p: 2.99 },
+        'mele':             { e: '🍎', c: 'Ortofrutta',  p: 2.49 },
+        'pere':             { e: '🍐', c: 'Ortofrutta',  p: 2.29 },
+        'banana':           { e: '🍌', c: 'Ortofrutta',  p: 1.79 },
+        'arance':           { e: '🍊', c: 'Ortofrutta',  p: 1.99 },
+        'limoni':           { e: '🍋', c: 'Ortofrutta',  p: 1.49 },
+        'pesche':           { e: '🍑', c: 'Ortofrutta',  p: 2.49 },
+        'susine':           { e: '🫐', c: 'Ortofrutta',  p: 2.49 },
+        'uva':              { e: '🍇', c: 'Ortofrutta',  p: 2.99 },
+        'kiwi':             { e: '🥝', c: 'Ortofrutta',  p: 2.29 },
+        'melone':           { e: '🍈', c: 'Ortofrutta',  p: 2.49 },
+        'anguria':          { e: '🍉', c: 'Ortofrutta',  p: 3.49 },
+        'cocomero':         { e: '🍉', c: 'Ortofrutta',  p: 3.49 },
+        'frutta secca':     { e: '🥜', c: 'Ortofrutta',  p: 3.99 },
+        'pomodoro':         { e: '🍅', c: 'Ortofrutta',  p: 1.99 },
+        'pomodori':         { e: '🍅', c: 'Ortofrutta',  p: 1.99 },
+        'insalata':         { e: '🥬', c: 'Ortofrutta',  p: 1.29 },
+        'finocchi':         { e: '🥬', c: 'Ortofrutta',  p: 1.49 },
+        'patate':           { e: '🥔', c: 'Ortofrutta',  p: 1.49 },
+        'carote':           { e: '🥕', c: 'Ortofrutta',  p: 1.29 },
+        'zucchine':         { e: '🥒', c: 'Ortofrutta',  p: 1.79 },
+        'melanzane':        { e: '🍆', c: 'Ortofrutta',  p: 1.99 },
+        'peperoni':         { e: '🫑', c: 'Ortofrutta',  p: 2.49 },
+        'cipolla':          { e: '🧅', c: 'Ortofrutta',  p: 0.99 },
+        'aglio':            { e: '🧄', c: 'Ortofrutta',  p: 0.89 },
+        'peperoncino':      { e: '🌶️', c: 'Ortofrutta', p: 0.79 },
+        'funghi':           { e: '🍄', c: 'Ortofrutta',  p: 2.49 },
+        'zucca':            { e: '🎃', c: 'Ortofrutta',  p: 1.99 },
 
-    	    'pomodoro': { e: '🍅', c: 'Ortofrutta' }, 
-    	    'pomodori': { e: '🍅', c: 'Ortofrutta' }, 
-    	    'insalata': { e: '🥬', c: 'Ortofrutta' },
-    	    'finocchi': { e: '🥬', c: 'Ortofrutta' },
-    	    'patate': { e: '🥔', c: 'Ortofrutta' }, 
-    	    'carote': { e: '🥕', c: 'Ortofrutta' },
-    	    'zucchine': { e: '🥒', c: 'Ortofrutta' }, 
-    	    'melanzane': { e: '🍆', c: 'Ortofrutta' },
-    	    'peperoni': { e: '🫑', c: 'Ortofrutta' },
-    	    'cipolla': { e: '🧅', c: 'Ortofrutta' },
-    	    'aglio': { e: '🧄', c: 'Ortofrutta' },
-    	    'peperoncino': { e: '🌶️', c: 'Ortofrutta' },
-    	    'funghi': { e: '🍄', c: 'Ortofrutta' },
-    	    'zucca': { e: '🎃', c: 'Ortofrutta' },
+        // IGIENE E CASA
+        'carta igienica':   { e: '🧻', c: 'Casa',        p: 3.99 },
+        'foxy':             { e: '🧻', c: 'Casa',        p: 3.99 },
+        'regina':           { e: '🧻', c: 'Casa',        p: 3.79 },
+        'scottex':          { e: '🧻', c: 'Casa',        p: 3.49 },
+        'carta forno':      { e: '📜', c: 'Casa',        p: 1.99 },
+        'alluminio':        { e: '🪙', c: 'Casa',        p: 1.99 },
+        'pellicola':        { e: '🌀', c: 'Casa',        p: 1.79 },
+        'sacchetti gelo':   { e: '❄️', c: 'Casa',        p: 1.49 },
+        'sacchi immondizia':{ e: '🗑️', c: 'Casa',        p: 2.29 },
+        'tovaglioli':       { e: '🧻', c: 'Casa',        p: 1.49 },
 
-    	 // IGIENE E CASA
-    	    'carta igienica': { e: '🧻', c: 'Casa' }, 
-    	    'foxy': { e: '🧻', c: 'Casa' },
-    	    'regina': { e: '🧻', c: 'Casa' }, 
-    	    'scottex': { e: '🧻', c: 'Casa' },
-    	    'carta forno': { e: '📜', c: 'Casa' },
-    	    'alluminio': { e: '🪙', c: 'Casa' },
-    	    'pellicola': { e: '🌀', c: 'Casa' },
-    	    'sacchetti gelo': { e: '❄️', c: 'Casa' },
-    	    'sacchi immondizia': { e: '🗑️', c: 'Casa' },
-    	    'tovaglioli': { e: '🧻', c: 'Casa' },
+        // PULIZIA E LAVANDERIA
+        'detersivo lavatrice':    { e: '🧴', c: 'Pulizia', p: 6.90 },
+        'dash':                   { e: '🧼', c: 'Pulizia', p: 6.49 },
+        'dixan':                  { e: '🧼', c: 'Pulizia', p: 5.99 },
+        'ammorbidente':           { e: '🌸', c: 'Pulizia', p: 3.49 },
+        'candeggina':             { e: '🧪', c: 'Pulizia', p: 1.29 },
+        'candeggina delicata':    { e: '🧪', c: 'Pulizia', p: 1.79 },
+        'smacchiatore':           { e: '🧪', c: 'Pulizia', p: 3.99 },
+        'detersivo piatti':       { e: '🧼', c: 'Pulizia', p: 1.99 },
+        'detersivo lavastoviglie':{ e: '🍽️', c: 'Pulizia', p: 4.99 },
+        'finish':                 { e: '🍽️', c: 'Pulizia', p: 5.49 },
+        'brillantante':           { e: '✨', c: 'Pulizia', p: 3.49 },
+        'sale lavastoviglie':     { e: '🧂', c: 'Pulizia', p: 1.49 },
+        'sgrassatore':            { e: '✨', c: 'Pulizia', p: 2.99 },
+        'chantecair':             { e: '✨', c: 'Pulizia', p: 3.49 },
+        'detersivo pavimenti':    { e: '🧹', c: 'Pulizia', p: 2.49 },
+        'alcool':                 { e: '🧴', c: 'Pulizia', p: 1.49 },
+        'anticalcare':            { e: '✨', c: 'Pulizia', p: 2.99 },
+        'wcrete':                 { e: '🚽', c: 'Pulizia', p: 1.99 },
+        'spugne':                 { e: '🧽', c: 'Pulizia', p: 1.49 },
+        'panni':                  { e: '🧹', c: 'Pulizia', p: 2.29 },
 
-    	    // PULIZIA E LAVANDERIA
-    	    'detersivo lavatrice': { e: '🧴', c: 'Pulizia' }, 
-    	    'dash': { e: '🧼', c: 'Pulizia' }, 
-    	    'dixan': { e: '🧼', c: 'Pulizia' }, 
-    	    'ammorbidente': { e: '🌸', c: 'Pulizia' },
-    	    'candeggina': { e: '🧪', c: 'Pulizia' }, 
-    	    'candeggina delicata': { e: '🧪', c: 'Pulizia' }, 
-    	    'smacchiatore': { e: '🧪', c: 'Pulizia' },
-    	    'detersivo piatti': { e: '🧼', c: 'Pulizia' },
-    	    'detersivo lavastoviglie': { e: '🍽️', c: 'Pulizia' }, 
-    	    'finish': { e: '🍽️', c: 'Pulizia' }, 
-    	    'brillantante': { e: '✨', c: 'Pulizia' }, 
-    	    'sale lavastoviglie': { e: '🧂', c: 'Pulizia' },
-    	    'sgrassatore': { e: '✨', c: 'Pulizia' }, 
-    	    'chantecair': { e: '✨', c: 'Pulizia' }, 
-    	    'detersivo pavimenti': { e: '🧹', c: 'Pulizia' },
-    	    'alcool': { e: '🧴', c: 'Pulizia' },
-    	    'anticalcare': { e: '✨', c: 'Pulizia' },
-    	    'wcrete': { e: '🚽', c: 'Pulizia' },
-    	    'spugne': { e: '🧽', c: 'Pulizia' },
-    	    'panni': { e: '🧹', c: 'Pulizia' },
-
-    	    // IGIENE PERSONALE
-    	    'fazzoletti': { e: '🤧', c: 'Igiene' }, 
-    	    'shampoo': { e: '🧴', c: 'Igiene' }, 
-    	    'bagnoschiuma': { e: '🧼', c: 'Igiene' }, 
-    	    'balsamo': { e: '🧴', c: 'Igiene' },
-    	    'sapone mani': { e: '🧼', c: 'Igiene' },
-    	    'sapone liquido': { e: '🧼', c: 'Igiene' },
-    	    'spazzolino': { e: '🪥', c: 'Igiene' }, 
-    	    'dentifricio': { e: '🪥', c: 'Igiene' },
-    	    'colgate': { e: '🪥', c: 'Igiene' },
-    	    'colluttorio': { e: '🧪', c: 'Igiene' },
-    	    'filo interdentale': { e: '🧵', c: 'Igiene' },
-    	    'deodorante': { e: '💨', c: 'Igiene' },
-    	    'dischetti cotone': { e: '⚪', c: 'Igiene' },
-    	    'cotton fioc': { e: '👂', c: 'Igiene' },
-    	    'assorbenti': { e: '🩸', c: 'Igiene' },
-    	    'schiuma da barba': { e: '🪒', c: 'Igiene' },
-    	    'rasoio': { e: '🪒', c: 'Igiene' },
-    	    'lamette': { e: '🪒', c: 'Igiene' },
-    	    'salviettine': { e: '🧻', c: 'Igiene' }
-    	};
+        // IGIENE PERSONALE
+        'fazzoletti':       { e: '🤧', c: 'Igiene',      p: 1.49 },
+        'shampoo':          { e: '🧴', c: 'Igiene',      p: 3.99 },
+        'bagnoschiuma':     { e: '🧼', c: 'Igiene',      p: 2.99 },
+        'balsamo':          { e: '🧴', c: 'Igiene',      p: 3.99 },
+        'sapone mani':      { e: '🧼', c: 'Igiene',      p: 1.99 },
+        'sapone liquido':   { e: '🧼', c: 'Igiene',      p: 2.29 },
+        'spazzolino':       { e: '🪥', c: 'Igiene',      p: 2.49 },
+        'dentifricio':      { e: '🪥', c: 'Igiene',      p: 2.99 },
+        'colgate':          { e: '🪥', c: 'Igiene',      p: 3.49 },
+        'colluttorio':      { e: '🧪', c: 'Igiene',      p: 3.49 },
+        'filo interdentale':{ e: '🧵', c: 'Igiene',      p: 2.49 },
+        'deodorante':       { e: '💨', c: 'Igiene',      p: 3.49 },
+        'dischetti cotone': { e: '⚪', c: 'Igiene',      p: 1.49 },
+        'cotton fioc':      { e: '👂', c: 'Igiene',      p: 1.29 },
+        'assorbenti':       { e: '🩸', c: 'Igiene',      p: 2.99 },
+        'schiuma da barba': { e: '🪒', c: 'Igiene',      p: 2.99 },
+        'rasoio':           { e: '🪒', c: 'Igiene',      p: 3.49 },
+        'lamette':          { e: '🪒', c: 'Igiene',      p: 4.99 },
+        'salviettine':      { e: '🧻', c: 'Igiene',      p: 1.99 }
+    };
     
         let items = JSON.parse(localStorage.getItem('smart_list_v4')) || [];
 
@@ -592,50 +587,43 @@
             localStorage.setItem('smart_list_v4', JSON.stringify(items));
         }
 
-        // --- GESTIONE AUTOCOMPLETE ---
-// --- GESTIONE AUTOCOMPLETE (AGGIORNATA) ---
-function showSuggestions() {
-    const val = document.getElementById('item-input').value.toLowerCase().trim();
-    const list = document.getElementById('autocomplete-list');
-    list.innerHTML = '';
-    if (!val) return;
+        function showSuggestions() {
+            const val = document.getElementById('item-input').value.toLowerCase().trim();
+            const list = document.getElementById('autocomplete-list');
+            list.innerHTML = '';
+            if (!val) return;
 
-    // 1. Estrai categorie uniche dal catalogo
-    const categories = [...new Set(Object.values(catalog).map(item => item.c))];
+            const categories = [...new Set(Object.values(catalog).map(item => item.c))];
+            const categoryMatch = categories.find(c => c.toLowerCase() === val);
 
-    // 2. Controlla se l'input corrisponde a una categoria
-    const categoryMatch = categories.find(c => c.toLowerCase() === val);
-
-    if (categoryMatch) {
-        // Se l'utente ha scritto esattamente una categoria, suggerisci i prodotti di quella categoria
-        Object.keys(catalog).forEach(k => {
-            if (catalog[k].c === categoryMatch) {
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.style.borderLeft = "4px solid var(--accent)"; // Evidenzia che è un suggerimento di gruppo
-                div.innerHTML = `<span>📂 ${catalog[k].e} ${k}</span><small>${catalog[k].c}</small>`;
-                div.onclick = () => {
-                    addItem(k);
-                    list.innerHTML = '';
-                };
-                list.appendChild(div);
+            if (categoryMatch) {
+                Object.keys(catalog).forEach(k => {
+                    if (catalog[k].c === categoryMatch) {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+                        div.style.borderLeft = "4px solid var(--accent)";
+                        div.innerHTML = `<span>📂 ${catalog[k].e} ${k}</span><small>${catalog[k].c} · ~€${catalog[k].p.toFixed(2)}</small>`;
+                        div.onclick = () => {
+                            addItem(k);
+                            list.innerHTML = '';
+                        };
+                        list.appendChild(div);
+                    }
+                });
+            } else {
+                const filtered = Object.keys(catalog).filter(k => k.includes(val));
+                filtered.forEach(k => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `<span>${catalog[k].e} ${k}</span><small>${catalog[k].c} · ~€${catalog[k].p.toFixed(2)}</small>`;
+                    div.onclick = () => {
+                        addItem(k);
+                        list.innerHTML = '';
+                    };
+                    list.appendChild(div);
+                });
             }
-        });
-    } else {
-        // 3. Altrimenti procedi con la ricerca classica per nome prodotto
-        const filtered = Object.keys(catalog).filter(k => k.includes(val));
-        filtered.forEach(k => {
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.innerHTML = `<span>${catalog[k].e} ${k}</span><small>${catalog[k].c}</small>`;
-            div.onclick = () => {
-                addItem(k);
-                list.innerHTML = '';
-            };
-            list.appendChild(div);
-        });
-    }
-}
+        }
 
         function handleKey(e) {
             if (e.key === 'Enter') {
@@ -649,7 +637,7 @@ function showSuggestions() {
             const val = (text || input.value).toLowerCase().trim();
             if (!val) return;
 
-            let info = { e: '📦', c: 'Altro' };
+            let info = { e: '📦', c: 'Altro', p: 0 };
             for (let key in catalog) { if (val.includes(key)) { info = catalog[key]; break; } }
 
             items.push({
@@ -657,13 +645,13 @@ function showSuggestions() {
                 name: val.charAt(0).toUpperCase() + val.slice(1),
                 emoji: info.e,
                 category: info.c,
-                qty: 1, price: 0, checked: false, customImg: null
+                qty: 1, price: info.p || 0, checked: false, customImg: null
             });
             input.value = '';
             render();
         }
 
-        // --- FUNZIONI CORE ---
+        // --- FUNZIONI CORE (invariate) ---
         function toggleCheck(id) {
             const item = items.find(it => it.id === id);
             item.checked = !item.checked;
