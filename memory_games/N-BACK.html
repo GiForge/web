@@ -6,12 +6,74 @@
     <title>Memory Number Trainer</title>
     <style>
         :root { --bg: #0f0f1a; --primary: #4ecca3; --text: #eeeeee; --panel: #16213e; }
-        body { margin: 0; height: 100vh; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; font-family: sans-serif; overflow: hidden; touch-action: manipulation; }
-        #stats-panel { display: flex; justify-content: space-around; width: 100%; padding: 2vh 0; background: var(--panel); border-bottom: 2px solid var(--primary); font-size: 1.1rem; }
-        #display-area { flex-grow: 1; display: flex; align-items: center; justify-content: center; font-size: clamp(3rem, 15vw, 8rem); font-weight: bold; color: var(--primary); }
-        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2vw; width: 90vmin; max-width: 400px; margin-bottom: 3vh; }
-        button { padding: 5vmin; font-size: clamp(1.2rem, 5vw, 2rem); background: #2c3e50; border: none; color: white; border-radius: 10px; cursor: pointer; }
-        #start-btn { width: 90vmin; max-width: 400px; padding: 20px; font-size: 1.5rem; background: var(--primary); color: #000; font-weight: bold; border-radius: 10px; margin-bottom: 20px; cursor: pointer; }
+        
+        body { 
+            margin: 0; 
+            height: 100vh; 
+            background: var(--bg); 
+            color: var(--text); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            font-family: sans-serif; 
+            overflow: hidden; /* Impedisce lo scroll */
+            touch-action: manipulation;
+        }
+
+        #stats-panel { 
+            display: flex; 
+            justify-content: space-around; 
+            width: 100%; 
+            padding: 15px 0; 
+            background: var(--panel); 
+            border-bottom: 2px solid var(--primary); 
+            font-size: 1.1rem; 
+            flex-shrink: 0;
+        }
+
+        #display-area { 
+            flex-grow: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: clamp(3rem, 15vw, 8rem); 
+            font-weight: bold; 
+            color: var(--primary); 
+            text-align: center;
+        }
+
+        .controls { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 10px; 
+            width: 90vw; 
+            max-width: 400px; 
+            margin-bottom: 3vh; 
+            flex-shrink: 0;
+        }
+
+        button { 
+            aspect-ratio: 1.5 / 1;
+            font-size: 1.5rem; 
+            background: #2c3e50; 
+            border: none; 
+            color: white; 
+            border-radius: 10px; 
+            cursor: pointer; 
+        }
+
+        #start-btn { 
+            width: 90vw; 
+            max-width: 400px; 
+            padding: 20px; 
+            font-size: 1.5rem; 
+            background: var(--primary); 
+            color: #000; 
+            font-weight: bold; 
+            border-radius: 10px; 
+            margin-bottom: 3vh; 
+            cursor: pointer; 
+        }
     </style>
 </head>
 <body>
@@ -22,14 +84,15 @@
     </div>
 
     <div id="display-area">PRONTO?</div>
+    
     <button id="start-btn" onclick="activateAudio()">PREMI PER GIOCARE</button>
+    
     <div class="controls" id="keyboard" style="display:none;"></div>
 
     <script>
         let audioCtx;
         const notes = [261.6, 293.7, 329.6, 392.0, 440.0, 493.9, 523.3, 587.3, 659.3];
         
-        // Funzione per generare il tono
         function playSound(n) {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
@@ -43,7 +106,6 @@
             osc.stop(audioCtx.currentTime + 0.5);
         }
 
-        // Attivazione obbligatoria per browser mobile
         function activateAudio() {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             document.getElementById('start-btn').style.display = 'none';
@@ -59,11 +121,12 @@
         bestEl.innerText = highScore;
 
         function initGame() {
+            const keyboard = document.getElementById('keyboard');
             for(let i=1; i<=9; i++) {
                 const btn = document.createElement('button');
                 btn.innerText = i;
                 btn.onclick = () => handleInput(i);
-                document.getElementById('keyboard').appendChild(btn);
+                keyboard.appendChild(btn);
             }
             startLevel();
         }
@@ -92,7 +155,11 @@
                 if(playerInput.join('') === sequence.join('')) {
                     score += level; level++;
                     scoreEl.innerText = score;
-                    if(score > highScore) { highScore = score; bestEl.innerText = highScore; localStorage.setItem('numMemoryBest', highScore); }
+                    if(score > highScore) { 
+                        highScore = score; 
+                        bestEl.innerText = highScore; 
+                        localStorage.setItem('numMemoryBest', highScore); 
+                    }
                     display.innerText = "BRAVO!";
                 } else {
                     display.innerText = "ERRORE!";

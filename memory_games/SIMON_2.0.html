@@ -6,9 +6,9 @@
     <title>Memory Grid - Statistiche</title>
     <style>
         :root { --bg: #1a1a2e; --cell: #0f3460; --highlight: #e94560; --wrong: #f39c12; --text: #ffffff; }
-        body { margin: 0; height: 100vh; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; overflow: hidden; }
+        body { margin: 0; height: 100vh; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; overflow: hidden; touch-action: manipulation; }
         #stats-bar { display: flex; gap: 20px; margin-bottom: 10px; font-size: 1rem; color: #aaa; }
-        #info { margin-bottom: 10px; font-size: 1.4rem; font-weight: bold; }
+        #info { margin-bottom: 10px; font-size: 1.4rem; font-weight: bold; height: 2rem; }
         #grid { display: grid; gap: 8px; width: 90vmin; height: 90vmin; max-width: 500px; max-height: 500px; }
         .cell { background: var(--cell); border-radius: 4px; cursor: pointer; transition: background 0.1s; }
         .cell.active { background: var(--highlight); }
@@ -100,10 +100,17 @@
                 el.classList.add('active');
                 setTimeout(() => el.classList.remove('active'), 200);
                 clickedCount++;
+                
                 if(clickedCount === sequence.length) {
+                    canClick = false;
+                    info.innerText = "Ottimo!";
                     level++;
                     clickedCount = 0;
-                    startLevel();
+                    
+                    // Pausa prima del livello successivo
+                    setTimeout(() => {
+                        startLevel();
+                    }, 1000);
                 }
             } else {
                 el.classList.add('wrong');
