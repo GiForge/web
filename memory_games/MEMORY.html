@@ -3,121 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Memory Fullscreen</title>
+    <title>Memory Grid Pro</title>
     <style>
-        :root {
-            --bg-color: #1a1a2e;
-            --card-back: #16213e;
-            --card-front: #0f3460;
-            --accent: #e94560;
-            --text: #ffffff;
-        }
-        body { 
-            font-family: sans-serif; 
-            background: var(--bg-color); 
-            color: var(--text);
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow: hidden; /* Blocca lo scroll */
-            padding: 10px;
-            box-sizing: border-box;
-        }
-        .header { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+        :root { --bg: #0f172a; --cell: #1e293b; --highlight: #22c55e; --wrong: #ef4444; --text: #f8fafc; }
         
-        #game-grid {
-            display: grid;
-            gap: 8px;
-            width: 100%;
-            height: calc(100vh - 100px); /* Occupa tutto lo spazio rimanente */
-            max-width: 600px;
-            aspect-ratio: 1 / 1; /* Mantiene proporzioni */
-            margin: auto;
-        }
-        .card {
-            background: var(--card-back);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: clamp(1rem, 5vw, 3rem); /* Dimensione font adattiva */
-            cursor: pointer;
-            border: 2px solid #0f3460;
-        }
-        .card.flipped { background: var(--card-front); }
-        .card.matched { background: var(--accent); }
-    </style>
-</head>
-<body>
-
-    <div class="header">
-        <select id="pairCount">
-            <option value="4">4 coppie</option>
-            <option value="8" selected>8 coppie</option>
-            <option value="12">12 coppie</option>
-        </select>
-        <div id="stats">Tentativi: 0</div>
-    </div>
-    
-    <div id="game-grid"></div>
-
-    <script>
-        const grid = document.getElementById('game-grid');
-        const stats = document.getElementById('stats');
-        const pairSelector = document.getElementById('pairCount');
-        const emojis = ['🍎', '🍌', '🍇', '🍓', '🍒', '🍍', '🥝', '🍉', '🥑', '🍋', '🍐', '🥥'];
-        let flippedCards = [], matchedPairs = 0, attempts = 0, lockBoard = false;
-
-        function initGame() {
-            const numPairs = parseInt(pairSelector.value);
-            const cards = [...emojis.slice(0, numPairs), ...emojis.slice(0, numPairs)].sort(() => Math.random() - 0.5);
-            
-            grid.innerHTML = '';
-            // Calcolo dinamico colonne: radice quadrata per mantenere il quadrato
-            const cols = Math.ceil(Math.sqrt(numPairs * 2));
-            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-            
-            stats.innerText = "Tentativi: 0";
-            matchedPairs = 0; attempts = 0; flippedCards = []; lockBoard = false;
-
-            cards.forEach(emoji => {
-                const card = document.createElement('div');
-                card.classList.add('card');
-                card.dataset.emoji = emoji;
-                card.onclick = flipCard;
-                grid.appendChild(card);
-            });
+        body { 
+            margin: 0; height: 100vh; background: var(--bg); color: var(--text); 
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between; 
+            font-family: system-ui, sans-serif; overflow: hidden; touch-action: manipulation;
+            padding: 2vh 0; box-sizing: border-box;
         }
 
-        function flipCard() {
-            if (lockBoard || this.classList.contains('flipped') || this.classList.contains('matched')) return;
-            this.classList.add('flipped');
-            this.innerText = this.dataset.emoji;
-            flippedCards.push(this);
-            if (flippedCards.length === 2) {
-                attempts++;
-                stats.innerText = "Tentativi: " + attempts;
-                lockBoard = true;
-                setTimeout(checkMatch, 600);
-            }
+        #header { text-align: center; width: 100%; }
+        #stats { display: flex; justify-content: space-around; width: 100%; font-size: 1.2rem; font-weight: bold; margin-top: 10px; }
+        
+        #grid { 
+            display: grid; gap: 10px; width: 90vmin; height: 90vmin; 
+            max-width: 450px; max-height: 450px;
         }
-
-        function checkMatch() {
-            const [c1, c2] = flippedCards;
-            if (c1.dataset.emoji === c2.dataset.emoji) {
-                c1.classList.add('matched'); c2.classList.add('matched');
-                matchedPairs++;
-            } else {
-                c1.classList.remove('flipped'); c2.classList.remove('flipped');
-                c1.innerText = ''; c2.innerText = '';
-            }
-            flippedCards = []; lockBoard = false;
-        }
-
-        pairSelector.onchange = initGame;
-        initGame();
-    </script>
-</body>
-</html>
+        
+        .cell { background: var(--cell); border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .cell.active { background: var(--highlight); transform: scale(0.95); }
+        .cell.wrong { background: var(--wrong); }
+        
+        #info { font-size: 1.5rem;
