@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Memory Number Trainer</title>
+    <style>
+        :root { --bg: #0f0f1a; --primary: #4ecca3; --text: #eeeeee; --panel: #16213e; }
+        body { margin: 0; height: 100vh; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; font-family: sans-serif; overflow: hidden; touch-action: manipulation; }
+        #stats-panel { display: flex; justify-content: space-around; width: 100%; padding: 2vh 0; background: var(--panel); border-bottom: 2px solid var(--primary); font-size: 1.1rem; }
+        #display-area { flex-grow: 1; display: flex; align-items: center; justify-content: center; font-size: clamp(3rem, 15vw, 8rem); font-weight: bold; color: var(--primary); }
+        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2vw; width: 90vmin; max-width: 400px; margin-bottom: 3vh; }
+        button { padding: 5vmin; font-size: clamp(1.2rem, 5vw, 2rem); background: #2c3e50; border: none; color: white; border-radius: 10px; cursor: pointer; }
+        #start-btn { width: 90vmin; max-width: 400px; padding: 20px; font-size: 1.5rem; background: var(--primary); color: #000; font-weight: bold; border-radius: 10px; margin-bottom: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="stats-panel">
+        <div>Punteggio: <span id="current-score">0</span></div>
+        <div>Record: <span id="high-score">0</span></div>
+    </div>
+
+    <div id="display-area">PRONTO?</div>
+    <button id="start-btn" onclick="activateAudio()">PREMI PER GIOCARE</button>
+    <div class="controls" id="keyboard" style="display:none;"></div>
+
+    <script>
+        let audioCtx;
+        const notes = [261.6, 293.7, 329.6, 392.0, 440.0, 493.9, 523.3, 587.3, 659.3];
+        
+        // Funzione per generare il tono
+        function playSound(n) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(notes[n-1], audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        // Attivazione obbligatoria per browser mobile
+        function activateAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('keyboard').style.display = 'grid';
+            initGame();
+        }
+
+        const display = document.getElementById('display-area');
+        const scoreEl = document.getElementById('current-score');
+        const bestEl = document.getElementById('high-score');
+        let sequence = [], playerInput = [], level = 3, score = 0;
+        let highScore = localStorage.getItem('numMemoryBest') || 0;
+        bestEl.innerText = highScore;
+
+        function initGame() {
+            for(let i=1; i<=9; i++) {
+                const btn = document.createElement('button');
+                btn.innerText = i;
+                btn.onclick = () => handleInput(i);
+                document.getElementById('keyboard').appendChild(btn);
+            }
+            startLevel();
+        }
+
+        async function startLevel() {
+            sequence = []; playerInput = [];
+            for(let i=0; i<level; i++) sequence.push(Math.floor(Math.random() * 9) + 1);
+            
+            display.innerText = "Guarda...";
+            await new Promise(r => setTimeout(r, 1000));
+            
+            for(let num of sequence) {
+                display.innerText = num;
+                playSound(num);
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            display.innerText = "?";
+        }
+
+        function handleInput(num) {
+            playSound(num);
+            playerInput.push(num);
+            display.innerText = num;
+            
+            if(playerInput.length === sequence.length) {
+                if(playerInput.join('') === sequence.join('')) {
+                    score += level; level++;
+                    scoreEl.innerText = score;
+                    if(score > highScore) { highScore = score; bestEl.innerText = highScore; localStorage.setItem('numMemoryBest', highScore); }
+                    display.innerText = "BRAVO!";
+                } else {
+                    display.innerText = "ERRORE!";
+                    score = 0; level = 3; scoreEl.innerText = score;
+                }
+                setTimeout(startLevel, 1200);
+            }
+        }
+    </script>
+</body>
+</html>

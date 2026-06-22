@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simon Game con Suoni</title>
+    <style>
+        :root {
+            --bg-color: #2c3e50;
+            --text-color: #ecf0f1;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        #game-board {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 300px;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .pad {
+            border-radius: 15px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.1s;
+        }
+        .pad.active { opacity: 1; transform: scale(0.95); }
+        
+        #green { background-color: #27ae60; }
+        #red { background-color: #c0392b; }
+        #yellow { background-color: #f1c40f; }
+        #blue { background-color: #2980b9; }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            background: #34495e;
+            color: white;
+            border: 2px solid white;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Simon Game</h1>
+    <h3 id="status">Premi Start per iniziare</h3>
+    
+    <div id="game-board">
+        <div class="pad" id="green" onclick="padClicked(0)"></div>
+        <div class="pad" id="red" onclick="padClicked(1)"></div>
+        <div class="pad" id="yellow" onclick="padClicked(2)"></div>
+        <div class="pad" id="blue" onclick="padClicked(3)"></div>
+    </div>
+
+    <button id="start-btn" onclick="startGame()">START</button>
+
+    <script>
+        // Web Audio API Setup
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const frequencies = [261.6, 329.6, 392.0, 523.3]; // C4, E4, G4, C5
+
+        function playTone(index) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(frequencies[index], audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        let sequence = [];
+        let playerSequence = [];
+        let level = 0;
+        let isProcessing = false;
+
+        const statusText = document.getElementById('status');
+        const pads = [
+            document.getElementById('green'),
+            document.getElementById('red'),
+            document.getElementById('yellow'),
+            document.getElementById('blue')
+        ];
+
+        function startGame() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            sequence = [];
+            level = 0;
+            nextRound();
+        }
+
+        function nextRound() {
+            playerSequence = [];
+            level++;
+            statusText.innerText = "Livello: " + level;
+            sequence.push(Math.floor(Math.random() * 4));
+            playSequence();
+        }
+
+        async function playSequence() {
+            isProcessing = true;
+            for (let i = 0; i < sequence.length; i++) {
+                await new Promise(r => setTimeout(r, 800));
+                flashPad(sequence[i]);
+            }
+            isProcessing = false;
+        }
+
+        function flashPad(index) {
+            playTone(index);
+            pads[index].classList.add('active');
+            setTimeout(() => pads[index].classList.remove('active'), 300);
+        }
+
+        function padClicked(index) {
+            if (isProcessing) return;
+            
+            flashPad(index);
+            playerSequence.push(index);
+
+            if (playerSequence[playerSequence.length - 1] !== sequence[playerSequence.length - 1]) {
+                statusText.innerText = "Game Over! Punteggio: " + (level - 1);
+                return;
+            }
+
+            if (playerSequence.length === sequence.length) {
+                setTimeout(nextRound, 1000);
+            }
+        }
+    </script>
+</body>
+</html>
