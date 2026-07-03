@@ -181,6 +181,19 @@ require(['vs/editor/editor.main'],()=>{
         automaticLayout:true,
         fontSize
     });
+
+    /* --- Aggiunge "Select All" al menu contestuale --- */
+    editor.addAction({
+        id: 'context-select-all',
+        label: 'Select All',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA],
+        contextMenuGroupId: '3_cutcopypaste',
+        contextMenuOrder: 3.5,
+        run: function(ed) {
+            ed.setSelection(ed.getModel().getFullModelRange());
+        }
+    });
+
     newFile();
 
     searchInput.addEventListener('keydown',e=>{
