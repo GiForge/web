@@ -3,27 +3,904 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Memory Grid Pro</title>
+    <title>Memory Match</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0f172a; --cell: #1e293b; --highlight: #22c55e; --wrong: #ef4444; --text: #f8fafc; }
-        
-        body { 
-            margin: 0; height: 100vh; background: var(--bg); color: var(--text); 
-            display: flex; flex-direction: column; align-items: center; justify-content: space-between; 
-            font-family: system-ui, sans-serif; overflow: hidden; touch-action: manipulation;
-            padding: 2vh 0; box-sizing: border-box;
+        :root {
+            --bg: #0a0e1a;
+            --surface: #111827;
+            --card-bg: #1a2236;
+            --card-border: rgba(255,255,255,0.06);
+            --card-pattern: rgba(255,255,255,0.03);
+            --text: #e8ecf4;
+            --muted: #5a6a85;
+            --accent: #22c55e;
+            --accent-glow: rgba(34,197,94,0.45);
+            --wrong: #ef4444;
+            --wrong-glow: rgba(239,68,68,0.35);
+            --gold: #facc15;
         }
 
-        #header { text-align: center; width: 100%; }
-        #stats { display: flex; justify-content: space-around; width: 100%; font-size: 1.2rem; font-weight: bold; margin-top: 10px; }
-        
-        #grid { 
-            display: grid; gap: 10px; width: 90vmin; height: 90vmin; 
-            max-width: 450px; max-height: 450px;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh; height: 100dvh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            overflow: hidden;
+            touch-action: manipulation;
+            position: relative;
         }
-        
-        .cell { background: var(--cell); border-radius: 8px; cursor: pointer; transition: 0.2s; }
-        .cell.active { background: var(--highlight); transform: scale(0.95); }
-        .cell.wrong { background: var(--wrong); }
-        
-        #info { font-size: 1.5rem;
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 50% 35% at 50% 0%, rgba(34,197,94,0.05) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 40% at 85% 100%, rgba(6,182,212,0.04) 0%, transparent 60%),
+                radial-gradient(ellipse 35% 50% at 5% 80%, rgba(168,85,247,0.03) 0%, transparent 50%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .game-wrapper {
+            position: relative; z-index: 1;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 2vh;
+            width: 100%; max-width: 520px;
+            padding: 1.5vh 4vw;
+        }
+
+        /* Header */
+        #header { text-align: center; width: 100%; }
+
+        #header h1 {
+            font-size: clamp(1.3rem, 4vw, 1.7rem);
+            font-weight: 700; letter-spacing: -0.03em;
+            background: linear-gradient(135deg, var(--text) 40%, var(--accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #stats {
+            display: flex; justify-content: center; gap: 5vw;
+            margin-top: 1vh;
+            font-size: clamp(0.78rem, 2.2vw, 0.9rem); font-weight: 500;
+        }
+
+        .stat {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 1px;
+        }
+
+        .stat-label {
+            font-size: 0.6rem; text-transform: uppercase;
+            letter-spacing: 0.12em; color: var(--muted); font-weight: 300;
+        }
+
+        .stat-value {
+            font-size: 1.2rem; font-weight: 700;
+            color: var(--text);
+            transition: transform 0.15s, color 0.2s;
+        }
+
+        .stat-value.bump { transform: scale(1.3); color: var(--accent); }
+
+        /* Griglia carte */
+        #grid-container {
+            position: relative;
+            width: min(88vmin, 440px);
+            aspect-ratio: var(--grid-aspect, 1);
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(var(--cols, 4), 1fr);
+            gap: clamp(6px, 1.5vmin, 10px);
+            width: 100%; height: 100%;
+        }
+
+        /* Carta */
+        .card {
+            perspective: 700px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .card-inner {
+            position: relative; width: 100%; height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.45s cubic-bezier(0.4, 0.0, 0.2, 1);
+            border-radius: clamp(8px, 2vmin, 14px);
+        }
+
+        .card.flipped .card-inner { transform: rotateY(180deg); }
+
+        .card-face {
+            position: absolute; inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: inherit;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Fronte (carta coperta) */
+        .card-front {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+
+        .card-front::before {
+            content: '';
+            position: absolute; inset: 0;
+            background:
+                repeating-linear-gradient(45deg, transparent, transparent 8px, var(--card-pattern) 8px, var(--card-pattern) 9px),
+                repeating-linear-gradient(-45deg, transparent, transparent 8px, var(--card-pattern) 8px, var(--card-pattern) 9px);
+            border-radius: inherit;
+        }
+
+        .card-front::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.05), transparent 60%);
+            border-radius: inherit;
+        }
+
+        /* Icona centro fronte */
+        .card-front-icon {
+            position: relative; z-index: 1;
+            font-size: clamp(1rem, 3vmin, 1.4rem);
+            color: rgba(255,255,255,0.08);
+        }
+
+        .card:not(.flipped):not(.matched):not(.locked):hover .card-front {
+            transform: scale(1.04);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .card:not(.flipped):not(.matched):not(.locked):active .card-front {
+            transform: scale(0.97);
+        }
+
+        /* Retro (simbolo) */
+        .card-back {
+            transform: rotateY(180deg);
+            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .card-back::before {
+            content: '';
+            position: absolute; inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(circle at 50% 50%, var(--sym-color, rgba(255,255,255,0.05)), transparent 70%);
+            opacity: 0.15;
+        }
+
+        .symbol {
+            position: relative; z-index: 1;
+            font-size: clamp(1.8rem, 6vmin, 2.8rem);
+            line-height: 1;
+            transition: transform 0.3s;
+            filter: drop-shadow(0 0 8px var(--sym-color, transparent));
+        }
+
+        /* Match trovato */
+        .card.matched .card-back {
+            border-color: var(--sym-color, var(--accent));
+            box-shadow: 0 0 18px color-mix(in srgb, var(--sym-color, var(--accent)) 35%, transparent),
+                        inset 0 0 15px color-mix(in srgb, var(--sym-color, var(--accent)) 10%, transparent);
+        }
+
+        .card.matched .symbol {
+            animation: symbolPop 0.4s ease;
+        }
+
+        @keyframes symbolPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.35); }
+            100% { transform: scale(1); }
+        }
+
+        /* Mismatch - scossa */
+        .card.wrong .card-back {
+            border-color: var(--wrong);
+            box-shadow: 0 0 16px var(--wrong-glow);
+        }
+
+        .card.wrong .card-inner {
+            animation: cardShake 0.4s ease;
+        }
+
+        @keyframes cardShake {
+            0%, 100% { translate: 0 0; }
+            20% { translate: -3px 1px; }
+            40% { translate: 3px -1px; }
+            60% { translate: -2px 1px; }
+            80% { translate: 2px 0; }
+        }
+
+        .card.locked { pointer-events: none; }
+
+        /* Info */
+        #info {
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
+            font-weight: 500; min-height: 1.6em;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; color: var(--muted);
+            transition: color 0.3s;
+        }
+
+        #info.highlight { color: var(--accent); }
+        #info.error { color: var(--wrong); }
+
+        /* Overlay */
+        #overlay {
+            position: fixed; inset: 0; z-index: 100;
+            background: rgba(10,14,26,0.93);
+            backdrop-filter: blur(14px);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 2.5vh;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.35s ease;
+            padding: 4vw;
+        }
+
+        #overlay.visible { opacity: 1; pointer-events: auto; }
+
+        #overlay h2 {
+            font-size: clamp(1.8rem, 6vw, 2.6rem);
+            font-weight: 700; letter-spacing: -0.04em;
+            text-align: center;
+        }
+
+        #overlay h2.win {
+            background: linear-gradient(135deg, var(--gold), #f59e0b);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #overlay p {
+            color: var(--muted); font-size: 0.9rem;
+            max-width: 300px; text-align: center; line-height: 1.55;
+        }
+
+        .difficulty-selector {
+            display: flex; gap: 10px; margin: 0.5vh 0;
+        }
+
+        .diff-btn {
+            padding: 10px 18px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            background: var(--surface);
+            color: var(--muted);
+            font-family: inherit; font-size: 0.82rem; font-weight: 500;
+            cursor: pointer; transition: all 0.2s;
+        }
+
+        .diff-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+        .diff-btn.selected {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(34,197,94,0.08);
+            box-shadow: 0 0 12px rgba(34,197,94,0.1);
+        }
+
+        .final-stats {
+            display: flex; gap: 4vw; margin: 0.5vh 0;
+        }
+
+        .final-stat { text-align: center; }
+
+        .final-stat-val {
+            font-size: 1.6rem; font-weight: 700; color: var(--text);
+        }
+
+        .final-stat-label {
+            font-size: 0.65rem; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--muted);
+        }
+
+        .stars-row {
+            display: flex; gap: 8px; font-size: 1.6rem;
+        }
+
+        .star { color: var(--muted); transition: color 0.3s, transform 0.3s; }
+        .star.earned { color: var(--gold); transform: scale(1.1); }
+
+        .btn {
+            padding: 13px 36px; border: none; border-radius: 12px;
+            font-family: inherit; font-size: 0.95rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s ease;
+            margin-top: 0.5vh;
+        }
+
+        .btn-primary {
+            background: var(--accent); color: #0a0e1a;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 28px rgba(34,197,94,0.55);
+        }
+
+        .btn-primary:active { transform: scale(0.97); }
+
+        /* Particelle match */
+        .particle {
+            position: fixed; pointer-events: none; z-index: 50;
+            border-radius: 50%;
+            animation: particleFly 0.65s ease-out forwards;
+        }
+
+        @keyframes particleFly {
+            0% { opacity: 1; transform: translate(0,0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+        }
+
+        /* Toast */
+        #toast {
+            position: fixed; top: 3vh; left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            z-index: 200;
+            background: var(--surface); border: 1px solid rgba(255,255,255,0.08);
+            padding: 9px 20px; border-radius: 10px;
+            font-size: 0.82rem; color: var(--text);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s, transform 0.25s;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .game-wrapper { gap: 1vh; padding: 0.5vh 4vw; }
+            #header h1 { font-size: 1.1rem; }
+            .stat-value { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <header id="header">
+            <h1>Memory Match</h1>
+            <div id="stats">
+                <div class="stat">
+                    <span class="stat-label">Mosse</span>
+                    <span class="stat-value" id="moves-val">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Coppie</span>
+                    <span class="stat-value" id="pairs-val">0/8</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Tempo</span>
+                    <span class="stat-value" id="time-val">0:00</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Record</span>
+                    <span class="stat-value" id="best-val" style="color:var(--gold)">--</span>
+                </div>
+            </div>
+        </header>
+
+        <div id="grid-container">
+            <div id="grid"></div>
+        </div>
+
+        <div id="info">Scegli la difficolta e gioca</div>
+    </div>
+
+    <!-- Overlay iniziale -->
+    <div id="overlay" class="visible">
+        <h2>Memory Match</h2>
+        <p>Scopri le carte e trova tutte le coppie di simboli uguali con il minor numero di mosse.</p>
+        <div class="difficulty-selector" id="diff-selector">
+            <button class="diff-btn" data-diff="easy">Facile</button>
+            <button class="diff-btn selected" data-diff="medium">Medio</button>
+            <button class="diff-btn" data-diff="hard">Difficile</button>
+        </div>
+        <button class="btn btn-primary" id="start-btn">Gioca</button>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        /* ============================
+           CONFIGURAZIONE DIFFICOLTÀ
+        ============================ */
+        const DIFFICULTIES = {
+            easy:   { cols: 4, rows: 3, pairs: 6,  label: 'Facile',   starThresholds: [8, 12, 20] },
+            medium: { cols: 4, rows: 4, pairs: 8,  label: 'Medio',    starThresholds: [10, 16, 26] },
+            hard:   { cols: 5, rows: 4, pairs: 10, label: 'Difficile', starThresholds: [14, 22, 36] },
+        };
+
+        /* Simboli e colori per le coppie */
+        const ALL_SYMBOLS = [
+            { icon: '♚', color: '#f59e0b' },
+            { icon: '♛', color: '#ec4899' },
+            { icon: '♞', color: '#a78bfa' },
+            { icon: '✦', color: '#22c55e' },
+            { icon: '◆', color: '#06b6d4' },
+            { icon: '▲', color: '#ef4444' },
+            { icon: '●', color: '#f97316' },
+            { icon: '✿', color: '#c084fc' },
+            { icon: '♠', color: '#64748b' },
+            { icon: '♥', color: '#fb7185' },
+        ];
+
+        /* ============================
+           STATO DEL GIOCO
+        ============================ */
+        let currentDiff = 'medium';
+        let cards = [];         // array di oggetti { id, symbolIndex, element }
+        let flippedCards = [];  // max 2 carte scoperte
+        let matchedCount = 0;
+        let totalPairs = 8;
+        let moves = 0;
+        let timerSeconds = 0;
+        let timerInterval = null;
+        let timerStarted = false;
+        let isLocked = false;   // blocca click durante animazioni
+        let gameActive = false;
+
+        /* ============================
+           RIFERIMENTI DOM
+        ============================ */
+        const gridEl = document.getElementById('grid');
+        const gridContainer = document.getElementById('grid-container');
+        const infoEl = document.getElementById('info');
+        const overlayEl = document.getElementById('overlay');
+        const startBtn = document.getElementById('start-btn');
+        const diffSelector = document.getElementById('diff-selector');
+        const movesVal = document.getElementById('moves-val');
+        const pairsVal = document.getElementById('pairs-val');
+        const timeVal = document.getElementById('time-val');
+        const bestVal = document.getElementById('best-val');
+        const toastEl = document.getElementById('toast');
+
+        /* ============================
+           AUDIO (Web Audio API)
+        ============================ */
+        let audioCtx = null;
+
+        function ensureAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTone(freq, duration = 0.15, type = 'sine', vol = 0.1) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playFlipSound() {
+            playTone(800, 0.06, 'sine', 0.06);
+        }
+
+        function playMatchSound() {
+            playTone(523, 0.12, 'sine', 0.1);
+            setTimeout(() => playTone(659, 0.12, 'sine', 0.1), 80);
+            setTimeout(() => playTone(784, 0.18, 'sine', 0.1), 160);
+        }
+
+        function playMismatchSound() {
+            playTone(200, 0.2, 'triangle', 0.08);
+            setTimeout(() => playTone(160, 0.25, 'triangle', 0.06), 100);
+        }
+
+        function playWinSound() {
+            const notes = [523, 587, 659, 784, 880, 1047];
+            notes.forEach((f, i) => {
+                setTimeout(() => playTone(f, 0.2, 'sine', 0.09), i * 100);
+            });
+        }
+
+        /* ============================
+           SELETTORE DIFFICOLTÀ
+        ============================ */
+        diffSelector.addEventListener('click', (e) => {
+            const btn = e.target.closest('.diff-btn');
+            if (!btn) return;
+            diffSelector.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            currentDiff = btn.dataset.diff;
+        });
+
+        /* ============================
+           UTILITÀ
+        ============================ */
+        function wait(ms) {
+            return new Promise(r => setTimeout(r, ms));
+        }
+
+        /* Mescola un array (Fisher-Yates) */
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        /* ============================
+           TIMER
+        ============================ */
+        function startTimer() {
+            if (timerStarted) return;
+            timerStarted = true;
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                timeVal.textContent = formatTime(timerSeconds);
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timerSeconds = 0;
+            timerStarted = false;
+            timeVal.textContent = '0:00';
+        }
+
+        /* ============================
+           DISPLAY
+        ============================ */
+        function updateDisplay() {
+            movesVal.textContent = moves;
+            pairsVal.textContent = `${matchedCount}/${totalPairs}`;
+            updateBestDisplay();
+        }
+
+        function bumpStat(el) {
+            el.classList.add('bump');
+            setTimeout(() => el.classList.remove('bump'), 200);
+        }
+
+        function getBestKey() { return `memorymatch_best_${currentDiff}`; }
+
+        function getBest() {
+            const val = localStorage.getItem(getBestKey());
+            return val ? parseInt(val) : null;
+        }
+
+        function setBest(val) {
+            localStorage.setItem(getBestKey(), val.toString());
+        }
+
+        function updateBestDisplay() {
+            const best = getBest();
+            bestVal.textContent = best !== null ? best : '--';
+        }
+
+        /* ============================
+           COSTRUZIONE GRIGLIA
+        ============================ */
+        function buildGrid() {
+            const diff = DIFFICULTIES[currentDiff];
+            const { cols, rows, pairs } = diff;
+            totalPairs = pairs;
+
+            /* Imposta aspect ratio e colonne CSS */
+            gridContainer.style.setProperty('--grid-aspect', `${cols}/${rows}`);
+            gridContainer.style.setProperty('--cols', cols);
+            gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+            /* Scegli simboli casuali */
+            const chosen = shuffle(ALL_SYMBOLS).slice(0, pairs);
+
+            /* Crea coppie e mescola */
+            let deck = [];
+            chosen.forEach((sym, idx) => {
+                deck.push({ symbolIndex: idx, ...sym });
+                deck.push({ symbolIndex: idx, ...sym });
+            });
+            deck = shuffle(deck);
+
+            /* Svuota e ricostruisci */
+            gridEl.innerHTML = '';
+            cards = [];
+            flippedCards = [];
+
+            deck.forEach((item, i) => {
+                const card = document.createElement('div');
+                card.className = 'card locked';
+                card.dataset.id = i;
+                card.dataset.symbolIndex = item.symbolIndex;
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-label', `Carta ${i + 1}, coperta`);
+                card.setAttribute('tabindex', '0');
+                card.style.setProperty('--sym-color', item.color);
+
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-face card-front">
+                            <span class="card-front-icon">?</span>
+                        </div>
+                        <div class="card-face card-back">
+                            <span class="symbol" style="color:${item.color}">${item.icon}</span>
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => handleCardClick(card));
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleCardClick(card);
+                    }
+                });
+
+                gridEl.appendChild(card);
+                cards.push({
+                    id: i,
+                    symbolIndex: item.symbolIndex,
+                    element: card,
+                    color: item.color,
+                    icon: item.icon,
+                });
+            });
+        }
+
+        /* ============================
+           LOGICA DI GIOCO
+        ============================ */
+        function startGame() {
+            ensureAudio();
+            overlayEl.classList.remove('visible');
+
+            matchedCount = 0;
+            moves = 0;
+            flippedCards = [];
+            isLocked = false;
+            gameActive = true;
+            resetTimer();
+            buildGrid();
+            updateDisplay();
+
+            /* Breve anteprima: mostra tutte le carte per 1.2s poi girale */
+            infoEl.className = 'highlight';
+            infoEl.textContent = 'Memorizza...';
+
+            cards.forEach(c => c.element.classList.add('flipped'));
+
+            setTimeout(() => {
+                cards.forEach(c => c.element.classList.remove('flipped'));
+                setTimeout(() => {
+                    cards.forEach(c => c.element.classList.remove('locked'));
+                    infoEl.className = '';
+                    infoEl.textContent = 'Tocca due carte';
+                }, 500);
+            }, 1200);
+        }
+
+        function handleCardClick(cardEl) {
+            if (isLocked || !gameActive) return;
+
+            const cardData = cards.find(c => c.element === cardEl);
+            if (!cardData) return;
+
+            /* Ignora se già scoperta o già trovata */
+            if (cardEl.classList.contains('flipped') || cardEl.classList.contains('matched')) return;
+
+            /* Avvia il timer al primo click */
+            startTimer();
+
+            /* Scopri la carta */
+            cardEl.classList.add('flipped');
+            playFlipSound();
+            cardEl.setAttribute('aria-label', `Carta ${cardData.id + 1}, simbolo ${cardData.icon}`);
+            flippedCards.push(cardData);
+
+            /* Se abbiamo 2 carte scoperte, controlla */
+            if (flippedCards.length === 2) {
+                moves++;
+                bumpStat(movesVal);
+                updateDisplay();
+                checkMatch();
+            }
+        }
+
+        async function checkMatch() {
+            isLocked = true;
+            const [a, b] = flippedCards;
+
+            if (a.symbolIndex === b.symbolIndex) {
+                /* Coppia trovata! */
+                await wait(300);
+                a.element.classList.add('matched');
+                b.element.classList.add('matched');
+                playMatchSound();
+                spawnParticles(a.element, a.color);
+                spawnParticles(b.element, b.color);
+
+                matchedCount++;
+                updateDisplay();
+                bumpStat(pairsVal);
+
+                infoEl.className = 'highlight';
+                infoEl.textContent = 'Coppia trovata!';
+
+                flippedCards = [];
+                isLocked = false;
+
+                /* Controlla vittoria */
+                if (matchedCount === totalPairs) {
+                    gameActive = false;
+                    stopTimer();
+                    setTimeout(() => showWin(), 600);
+                }
+            } else {
+                /* Non corrispondono */
+                a.element.classList.add('wrong');
+                b.element.classList.add('wrong');
+                playMismatchSound();
+
+                infoEl.className = 'error';
+                infoEl.textContent = 'Riprova';
+
+                await wait(800);
+
+                a.element.classList.remove('flipped', 'wrong');
+                b.element.classList.remove('flipped', 'wrong');
+                a.element.setAttribute('aria-label', `Carta ${a.id + 1}, coperta`);
+                b.element.setAttribute('aria-label', `Carta ${b.id + 1}, coperta`);
+
+                infoEl.className = '';
+                infoEl.textContent = 'Tocca due carte';
+
+                flippedCards = [];
+                isLocked = false;
+            }
+        }
+
+        /* ============================
+           VITTORIA
+        ============================ */
+        function showWin() {
+            playWinSound();
+
+            const diff = DIFFICULTIES[currentDiff];
+            const thresholds = diff.starThresholds; // [3stelle, 2stelle, 1stella]
+            let stars = 1;
+            if (moves <= thresholds[0]) stars = 3;
+            else if (moves <= thresholds[1]) stars = 2;
+
+            /* Aggiorna record */
+            const prevBest = getBest();
+            let newRecord = false;
+            if (prevBest === null || moves < prevBest) {
+                setBest(moves);
+                newRecord = true;
+            }
+            updateBestDisplay();
+
+            /* Costruisci overlay vittoria */
+            const starsHTML = [1, 2, 3].map(i =>
+                `<span class="star ${i <= stars ? 'earned' : ''}">&#9733;</span>`
+            ).join('');
+
+            overlayEl.innerHTML = `
+                <h2 class="win">Completato!</h2>
+                <div class="stars-row">${starsHTML}</div>
+                <div class="final-stats">
+                    <div class="final-stat">
+                        <div class="final-stat-val">${moves}</div>
+                        <div class="final-stat-label">Mosse</div>
+                    </div>
+                    <div class="final-stat">
+                        <div class="final-stat-val">${formatTime(timerSeconds)}</div>
+                        <div class="final-stat-label">Tempo</div>
+                    </div>
+                    <div class="final-stat">
+                        <div class="final-stat-val">${getBest()}</div>
+                        <div class="final-stat-label">Record</div>
+                    </div>
+                </div>
+                ${newRecord ? '<p style="color:var(--gold);font-weight:600;">Nuovo record!</p>' : '<p>Riprova per migliorare il tuo punteggio</p>'}
+                <div class="difficulty-selector" id="diff-selector-end">
+                    <button class="diff-btn ${currentDiff==='easy'?'selected':''}" data-diff="easy">Facile</button>
+                    <button class="diff-btn ${currentDiff==='medium'?'selected':''}" data-diff="medium">Medio</button>
+                    <button class="diff-btn ${currentDiff==='hard'?'selected':''}" data-diff="hard">Difficile</button>
+                </div>
+                <button class="btn btn-primary" id="replay-btn">Rigioca</button>
+            `;
+
+            overlayEl.classList.add('visible');
+
+            /* Event listener per il selettore nell'overlay finale */
+            document.getElementById('diff-selector-end').addEventListener('click', (e) => {
+                const btn = e.target.closest('.diff-btn');
+                if (!btn) return;
+                document.querySelectorAll('#diff-selector-end .diff-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                currentDiff = btn.dataset.diff;
+                /* Aggiorna anche il selettore principale */
+                diffSelector.querySelectorAll('.diff-btn').forEach(b => {
+                    b.classList.toggle('selected', b.dataset.diff === currentDiff);
+                });
+            });
+
+            document.getElementById('replay-btn').addEventListener('click', () => {
+                startGame();
+            });
+        }
+
+        /* ============================
+           EFFETTI VISIVI
+        ============================ */
+        function spawnParticles(fromEl, color) {
+            const rect = fromEl.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const colors = [color, '#ffffff', color, color];
+
+            for (let i = 0; i < 10; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const size = 3 + Math.random() * 5;
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 30 + Math.random() * 70;
+                const dx = Math.cos(angle) * dist;
+                const dy = Math.sin(angle) * dist;
+                p.style.cssText = `
+                    left:${cx - size/2}px; top:${cy - size/2}px;
+                    width:${size}px; height:${size}px;
+                    background:${colors[Math.floor(Math.random() * colors.length)]};
+                    --dx:${dx}px; --dy:${dy}px;
+                `;
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 700);
+            }
+        }
+
+        function showToast(msg, duration = 2000) {
+            toastEl.textContent = msg;
+            toastEl.classList.add('show');
+            setTimeout(() => toastEl.classList.remove('show'), duration);
+        }
+
+        /* ============================
+           AVVIO
+        ============================ */
+        updateBestDisplay();
+        startBtn.addEventListener('click', startGame);
+    </script>
+</body>
+</html>
