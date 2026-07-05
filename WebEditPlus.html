@@ -36,7 +36,7 @@ html,body{
     border-bottom:1px solid var(--border);
 }
 
-.actions{display:flex;gap:8px;align-items:center}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
 button,select{
     background:#3c3c3c;
@@ -49,10 +49,17 @@ button,select{
     display:flex;
     align-items:center;
     gap:6px;
+    transition:background .15s, border-color .15s;
 }
 
 button:hover{background:#505050}
 select{background:var(--accent);border:none;font-weight:bold}
+
+/* Stato attivo per i toggle */
+button.toggle-on{
+    background:var(--accent);
+    border-color:var(--accent);
+}
 
 .file-info{
     margin-left:auto;
@@ -99,15 +106,17 @@ select{background:var(--accent);border:none;font-weight:bold}
     background:var(--toolbar-bg);
     border-bottom:1px solid var(--border);
     padding:8px 15px;
+    align-items:center;
     gap:8px;
 }
 
-input{
-    background:var(--input-bg);
-    border:1px solid var(--border);
-    color:white;
-    padding:6px;
-    border-radius:4px;
+#search-bar.visible{
+    display:flex;
+}
+
+#search-bar input{
+    flex:1;
+    min-width:0;
 }
 
 /* ===== EDITOR ===== */
@@ -130,11 +139,14 @@ input{
         <button onclick="saveFile()"><i class="fas fa-save"></i><span>Salva</span></button>
         <button onclick="toggleSearchBar()"><i class="fas fa-search"></i></button>
 
-        <!-- FONT SIZE -->
         <button onclick="decreaseFont()">A−</button>
         <button onclick="increaseFont()">A+</button>
 
-        <!-- EDITOR CONTEXT MENU (MOBILE) -->
+        <!-- WRAP TOGGLE -->
+        <button id="wrapBtn" onclick="toggleWrap()" title="A capo automatico">
+            <i class="fas fa-text-width"></i><span>Wrap</span>
+        </button>
+
         <button onclick="openEditorContextMenu()" title="Menu editor">
             <i class="fas fa-ellipsis-vertical"></i>
         </button>
@@ -171,6 +183,8 @@ input{
 <script>
 let editor, tabs=[], activeTab=null, untitledCount=1;
 let fontSize = 14;
+let searchBarVisible = false;
+let wordWrapEnabled = false;
 
 /* ===== MONACO INIT ===== */
 require.config({paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs'}});
@@ -179,14 +193,50 @@ require(['vs/editor/editor.main'],()=>{
         theme:'vs-dark',
         language:'plaintext',
         automaticLayout:true,
-        fontSize
+        fontSize,
+        wordWrap:'off'
     });
+
+    /* --- Select All nel menu contestuale --- */
+    editor.addAction({
+        id: 'context-select-all',
+        label: 'Select All',
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA],
+        contextMenuGroupId: '3_cutcopypaste',
+        contextMenuOrder: 3.5,
+        run: function(ed) {
+            ed.setSelection(ed.getModel().getFullModelRange());
+        }
+    });
+
     newFile();
 
-    searchInput.addEventListener('keydown',e=>{
-        if(e.key==='Enter'){e.shiftKey?findPrevious():findNext();}
+    document.getElementById('searchInput').addEventListener('keydown', function(e){
+        if(e.key==='Enter'){
+            e.preventDefault();
+            e.shiftKey ? findPrevious() : findNext();
+        }
     });
 });
+
+/* ===== WRAP TOGGLE ===== */
+function toggleWrap(){
+    wordWrapEnabled = !wordWrapEnabled;
+    editor.updateOptions({ wordWrap: wordWrapEnabled ? 'on' : 'off' });
+    document.getElementById('wrapBtn').classList.toggle('toggle-on', wordWrapEnabled);
+}
+
+/* ===== SEARCH BAR TOGGLE ===== */
+function toggleSearchBar(){
+    const bar = document.getElementById('search-bar');
+    searchBarVisible = !searchBarVisible;
+    bar.classList.toggle('visible', searchBarVisible);
+    if(searchBarVisible){
+        document.getElementById('searchInput').focus();
+    } else {
+        editor.focus();
+    }
+}
 
 /* ===== CONTEXT MENU (EDITOR) ===== */
 function openEditorContextMenu(){
@@ -283,28 +333,47 @@ async function saveFile(){
     await w.close();
 }
 
-/* SEARCH */
-function toggleSearchBar(){
-    const b=document.getElementById('search-bar');
-    b.style.display=b.style.display==='flex'?'none':'flex';
-}
+/* ===== SEARCH con scroll automatico ===== */
 function findNext(){
-    const r=editor.getModel()
-        .findNextMatch(searchInput.value,editor.getPosition(),false,false,null,true);
-    if(r)editor.setSelection(r.range);
+    const term = document.getElementById('searchInput').value;
+    if(!term) return;
+    const r = editor.getModel()
+        .findNextMatch(term, editor.getPosition(), false, false, null, true);
+    if(r){
+        editor.setSelection(r.range);
+        editor.revealRangeInCenter(r.range);
+    }
 }
+
 function findPrevious(){
-    const r=editor.getModel()
-        .findPreviousMatch(searchInput.value,editor.getPosition(),false,false,null,true);
-    if(r)editor.setSelection(r.range);
+    const term = document.getElementById('searchInput').value;
+    if(!term) return;
+    const r = editor.getModel()
+        .findPreviousMatch(term, editor.getPosition(), false, false, null, true);
+    if(r){
+        editor.setSelection(r.range);
+        editor.revealRangeInCenter(r.range);
+    }
 }
+
 function replaceOnce(){
-    editor.executeEdits("",[{range:editor.getSelection(),text:replaceInput.value}]);
+    const term = document.getElementById('searchInput').value;
+    const replacement = document.getElementById('replaceInput').value;
+    if(!term) return;
+    const sel = editor.getSelection();
+    if(!sel.isEmpty() && editor.getModel().getValueInRange(sel) === term){
+        editor.executeEdits("", [{range: sel, text: replacement}]);
+    }
+    findNext();
 }
+
 function replaceAll(){
-    const m=editor.getModel();
-    const ms=m.findMatches(searchInput.value,true,false,false,null,true);
-    editor.executeEdits("",ms.map(x=>({range:x.range,text:replaceInput.value})));
+    const term = document.getElementById('searchInput').value;
+    const replacement = document.getElementById('replaceInput').value;
+    if(!term) return;
+    const m = editor.getModel();
+    const ms = m.findMatches(term, true, false, false, null, true);
+    editor.executeEdits("", ms.map(x => ({range: x.range, text: replacement})));
 }
 
 /* UTILS */
