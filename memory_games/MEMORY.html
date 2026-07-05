@@ -7,17 +7,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0a0e1a;
-            --surface: #111827;
-            --card-bg: #1a2236;
-            --card-border: rgba(255,255,255,0.06);
-            --card-pattern: rgba(255,255,255,0.03);
+            --bg: #080c16;
+            --surface: #0f1629;
+            --card-bg: #151d33;
+            --card-border: rgba(255,255,255,0.05);
+            --card-pattern: rgba(255,255,255,0.025);
             --text: #e8ecf4;
-            --muted: #5a6a85;
+            --muted: #4e5d78;
             --accent: #22c55e;
-            --accent-glow: rgba(34,197,94,0.45);
+            --accent-glow: rgba(34,197,94,0.4);
             --wrong: #ef4444;
-            --wrong-glow: rgba(239,68,68,0.35);
+            --wrong-glow: rgba(239,68,68,0.3);
             --gold: #facc15;
         }
 
@@ -39,25 +39,24 @@
             content: '';
             position: fixed; inset: 0;
             background:
-                radial-gradient(ellipse 50% 35% at 50% 0%, rgba(34,197,94,0.05) 0%, transparent 70%),
-                radial-gradient(ellipse 40% 40% at 85% 100%, rgba(6,182,212,0.04) 0%, transparent 60%),
-                radial-gradient(ellipse 35% 50% at 5% 80%, rgba(168,85,247,0.03) 0%, transparent 50%);
+                radial-gradient(ellipse 50% 30% at 50% 0%, rgba(34,197,94,0.04) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 40% at 90% 100%, rgba(6,182,212,0.03) 0%, transparent 60%),
+                radial-gradient(ellipse 30% 50% at 5% 80%, rgba(168,85,247,0.025) 0%, transparent 50%);
             pointer-events: none; z-index: 0;
         }
 
         .game-wrapper {
             position: relative; z-index: 1;
             display: flex; flex-direction: column;
-            align-items: center; gap: 2vh;
-            width: 100%; max-width: 520px;
-            padding: 1.5vh 4vw;
+            align-items: center; gap: 1.8vh;
+            width: 100%; max-width: 540px;
+            padding: 1.2vh 3vw;
         }
 
-        /* Header */
         #header { text-align: center; width: 100%; }
 
         #header h1 {
-            font-size: clamp(1.3rem, 4vw, 1.7rem);
+            font-size: clamp(1.2rem, 3.8vw, 1.6rem);
             font-weight: 700; letter-spacing: -0.03em;
             background: linear-gradient(135deg, var(--text) 40%, var(--accent));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -65,46 +64,42 @@
         }
 
         #stats {
-            display: flex; justify-content: center; gap: 5vw;
-            margin-top: 1vh;
-            font-size: clamp(0.78rem, 2.2vw, 0.9rem); font-weight: 500;
+            display: flex; justify-content: center; gap: 4vw;
+            margin-top: 0.8vh;
+            font-size: clamp(0.75rem, 2vw, 0.85rem); font-weight: 500;
         }
 
-        .stat {
-            display: flex; flex-direction: column;
-            align-items: center; gap: 1px;
-        }
+        .stat { display: flex; flex-direction: column; align-items: center; gap: 1px; }
 
         .stat-label {
-            font-size: 0.6rem; text-transform: uppercase;
+            font-size: 0.58rem; text-transform: uppercase;
             letter-spacing: 0.12em; color: var(--muted); font-weight: 300;
         }
 
         .stat-value {
-            font-size: 1.2rem; font-weight: 700;
-            color: var(--text);
+            font-size: 1.15rem; font-weight: 700; color: var(--text);
             transition: transform 0.15s, color 0.2s;
         }
 
         .stat-value.bump { transform: scale(1.3); color: var(--accent); }
 
-        /* Griglia carte */
+        /* Griglia */
         #grid-container {
             position: relative;
-            width: min(88vmin, 440px);
+            width: min(92vmin, 460px);
             aspect-ratio: var(--grid-aspect, 1);
         }
 
         #grid {
             display: grid;
             grid-template-columns: repeat(var(--cols, 4), 1fr);
-            gap: clamp(6px, 1.5vmin, 10px);
+            gap: clamp(5px, 1.2vmin, 9px);
             width: 100%; height: 100%;
         }
 
         /* Carta */
         .card {
-            perspective: 700px;
+            perspective: 800px;
             cursor: pointer;
             position: relative;
         }
@@ -112,7 +107,7 @@
         .card-inner {
             position: relative; width: 100%; height: 100%;
             transform-style: preserve-3d;
-            transition: transform 0.45s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.15, 1);
             border-radius: clamp(8px, 2vmin, 14px);
         }
 
@@ -127,239 +122,245 @@
             overflow: hidden;
         }
 
-        /* Fronte (carta coperta) */
+        /* Fronte coperto */
         .card-front {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
-            transition: transform 0.15s, box-shadow 0.2s;
+            transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
         }
 
         .card-front::before {
             content: '';
             position: absolute; inset: 0;
             background:
-                repeating-linear-gradient(45deg, transparent, transparent 8px, var(--card-pattern) 8px, var(--card-pattern) 9px),
-                repeating-linear-gradient(-45deg, transparent, transparent 8px, var(--card-pattern) 8px, var(--card-pattern) 9px);
+                repeating-linear-gradient(45deg, transparent, transparent 7px, var(--card-pattern) 7px, var(--card-pattern) 8px),
+                repeating-linear-gradient(-45deg, transparent, transparent 7px, var(--card-pattern) 7px, var(--card-pattern) 8px);
             border-radius: inherit;
         }
 
         .card-front::after {
             content: '';
             position: absolute; inset: 0;
-            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.05), transparent 60%);
+            background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.045), transparent 55%);
             border-radius: inherit;
         }
 
-        /* Icona centro fronte */
         .card-front-icon {
             position: relative; z-index: 1;
-            font-size: clamp(1rem, 3vmin, 1.4rem);
-            color: rgba(255,255,255,0.08);
+            font-size: clamp(0.9rem, 2.8vmin, 1.3rem);
+            color: rgba(255,255,255,0.07);
+            font-weight: 700;
         }
 
         .card:not(.flipped):not(.matched):not(.locked):hover .card-front {
-            transform: scale(1.04);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            border-color: rgba(255,255,255,0.1);
+            transform: scale(1.05);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+            border-color: rgba(255,255,255,0.12);
         }
 
         .card:not(.flipped):not(.matched):not(.locked):active .card-front {
-            transform: scale(0.97);
+            transform: scale(0.96);
         }
 
-        /* Retro (simbolo) */
+        /* Retro con simbolo */
         .card-back {
             transform: rotateY(180deg);
             background: var(--surface);
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 2px solid var(--sym-color, rgba(255,255,255,0.1));
+            position: relative;
         }
 
         .card-back::before {
             content: '';
             position: absolute; inset: 0;
             border-radius: inherit;
-            background: radial-gradient(circle at 50% 50%, var(--sym-color, rgba(255,255,255,0.05)), transparent 70%);
-            opacity: 0.15;
+            background: radial-gradient(ellipse 70% 70% at 50% 50%, var(--sym-color, transparent), transparent);
+            opacity: 0.13;
+        }
+
+        .card-back::after {
+            content: '';
+            position: absolute; inset: 15%;
+            border-radius: 50%;
+            background: var(--sym-color, transparent);
+            opacity: 0.09;
+            filter: blur(15px);
         }
 
         .symbol {
-            position: relative; z-index: 1;
-            font-size: clamp(1.8rem, 6vmin, 2.8rem);
+            position: relative; z-index: 2;
+            font-size: clamp(2.2rem, 9vmin, 3.6rem);
             line-height: 1;
-            transition: transform 0.3s;
-            filter: drop-shadow(0 0 8px var(--sym-color, transparent));
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: drop-shadow(0 0 12px var(--sym-color, transparent))
+                    drop-shadow(0 2px 6px rgba(0,0,0,0.6));
         }
 
         /* Match trovato */
         .card.matched .card-back {
             border-color: var(--sym-color, var(--accent));
-            box-shadow: 0 0 18px color-mix(in srgb, var(--sym-color, var(--accent)) 35%, transparent),
-                        inset 0 0 15px color-mix(in srgb, var(--sym-color, var(--accent)) 10%, transparent);
+            box-shadow:
+                0 0 22px color-mix(in srgb, var(--sym-color, var(--accent)) 30%, transparent),
+                0 0 44px color-mix(in srgb, var(--sym-color, var(--accent)) 12%, transparent),
+                inset 0 0 22px color-mix(in srgb, var(--sym-color, var(--accent)) 8%, transparent);
         }
 
+        .card.matched .card-back::before { opacity: 0.22; }
+
         .card.matched .symbol {
-            animation: symbolPop 0.4s ease;
+            animation: symbolPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         @keyframes symbolPop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.35); }
-            100% { transform: scale(1); }
+            0%   { transform: scale(1) rotate(0deg); }
+            40%  { transform: scale(1.45) rotate(-8deg); }
+            70%  { transform: scale(1.1) rotate(3deg); }
+            100% { transform: scale(1) rotate(0deg); }
         }
 
-        /* Mismatch - scossa */
+        /* Errore */
         .card.wrong .card-back {
-            border-color: var(--wrong);
-            box-shadow: 0 0 16px var(--wrong-glow);
+            border-color: var(--wrong) !important;
+            box-shadow: 0 0 18px var(--wrong-glow) !important;
         }
 
-        .card.wrong .card-inner {
-            animation: cardShake 0.4s ease;
-        }
+        .card.wrong .card-inner { animation: cardShake 0.45s ease; }
 
         @keyframes cardShake {
             0%, 100% { translate: 0 0; }
-            20% { translate: -3px 1px; }
-            40% { translate: 3px -1px; }
-            60% { translate: -2px 1px; }
-            80% { translate: 2px 0; }
+            15%  { translate: -4px 2px; }
+            30%  { translate: 4px -2px; }
+            45%  { translate: -3px 1px; }
+            60%  { translate: 3px -1px; }
+            75%  { translate: -2px 1px; }
         }
 
         .card.locked { pointer-events: none; }
 
         /* Info */
         #info {
-            font-size: clamp(0.85rem, 2.5vw, 1rem);
-            font-weight: 500; min-height: 1.6em;
+            font-size: clamp(0.82rem, 2.4vw, 0.95rem);
+            font-weight: 500; min-height: 1.5em;
             display: flex; align-items: center; justify-content: center;
             text-align: center; color: var(--muted);
             transition: color 0.3s;
         }
-
         #info.highlight { color: var(--accent); }
         #info.error { color: var(--wrong); }
 
         /* Overlay */
         #overlay {
             position: fixed; inset: 0; z-index: 100;
-            background: rgba(10,14,26,0.93);
-            backdrop-filter: blur(14px);
+            background: rgba(8,12,22,0.94);
+            backdrop-filter: blur(16px);
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            gap: 2.5vh;
+            gap: 2.2vh; padding: 4vw;
             opacity: 0; pointer-events: none;
             transition: opacity 0.35s ease;
-            padding: 4vw;
         }
-
         #overlay.visible { opacity: 1; pointer-events: auto; }
 
         #overlay h2 {
-            font-size: clamp(1.8rem, 6vw, 2.6rem);
-            font-weight: 700; letter-spacing: -0.04em;
-            text-align: center;
+            font-size: clamp(1.7rem, 5.5vw, 2.5rem);
+            font-weight: 700; letter-spacing: -0.04em; text-align: center;
         }
-
         #overlay h2.win {
             background: linear-gradient(135deg, var(--gold), #f59e0b);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-
         #overlay p {
-            color: var(--muted); font-size: 0.9rem;
-            max-width: 300px; text-align: center; line-height: 1.55;
+            color: var(--muted); font-size: 0.88rem;
+            max-width: 310px; text-align: center; line-height: 1.55;
         }
 
-        .difficulty-selector {
-            display: flex; gap: 10px; margin: 0.5vh 0;
-        }
-
+        .difficulty-selector { display: flex; gap: 8px; margin: 0.3vh 0; }
         .diff-btn {
-            padding: 10px 18px;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            background: var(--surface);
-            color: var(--muted);
-            font-family: inherit; font-size: 0.82rem; font-weight: 500;
+            padding: 10px 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; background: var(--surface);
+            color: var(--muted); font-family: inherit;
+            font-size: 0.8rem; font-weight: 500;
             cursor: pointer; transition: all 0.2s;
         }
-
-        .diff-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
-
+        .diff-btn:hover { border-color: rgba(255,255,255,0.18); color: var(--text); }
         .diff-btn.selected {
-            border-color: var(--accent);
-            color: var(--accent);
-            background: rgba(34,197,94,0.08);
-            box-shadow: 0 0 12px rgba(34,197,94,0.1);
+            border-color: var(--accent); color: var(--accent);
+            background: rgba(34,197,94,0.07);
+            box-shadow: 0 0 12px rgba(34,197,94,0.08);
         }
 
-        .final-stats {
-            display: flex; gap: 4vw; margin: 0.5vh 0;
-        }
-
+        .final-stats { display: flex; gap: 4vw; margin: 0.3vh 0; }
         .final-stat { text-align: center; }
-
-        .final-stat-val {
-            font-size: 1.6rem; font-weight: 700; color: var(--text);
-        }
-
+        .final-stat-val { font-size: 1.5rem; font-weight: 700; color: var(--text); }
         .final-stat-label {
-            font-size: 0.65rem; text-transform: uppercase;
+            font-size: 0.62rem; text-transform: uppercase;
             letter-spacing: 0.1em; color: var(--muted);
         }
 
-        .stars-row {
-            display: flex; gap: 8px; font-size: 1.6rem;
+        .stars-row { display: flex; gap: 10px; font-size: 1.8rem; }
+        .star { color: #1e293b; transition: color 0.4s, transform 0.4s; }
+        .star.earned {
+            color: var(--gold); transform: scale(1.15);
+            filter: drop-shadow(0 0 6px rgba(250,204,21,0.5));
         }
 
-        .star { color: var(--muted); transition: color 0.3s, transform 0.3s; }
-        .star.earned { color: var(--gold); transform: scale(1.1); }
+        .preview-icons {
+            display: flex; flex-wrap: wrap; gap: 5px;
+            justify-content: center; max-width: 280px; margin: 0.5vh 0;
+        }
+        .preview-icon {
+            width: 38px; height: 38px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; border-radius: 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
 
         .btn {
-            padding: 13px 36px; border: none; border-radius: 12px;
+            padding: 13px 38px; border: none; border-radius: 12px;
             font-family: inherit; font-size: 0.95rem; font-weight: 600;
-            cursor: pointer; transition: all 0.2s ease;
-            margin-top: 0.5vh;
+            cursor: pointer; transition: all 0.2s ease; margin-top: 0.3vh;
         }
-
         .btn-primary {
-            background: var(--accent); color: #0a0e1a;
+            background: var(--accent); color: #080c16;
             box-shadow: 0 4px 20px var(--accent-glow);
         }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 28px rgba(34,197,94,0.55);
-        }
-
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(34,197,94,0.5); }
         .btn-primary:active { transform: scale(0.97); }
 
-        /* Particelle match */
+        /* Particelle */
         .particle {
             position: fixed; pointer-events: none; z-index: 50;
             border-radius: 50%;
-            animation: particleFly 0.65s ease-out forwards;
+            animation: particleFly 0.7s ease-out forwards;
         }
-
         @keyframes particleFly {
-            0% { opacity: 1; transform: translate(0,0) scale(1); }
+            0%   { opacity: 1; transform: translate(0,0) scale(1); }
             100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
         }
 
-        /* Toast */
+        .particle-star {
+            position: fixed; pointer-events: none; z-index: 50;
+            animation: particleStar 0.8s ease-out forwards;
+        }
+        @keyframes particleStar {
+            0%   { opacity: 1; transform: translate(0,0) scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0) rotate(180deg); }
+        }
+
         #toast {
             position: fixed; top: 3vh; left: 50%;
             transform: translateX(-50%) translateY(-20px);
-            z-index: 200;
-            background: var(--surface); border: 1px solid rgba(255,255,255,0.08);
+            z-index: 200; background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.08);
             padding: 9px 20px; border-radius: 10px;
             font-size: 0.82rem; color: var(--text);
             opacity: 0; pointer-events: none;
             transition: opacity 0.25s, transform 0.25s;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
         }
-
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         @media (prefers-reduced-motion: reduce) {
@@ -368,11 +369,11 @@
                 transition-duration: 0.01ms !important;
             }
         }
-
-        @media (max-height: 600px) {
-            .game-wrapper { gap: 1vh; padding: 0.5vh 4vw; }
-            #header h1 { font-size: 1.1rem; }
-            .stat-value { font-size: 1rem; }
+        @media (max-height: 580px) {
+            .game-wrapper { gap: 0.8vh; padding: 0.3vh 3vw; }
+            #header h1 { font-size: 1rem; }
+            .stat-value { font-size: 0.95rem; }
+            #info { font-size: 0.75rem; }
         }
     </style>
 </head>
@@ -399,18 +400,13 @@
                 </div>
             </div>
         </header>
-
-        <div id="grid-container">
-            <div id="grid"></div>
-        </div>
-
+        <div id="grid-container"><div id="grid"></div></div>
         <div id="info">Scegli la difficolta e gioca</div>
     </div>
 
-    <!-- Overlay iniziale -->
     <div id="overlay" class="visible">
         <h2>Memory Match</h2>
-        <p>Scopri le carte e trova tutte le coppie di simboli uguali con il minor numero di mosse.</p>
+        <p>Scopri le carte e trova tutte le coppie di simboli uguali con il minor numero di mosse possibile.</p>
         <div class="difficulty-selector" id="diff-selector">
             <button class="diff-btn" data-diff="easy">Facile</button>
             <button class="diff-btn selected" data-diff="medium">Medio</button>
@@ -423,45 +419,50 @@
 
     <script>
         /* ============================
-           CONFIGURAZIONE DIFFICOLTÀ
+           SIMBOLI — caratteri Unicode multicolore
+           Ogni simbolo ha forma, colore e nome unici
         ============================ */
-        const DIFFICULTIES = {
-            easy:   { cols: 4, rows: 3, pairs: 6,  label: 'Facile',   starThresholds: [8, 12, 20] },
-            medium: { cols: 4, rows: 4, pairs: 8,  label: 'Medio',    starThresholds: [10, 16, 26] },
-            hard:   { cols: 5, rows: 4, pairs: 10, label: 'Difficile', starThresholds: [14, 22, 36] },
-        };
-
-        /* Simboli e colori per le coppie */
         const ALL_SYMBOLS = [
-            { icon: '♚', color: '#f59e0b' },
-            { icon: '♛', color: '#ec4899' },
-            { icon: '♞', color: '#a78bfa' },
-            { icon: '✦', color: '#22c55e' },
-            { icon: '◆', color: '#06b6d4' },
-            { icon: '▲', color: '#ef4444' },
-            { icon: '●', color: '#f97316' },
-            { icon: '✿', color: '#c084fc' },
-            { icon: '♠', color: '#64748b' },
-            { icon: '♥', color: '#fb7185' },
+            { char: '★',  color: '#FBBF24', name: 'Stella' },
+            { char: '♥',  color: '#F43F5E', name: 'Cuore' },
+            { char: '⚡', color: '#38BDF8', name: 'Fulmine' },
+            { char: '☾',  color: '#C084FC', name: 'Luna' },
+            { char: '🔥', color: '#FB923C', name: 'Fuoco' },
+            { char: '◆',  color: '#2DD4BF', name: 'Diamante' },
+            { char: '♛',  color: '#FACC15', name: 'Regina' },
+            { char: '☀',  color: '#FCD34D', name: 'Sole' },
+            { char: '❄',  color: '#67E8F9', name: 'Fiocco' },
+            { char: '☘',  color: '#4ADE80', name: 'Trifoglio' },
+            { char: '♫',  color: '#F472B6', name: 'Nota' },
+            { char: '⚓',  color: '#94A3B8', name: 'Ancora' },
         ];
 
         /* ============================
-           STATO DEL GIOCO
+           DIFFICOLTÀ
+        ============================ */
+        const DIFFICULTIES = {
+            easy:   { cols: 4, rows: 3, pairs: 6,  label: 'Facile',    starThresholds: [8, 13, 22] },
+            medium: { cols: 4, rows: 4, pairs: 8,  label: 'Medio',     starThresholds: [12, 18, 30] },
+            hard:   { cols: 5, rows: 4, pairs: 10, label: 'Difficile', starThresholds: [16, 24, 40] },
+        };
+
+        /* ============================
+           STATO
         ============================ */
         let currentDiff = 'medium';
-        let cards = [];         // array di oggetti { id, symbolIndex, element }
-        let flippedCards = [];  // max 2 carte scoperte
+        let cards = [];
+        let flippedCards = [];
         let matchedCount = 0;
         let totalPairs = 8;
         let moves = 0;
         let timerSeconds = 0;
         let timerInterval = null;
         let timerStarted = false;
-        let isLocked = false;   // blocca click durante animazioni
+        let isLocked = false;
         let gameActive = false;
 
         /* ============================
-           RIFERIMENTI DOM
+           DOM
         ============================ */
         const gridEl = document.getElementById('grid');
         const gridContainer = document.getElementById('grid-container');
@@ -476,7 +477,7 @@
         const toastEl = document.getElementById('toast');
 
         /* ============================
-           AUDIO (Web Audio API)
+           AUDIO
         ============================ */
         let audioCtx = null;
 
@@ -485,39 +486,39 @@
             if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
-        function playTone(freq, duration = 0.15, type = 'sine', vol = 0.1) {
+        function playTone(freq, dur = 0.15, type = 'sine', vol = 0.08) {
             if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
+            try {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                g.gain.setValueAtTime(vol, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+                osc.connect(g); g.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + dur + 0.05);
+            } catch(e) {}
         }
 
-        function playFlipSound() {
-            playTone(800, 0.06, 'sine', 0.06);
-        }
+        const NOTES = [523, 587, 659, 698, 784, 880, 988, 1047, 1175, 1319, 1397, 1568];
 
-        function playMatchSound() {
-            playTone(523, 0.12, 'sine', 0.1);
-            setTimeout(() => playTone(659, 0.12, 'sine', 0.1), 80);
-            setTimeout(() => playTone(784, 0.18, 'sine', 0.1), 160);
+        function playFlipSound(si) { playTone(NOTES[si % NOTES.length], 0.18, 'sine', 0.07); }
+
+        function playMatchSound(si) {
+            const b = NOTES[si % NOTES.length];
+            playTone(b, 0.12, 'sine', 0.09);
+            setTimeout(() => playTone(b * 1.25, 0.12, 'sine', 0.09), 80);
+            setTimeout(() => playTone(b * 1.5, 0.2, 'sine', 0.09), 160);
         }
 
         function playMismatchSound() {
-            playTone(200, 0.2, 'triangle', 0.08);
-            setTimeout(() => playTone(160, 0.25, 'triangle', 0.06), 100);
+            playTone(200, 0.22, 'triangle', 0.07);
+            setTimeout(() => playTone(155, 0.3, 'triangle', 0.05), 110);
         }
 
         function playWinSound() {
-            const notes = [523, 587, 659, 784, 880, 1047];
-            notes.forEach((f, i) => {
-                setTimeout(() => playTone(f, 0.2, 'sine', 0.09), i * 100);
+            [523, 587, 659, 784, 880, 1047].forEach((f, i) => {
+                setTimeout(() => playTone(f, 0.22, 'sine', 0.08), i * 90);
             });
         }
 
@@ -535,11 +536,8 @@
         /* ============================
            UTILITÀ
         ============================ */
-        function wait(ms) {
-            return new Promise(r => setTimeout(r, ms));
-        }
+        function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-        /* Mescola un array (Fisher-Yates) */
         function shuffle(arr) {
             const a = [...arr];
             for (let i = a.length - 1; i > 0; i--) {
@@ -549,11 +547,7 @@
             return a;
         }
 
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60);
-            const s = seconds % 60;
-            return `${m}:${s.toString().padStart(2, '0')}`;
-        }
+        function fmtTime(s) { return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; }
 
         /* ============================
            TIMER
@@ -561,23 +555,10 @@
         function startTimer() {
             if (timerStarted) return;
             timerStarted = true;
-            timerInterval = setInterval(() => {
-                timerSeconds++;
-                timeVal.textContent = formatTime(timerSeconds);
-            }, 1000);
+            timerInterval = setInterval(() => { timerSeconds++; timeVal.textContent = fmtTime(timerSeconds); }, 1000);
         }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-
-        function resetTimer() {
-            stopTimer();
-            timerSeconds = 0;
-            timerStarted = false;
-            timeVal.textContent = '0:00';
-        }
+        function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+        function resetTimer() { stopTimer(); timerSeconds = 0; timerStarted = false; timeVal.textContent = '0:00'; }
 
         /* ============================
            DISPLAY
@@ -587,45 +568,25 @@
             pairsVal.textContent = `${matchedCount}/${totalPairs}`;
             updateBestDisplay();
         }
-
-        function bumpStat(el) {
-            el.classList.add('bump');
-            setTimeout(() => el.classList.remove('bump'), 200);
-        }
-
-        function getBestKey() { return `memorymatch_best_${currentDiff}`; }
-
-        function getBest() {
-            const val = localStorage.getItem(getBestKey());
-            return val ? parseInt(val) : null;
-        }
-
-        function setBest(val) {
-            localStorage.setItem(getBestKey(), val.toString());
-        }
-
-        function updateBestDisplay() {
-            const best = getBest();
-            bestVal.textContent = best !== null ? best : '--';
-        }
+        function bumpStat(el) { el.classList.add('bump'); setTimeout(() => el.classList.remove('bump'), 220); }
+        function getBestKey() { return `memmatch_best_${currentDiff}`; }
+        function getBest() { const v = localStorage.getItem(getBestKey()); return v ? parseInt(v) : null; }
+        function setBest(v) { localStorage.setItem(getBestKey(), v.toString()); }
+        function updateBestDisplay() { const b = getBest(); bestVal.textContent = b !== null ? b : '--'; }
 
         /* ============================
-           COSTRUZIONE GRIGLIA
+           GRIGLIA
         ============================ */
         function buildGrid() {
             const diff = DIFFICULTIES[currentDiff];
             const { cols, rows, pairs } = diff;
             totalPairs = pairs;
 
-            /* Imposta aspect ratio e colonne CSS */
             gridContainer.style.setProperty('--grid-aspect', `${cols}/${rows}`);
             gridContainer.style.setProperty('--cols', cols);
             gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
-            /* Scegli simboli casuali */
             const chosen = shuffle(ALL_SYMBOLS).slice(0, pairs);
-
-            /* Crea coppie e mescola */
             let deck = [];
             chosen.forEach((sym, idx) => {
                 deck.push({ symbolIndex: idx, ...sym });
@@ -633,7 +594,6 @@
             });
             deck = shuffle(deck);
 
-            /* Svuota e ricostruisci */
             gridEl.innerHTML = '';
             cards = [];
             flippedCards = [];
@@ -654,81 +614,73 @@
                             <span class="card-front-icon">?</span>
                         </div>
                         <div class="card-face card-back">
-                            <span class="symbol" style="color:${item.color}">${item.icon}</span>
+                            <span class="symbol" style="color:${item.color}">${item.char}</span>
                         </div>
                     </div>
                 `;
 
                 card.addEventListener('click', () => handleCardClick(card));
                 card.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleCardClick(card);
-                    }
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(card); }
                 });
 
                 gridEl.appendChild(card);
                 cards.push({
-                    id: i,
-                    symbolIndex: item.symbolIndex,
-                    element: card,
-                    color: item.color,
-                    icon: item.icon,
+                    id: i, symbolIndex: item.symbolIndex,
+                    element: card, color: item.color,
+                    name: item.name, char: item.char,
                 });
             });
         }
 
         /* ============================
-           LOGICA DI GIOCO
+           GIOCO
         ============================ */
         function startGame() {
             ensureAudio();
             overlayEl.classList.remove('visible');
+            matchedCount = 0; moves = 0; flippedCards = [];
+            isLocked = false; gameActive = true;
+            resetTimer(); buildGrid(); updateDisplay();
 
-            matchedCount = 0;
-            moves = 0;
-            flippedCards = [];
-            isLocked = false;
-            gameActive = true;
-            resetTimer();
-            buildGrid();
-            updateDisplay();
-
-            /* Breve anteprima: mostra tutte le carte per 1.2s poi girale */
             infoEl.className = 'highlight';
             infoEl.textContent = 'Memorizza...';
 
-            cards.forEach(c => c.element.classList.add('flipped'));
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    /* Scopri a cascata */
+                    cards.forEach((c, i) => {
+                        setTimeout(() => { c.element.classList.add('flipped'); playFlipSound(c.symbolIndex); }, i * 45);
+                    });
 
-            setTimeout(() => {
-                cards.forEach(c => c.element.classList.remove('flipped'));
-                setTimeout(() => {
-                    cards.forEach(c => c.element.classList.remove('locked'));
-                    infoEl.className = '';
-                    infoEl.textContent = 'Tocca due carte';
-                }, 500);
-            }, 1200);
+                    /* Rigira tutto */
+                    const flipBack = cards.length * 45 + 1300;
+                    setTimeout(() => {
+                        cards.forEach((c, i) => {
+                            setTimeout(() => c.element.classList.remove('flipped'), i * 30);
+                        });
+                        setTimeout(() => {
+                            cards.forEach(c => c.element.classList.remove('locked'));
+                            infoEl.className = '';
+                            infoEl.textContent = 'Tocca due carte';
+                        }, cards.length * 30 + 400);
+                    }, flipBack);
+                });
+            });
         }
 
         function handleCardClick(cardEl) {
             if (isLocked || !gameActive) return;
-
             const cardData = cards.find(c => c.element === cardEl);
             if (!cardData) return;
-
-            /* Ignora se già scoperta o già trovata */
             if (cardEl.classList.contains('flipped') || cardEl.classList.contains('matched')) return;
 
-            /* Avvia il timer al primo click */
             startTimer();
-
-            /* Scopri la carta */
             cardEl.classList.add('flipped');
-            playFlipSound();
-            cardEl.setAttribute('aria-label', `Carta ${cardData.id + 1}, simbolo ${cardData.icon}`);
+            playFlipSound(cardData.symbolIndex);
+            cardEl.setAttribute('aria-label', `Carta ${cardData.id + 1}, ${cardData.name}`);
             flippedCards.push(cardData);
 
-            /* Se abbiamo 2 carte scoperte, controlla */
             if (flippedCards.length === 2) {
                 moves++;
                 bumpStat(movesVal);
@@ -742,49 +694,42 @@
             const [a, b] = flippedCards;
 
             if (a.symbolIndex === b.symbolIndex) {
-                /* Coppia trovata! */
-                await wait(300);
+                await wait(350);
                 a.element.classList.add('matched');
                 b.element.classList.add('matched');
-                playMatchSound();
+                playMatchSound(a.symbolIndex);
                 spawnParticles(a.element, a.color);
                 spawnParticles(b.element, b.color);
+                spawnStarParticles(a.element, a.color);
 
                 matchedCount++;
                 updateDisplay();
                 bumpStat(pairsVal);
-
                 infoEl.className = 'highlight';
                 infoEl.textContent = 'Coppia trovata!';
 
                 flippedCards = [];
                 isLocked = false;
 
-                /* Controlla vittoria */
                 if (matchedCount === totalPairs) {
                     gameActive = false;
                     stopTimer();
-                    setTimeout(() => showWin(), 600);
+                    setTimeout(() => showWin(), 700);
                 }
             } else {
-                /* Non corrispondono */
                 a.element.classList.add('wrong');
                 b.element.classList.add('wrong');
                 playMismatchSound();
-
                 infoEl.className = 'error';
                 infoEl.textContent = 'Riprova';
 
-                await wait(800);
-
+                await wait(850);
                 a.element.classList.remove('flipped', 'wrong');
                 b.element.classList.remove('flipped', 'wrong');
                 a.element.setAttribute('aria-label', `Carta ${a.id + 1}, coperta`);
                 b.element.setAttribute('aria-label', `Carta ${b.id + 1}, coperta`);
-
                 infoEl.className = '';
                 infoEl.textContent = 'Tocca due carte';
-
                 flippedCards = [];
                 isLocked = false;
             }
@@ -795,37 +740,38 @@
         ============================ */
         function showWin() {
             playWinSound();
-
-            const diff = DIFFICULTIES[currentDiff];
-            const thresholds = diff.starThresholds; // [3stelle, 2stelle, 1stella]
+            const th = DIFFICULTIES[currentDiff].starThresholds;
             let stars = 1;
-            if (moves <= thresholds[0]) stars = 3;
-            else if (moves <= thresholds[1]) stars = 2;
+            if (moves <= th[0]) stars = 3;
+            else if (moves <= th[1]) stars = 2;
 
-            /* Aggiorna record */
             const prevBest = getBest();
             let newRecord = false;
-            if (prevBest === null || moves < prevBest) {
-                setBest(moves);
-                newRecord = true;
-            }
+            if (prevBest === null || moves < prevBest) { setBest(moves); newRecord = true; }
             updateBestDisplay();
 
-            /* Costruisci overlay vittoria */
-            const starsHTML = [1, 2, 3].map(i =>
+            const starsHTML = [1,2,3].map(i =>
                 `<span class="star ${i <= stars ? 'earned' : ''}">&#9733;</span>`
             ).join('');
+
+            /* Anteprima dei simboli usati */
+            const seen = new Set();
+            const previewHTML = cards.filter(c => c.element.classList.contains('matched'))
+                .filter(c => { if (seen.has(c.symbolIndex)) return false; seen.add(c.symbolIndex); return true; })
+                .map(c => `<div class="preview-icon" style="color:${c.color}">${c.char}</div>`)
+                .join('');
 
             overlayEl.innerHTML = `
                 <h2 class="win">Completato!</h2>
                 <div class="stars-row">${starsHTML}</div>
+                <div class="preview-icons">${previewHTML}</div>
                 <div class="final-stats">
                     <div class="final-stat">
                         <div class="final-stat-val">${moves}</div>
                         <div class="final-stat-label">Mosse</div>
                     </div>
                     <div class="final-stat">
-                        <div class="final-stat-val">${formatTime(timerSeconds)}</div>
+                        <div class="final-stat-val">${fmtTime(timerSeconds)}</div>
                         <div class="final-stat-label">Tempo</div>
                     </div>
                     <div class="final-stat">
@@ -844,56 +790,64 @@
 
             overlayEl.classList.add('visible');
 
-            /* Event listener per il selettore nell'overlay finale */
             document.getElementById('diff-selector-end').addEventListener('click', (e) => {
                 const btn = e.target.closest('.diff-btn');
                 if (!btn) return;
                 document.querySelectorAll('#diff-selector-end .diff-btn').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 currentDiff = btn.dataset.diff;
-                /* Aggiorna anche il selettore principale */
-                diffSelector.querySelectorAll('.diff-btn').forEach(b => {
-                    b.classList.toggle('selected', b.dataset.diff === currentDiff);
-                });
+                diffSelector.querySelectorAll('.diff-btn').forEach(b =>
+                    b.classList.toggle('selected', b.dataset.diff === currentDiff)
+                );
             });
 
-            document.getElementById('replay-btn').addEventListener('click', () => {
-                startGame();
-            });
+            document.getElementById('replay-btn').addEventListener('click', startGame);
         }
 
         /* ============================
-           EFFETTI VISIVI
+           PARTICELLE
         ============================ */
         function spawnParticles(fromEl, color) {
             const rect = fromEl.getBoundingClientRect();
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
-            const colors = [color, '#ffffff', color, color];
-
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 12; i++) {
                 const p = document.createElement('div');
                 p.className = 'particle';
-                const size = 3 + Math.random() * 5;
+                const size = 4 + Math.random() * 7;
                 const angle = Math.random() * Math.PI * 2;
-                const dist = 30 + Math.random() * 70;
-                const dx = Math.cos(angle) * dist;
-                const dy = Math.sin(angle) * dist;
+                const dist = 35 + Math.random() * 80;
                 p.style.cssText = `
-                    left:${cx - size/2}px; top:${cy - size/2}px;
+                    left:${cx-size/2}px; top:${cy-size/2}px;
                     width:${size}px; height:${size}px;
-                    background:${colors[Math.floor(Math.random() * colors.length)]};
-                    --dx:${dx}px; --dy:${dy}px;
+                    background:${color};
+                    --dx:${Math.cos(angle)*dist}px; --dy:${Math.sin(angle)*dist}px;
                 `;
                 document.body.appendChild(p);
-                setTimeout(() => p.remove(), 700);
+                setTimeout(() => p.remove(), 750);
             }
         }
 
-        function showToast(msg, duration = 2000) {
-            toastEl.textContent = msg;
-            toastEl.classList.add('show');
-            setTimeout(() => toastEl.classList.remove('show'), duration);
+        function spawnStarParticles(fromEl, color) {
+            const rect = fromEl.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            for (let i = 0; i < 5; i++) {
+                const s = document.createElement('div');
+                s.className = 'particle-star';
+                const size = 10 + Math.random() * 8;
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 50 + Math.random() * 60;
+                s.style.cssText = `
+                    left:${cx-size/2}px; top:${cy-size/2}px;
+                    width:${size}px; height:${size}px;
+                    color:${color}; font-size:${size}px;
+                    --dx:${Math.cos(angle)*dist}px; --dy:${Math.sin(angle)*dist}px;
+                `;
+                s.innerHTML = '&#9733;';
+                document.body.appendChild(s);
+                setTimeout(() => s.remove(), 850);
+            }
         }
 
         /* ============================
