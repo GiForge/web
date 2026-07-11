@@ -15,6 +15,7 @@
     --text-color:#ccc;
     --border:#444;
     --input-bg:#3c3c3c;
+    --menu-bg:#252526;
 }
 
 html,body{
@@ -27,7 +28,7 @@ html,body{
 
 /* ===== TOOLBAR ===== */
 #toolbar{
-    height:55px;
+    height:48px;
     background:var(--toolbar-bg);
     display:flex;
     align-items:center;
@@ -36,7 +37,7 @@ html,body{
     border-bottom:1px solid var(--border);
 }
 
-.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.actions{display:flex;gap:6px;align-items:center}
 
 button,select{
     background:#3c3c3c;
@@ -55,7 +56,6 @@ button,select{
 button:hover{background:#505050}
 select{background:var(--accent);border:none;font-weight:bold}
 
-/* Stato attivo per i toggle */
 button.toggle-on{
     background:var(--accent);
     border-color:var(--accent);
@@ -65,10 +65,100 @@ button.toggle-on{
     margin-left:auto;
     font-size:12px;
     color:#888;
-    max-width:200px;
+    max-width:220px;
     overflow:hidden;
     white-space:nowrap;
     text-overflow:ellipsis;
+}
+
+/* ===== MENU DROPDOWN ===== */
+.menu-wrapper{
+    position:relative;
+}
+
+.menu-btn{
+    background:var(--accent) !important;
+    border-color:var(--accent) !important;
+    font-weight:bold;
+    border-radius:4px;
+}
+
+.menu-btn:hover{
+    filter:brightness(1.15);
+    background:var(--accent) !important;
+}
+
+.menu-panel{
+    display:none;
+    position:absolute;
+    top:calc(100% + 4px);
+    left:0;
+    min-width:240px;
+    background:var(--menu-bg);
+    border:1px solid var(--border);
+    border-radius:6px;
+    box-shadow:0 8px 30px rgba(0,0,0,.5);
+    z-index:1000;
+    padding:6px 0;
+    animation:menuIn .12s ease-out;
+}
+
+@keyframes menuIn{
+    from{opacity:0;transform:translateY(-6px)}
+    to{opacity:1;transform:translateY(0)}
+}
+
+.menu-panel.open{display:block}
+
+.menu-panel button{
+    width:100%;
+    background:transparent;
+    border:none;
+    border-radius:0;
+    padding:9px 16px;
+    justify-content:flex-start;
+    font-size:13px;
+    gap:10px;
+}
+
+.menu-panel button:hover{
+    background:var(--accent);
+}
+
+.menu-panel button i{
+    width:16px;
+    text-align:center;
+    color:#888;
+    font-size:13px;
+}
+
+.menu-panel button:hover i{
+    color:white;
+}
+
+.menu-separator{
+    height:1px;
+    background:var(--border);
+    margin:4px 12px;
+}
+
+.menu-lang{
+    padding:8px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+.menu-lang label{
+    font-size:11px;
+    color:#888;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+}
+
+.menu-lang select{
+    width:100%;
+    border-radius:4px;
 }
 
 /* ===== TABS ===== */
@@ -110,22 +200,25 @@ button.toggle-on{
     gap:8px;
 }
 
-#search-bar.visible{
-    display:flex;
-}
-
-#search-bar input{
-    flex:1;
-    min-width:0;
-}
+#search-bar.visible{display:flex}
+#search-bar input{flex:1;min-width:0}
 
 /* ===== EDITOR ===== */
 #editor-container{
-    height:calc(100% - 55px - 34px);
+    height:calc(100% - 48px - 34px);
+}
+
+/* ===== SEPARATORE TOOLBAR ===== */
+.toolbar-sep{
+    width:1px;
+    height:24px;
+    background:var(--border);
+    margin:0 4px;
 }
 
 @media(max-width:768px){
     button span{display:none}
+    .menu-panel{min-width:200px}
 }
 </style>
 </head>
@@ -134,35 +227,75 @@ button.toggle-on{
 
 <div id="toolbar">
     <div class="actions">
-        <button onclick="newFile()"><i class="fas fa-file"></i><span>Nuovo</span></button>
-        <button onclick="openFile()"><i class="fas fa-folder-open"></i><span>Apri</span></button>
-        <button onclick="saveFile()"><i class="fas fa-save"></i><span>Salva</span></button>
-        <button onclick="toggleSearchBar()"><i class="fas fa-search"></i></button>
 
-        <button onclick="decreaseFont()">A−</button>
-        <button onclick="increaseFont()">A+</button>
+        <!-- MENU PRINCIPALE -->
+        <div class="menu-wrapper">
+            <button class="menu-btn" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i><span>Menu</span>
+            </button>
+            <div id="menuPanel" class="menu-panel">
 
-        <!-- WRAP TOGGLE -->
+                <button onclick="newFile(); closeMenu()">
+                    <i class="fas fa-file"></i> Nuovo file
+                </button>
+                <button onclick="openFile(); closeMenu()">
+                    <i class="fas fa-folder-open"></i> Apri file
+                </button>
+
+                <div class="menu-separator"></div>
+
+                <button onclick="saveFile(); closeMenu()">
+                    <i class="fas fa-save"></i> Salva
+                </button>
+                <button onclick="saveFileAs(); closeMenu()">
+                    <i class="fas fa-file-export"></i> Salva con nome
+                </button>
+
+                <div class="menu-separator"></div>
+
+                <button onclick="toggleSearchBar(); closeMenu()">
+                    <i class="fas fa-search"></i> Cerca e sostituisci
+                </button>
+
+                <div class="menu-separator"></div>
+
+                <div class="menu-lang">
+                    <label>Linguaggio</label>
+                    <select id="languageSelector" onchange="changeLanguage()">
+                        <option value="plaintext">Testo</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="java">Java</option>
+                        <option value="python">Python</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="json">JSON</option>
+                        <option value="cpp">C++</option>
+                        <option value="markdown">Markdown</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="toolbar-sep"></div>
+
+        <!-- FONT E WRAP -->
+        <button onclick="decreaseFont()" title="Riduci font">A−</button>
+        <button onclick="increaseFont()" title="Aumenta font">A+</button>
+
+        <div class="toolbar-sep"></div>
+
         <button id="wrapBtn" onclick="toggleWrap()" title="A capo automatico">
             <i class="fas fa-text-width"></i><span>Wrap</span>
         </button>
 
-        <button onclick="openEditorContextMenu()" title="Menu editor">
+        <div class="toolbar-sep"></div>
+
+        <!-- MENU CONTESTUALE EDITOR (MOBILE) -->
+        <button onclick="openEditorContextMenu()" title="Menu contestuale editor">
             <i class="fas fa-ellipsis-vertical"></i>
         </button>
-
-        <select id="languageSelector" onchange="changeLanguage()">
-            <option value="plaintext">Testo</option>
-            <option value="javascript">JavaScript</option>
-            <option value="java">Java</option>
-            <option value="python">Python</option>
-            <option value="html">HTML</option>
-            <option value="css">CSS</option>
-            <option value="json">JSON</option>
-            <option value="cpp">C++</option>
-            <option value="markdown">Markdown</option>
-        </select>
     </div>
+
     <div class="file-info" id="fileNameDisplay">Senza nome</div>
 </div>
 
@@ -185,6 +318,7 @@ let editor, tabs=[], activeTab=null, untitledCount=1;
 let fontSize = 14;
 let searchBarVisible = false;
 let wordWrapEnabled = false;
+let menuOpen = false;
 
 /* ===== MONACO INIT ===== */
 require.config({paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs'}});
@@ -197,32 +331,61 @@ require(['vs/editor/editor.main'],()=>{
         wordWrap:'off'
     });
 
-    /* --- Select All nel menu contestuale --- */
+    /* Select All nel menu contestuale */
     editor.addAction({
-        id: 'context-select-all',
-        label: 'Select All',
-        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA],
-        contextMenuGroupId: '3_cutcopypaste',
-        contextMenuOrder: 3.5,
-        run: function(ed) {
+        id:'context-select-all',
+        label:'Select All',
+        keybindings:[monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA],
+        contextMenuGroupId:'3_cutcopypaste',
+        contextMenuOrder:3.5,
+        run:function(ed){
             ed.setSelection(ed.getModel().getFullModelRange());
         }
     });
 
     newFile();
 
-    document.getElementById('searchInput').addEventListener('keydown', function(e){
+    document.getElementById('searchInput').addEventListener('keydown',function(e){
         if(e.key==='Enter'){
             e.preventDefault();
             e.shiftKey ? findPrevious() : findNext();
         }
     });
+
+    /* Chiudi menu cliccando fuori */
+    document.addEventListener('click',function(e){
+        if(menuOpen && !e.target.closest('.menu-wrapper')){
+            closeMenu();
+        }
+    });
 });
+
+/* ===== MENU ===== */
+function toggleMenu(){
+    menuOpen = !menuOpen;
+    document.getElementById('menuPanel').classList.toggle('open', menuOpen);
+}
+
+function closeMenu(){
+    menuOpen = false;
+    document.getElementById('menuPanel').classList.remove('open');
+}
+
+/* ===== CONTEXT MENU EDITOR (MOBILE) ===== */
+function openEditorContextMenu(){
+    if(!editor) return;
+    closeMenu();
+    editor.focus();
+    const contrib = editor.getContribution('editor.contrib.contextmenu');
+    if(contrib && contrib.showContextMenu){
+        contrib.showContextMenu();
+    }
+}
 
 /* ===== WRAP TOGGLE ===== */
 function toggleWrap(){
     wordWrapEnabled = !wordWrapEnabled;
-    editor.updateOptions({ wordWrap: wordWrapEnabled ? 'on' : 'off' });
+    editor.updateOptions({wordWrap: wordWrapEnabled ? 'on' : 'off'});
     document.getElementById('wrapBtn').classList.toggle('toggle-on', wordWrapEnabled);
 }
 
@@ -235,16 +398,6 @@ function toggleSearchBar(){
         document.getElementById('searchInput').focus();
     } else {
         editor.focus();
-    }
-}
-
-/* ===== CONTEXT MENU (EDITOR) ===== */
-function openEditorContextMenu(){
-    if(!editor) return;
-    editor.focus();
-    const contrib = editor.getContribution('editor.contrib.contextmenu');
-    if(contrib && contrib.showContextMenu){
-        contrib.showContextMenu();
     }
 }
 
@@ -319,26 +472,52 @@ function closeTab(id){
 }
 
 function newFile(){createTab(`Senza nome ${untitledCount++}.txt`);}
+
 async function openFile(){
-    const [h]=await window.showOpenFilePicker();
-    const f=await h.getFile();
-    createTab(f.name,await f.text(),getLang(f.name),h);
-}
-async function saveFile(){
-    if(!activeTab.handle){
-        activeTab.handle=await window.showSaveFilePicker({suggestedName:activeTab.name});
-    }
-    const w=await activeTab.handle.createWritable();
-    await w.write(editor.getValue());
-    await w.close();
+    try{
+        const [h]=await window.showOpenFilePicker();
+        const f=await h.getFile();
+        createTab(f.name,await f.text(),getLang(f.name),h);
+    }catch(e){}
 }
 
-/* ===== SEARCH con scroll automatico ===== */
+async function saveFile(){
+    if(!activeTab.handle){
+        return saveFileAs();
+    }
+    try{
+        const w=await activeTab.handle.createWritable();
+        await w.write(editor.getValue());
+        await w.close();
+    }catch(e){}
+}
+
+async function saveFileAs(){
+    try{
+        const handle=await window.showSaveFilePicker({suggestedName:activeTab.name});
+        const w=await handle.createWritable();
+        await w.write(editor.getValue());
+        await w.close();
+        activeTab.handle=handle;
+        const newName=handle.name;
+        activeTab.name=newName;
+        const tabEl=document.querySelector(`.tab[data-id="${activeTab.id}"] span`);
+        if(tabEl) tabEl.textContent=newName;
+        fileNameDisplay.textContent=newName;
+        const newLang=getLang(newName);
+        if(newLang!==activeTab.model.getLanguageId()){
+            monaco.editor.setModelLanguage(activeTab.model,newLang);
+            languageSelector.value=newLang;
+        }
+    }catch(e){}
+}
+
+/* ===== SEARCH ===== */
 function findNext(){
-    const term = document.getElementById('searchInput').value;
+    const term=document.getElementById('searchInput').value;
     if(!term) return;
-    const r = editor.getModel()
-        .findNextMatch(term, editor.getPosition(), false, false, null, true);
+    const r=editor.getModel()
+        .findNextMatch(term,editor.getPosition(),false,false,null,true);
     if(r){
         editor.setSelection(r.range);
         editor.revealRangeInCenter(r.range);
@@ -346,10 +525,10 @@ function findNext(){
 }
 
 function findPrevious(){
-    const term = document.getElementById('searchInput').value;
+    const term=document.getElementById('searchInput').value;
     if(!term) return;
-    const r = editor.getModel()
-        .findPreviousMatch(term, editor.getPosition(), false, false, null, true);
+    const r=editor.getModel()
+        .findPreviousMatch(term,editor.getPosition(),false,false,null,true);
     if(r){
         editor.setSelection(r.range);
         editor.revealRangeInCenter(r.range);
@@ -357,33 +536,34 @@ function findPrevious(){
 }
 
 function replaceOnce(){
-    const term = document.getElementById('searchInput').value;
-    const replacement = document.getElementById('replaceInput').value;
+    const term=document.getElementById('searchInput').value;
+    const replacement=document.getElementById('replaceInput').value;
     if(!term) return;
-    const sel = editor.getSelection();
-    if(!sel.isEmpty() && editor.getModel().getValueInRange(sel) === term){
-        editor.executeEdits("", [{range: sel, text: replacement}]);
+    const sel=editor.getSelection();
+    if(!sel.isEmpty() && editor.getModel().getValueInRange(sel)===term){
+        editor.executeEdits("",[{range:sel,text:replacement}]);
     }
     findNext();
 }
 
 function replaceAll(){
-    const term = document.getElementById('searchInput').value;
-    const replacement = document.getElementById('replaceInput').value;
+    const term=document.getElementById('searchInput').value;
+    const replacement=document.getElementById('replaceInput').value;
     if(!term) return;
-    const m = editor.getModel();
-    const ms = m.findMatches(term, true, false, false, null, true);
-    editor.executeEdits("", ms.map(x => ({range: x.range, text: replacement})));
+    const m=editor.getModel();
+    const ms=m.findMatches(term,true,false,false,null,true);
+    editor.executeEdits("",ms.map(x=>({range:x.range,text:replacement})));
 }
 
-/* UTILS */
+/* ===== UTILS ===== */
 function getLang(name){
-    return {
+    return{
         js:'javascript',java:'java',py:'python',
         html:'html',css:'css',json:'json',
         cpp:'cpp',md:'markdown',txt:'plaintext'
     }[name.split('.').pop()]||'plaintext';
 }
+
 function changeLanguage(){
     monaco.editor.setModelLanguage(activeTab.model,languageSelector.value);
 }
