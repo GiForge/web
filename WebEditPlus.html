@@ -51,9 +51,11 @@ button,select{
     align-items:center;
     gap:6px;
     transition:background .15s, border-color .15s;
+    -webkit-tap-highlight-color:transparent;
 }
 
 button:hover{background:#505050}
+button:active{background:#606060}
 select{background:var(--accent);border:none;font-weight:bold}
 
 button.toggle-on{
@@ -72,21 +74,15 @@ button.toggle-on{
 }
 
 /* ===== MENU DROPDOWN ===== */
-.menu-wrapper{
-    position:relative;
-}
+.menu-wrapper{position:relative}
 
 .menu-btn{
     background:var(--accent) !important;
     border-color:var(--accent) !important;
     font-weight:bold;
-    border-radius:4px;
 }
 
-.menu-btn:hover{
-    filter:brightness(1.15);
-    background:var(--accent) !important;
-}
+.menu-btn:hover{filter:brightness(1.15);background:var(--accent) !important}
 
 .menu-panel{
     display:none;
@@ -121,9 +117,7 @@ button.toggle-on{
     gap:10px;
 }
 
-.menu-panel button:hover{
-    background:var(--accent);
-}
+.menu-panel button:hover{background:var(--accent)}
 
 .menu-panel button i{
     width:16px;
@@ -132,15 +126,9 @@ button.toggle-on{
     font-size:13px;
 }
 
-.menu-panel button:hover i{
-    color:white;
-}
+.menu-panel button:hover i{color:white}
 
-.menu-separator{
-    height:1px;
-    background:var(--border);
-    margin:4px 12px;
-}
+.menu-separator{height:1px;background:var(--border);margin:4px 12px}
 
 .menu-lang{
     padding:8px 16px;
@@ -156,9 +144,103 @@ button.toggle-on{
     letter-spacing:.5px;
 }
 
-.menu-lang select{
+.menu-lang select{width:100%;border-radius:4px}
+
+/* ===== MOBILE CONTEXT MENU (da pulsante ⋮) ===== */
+.mobile-ctx-menu{
+    display:none;
+    position:fixed;
+    z-index:2000;
+    min-width:190px;
+    background:var(--menu-bg);
+    border:1px solid var(--border);
+    border-radius:6px;
+    box-shadow:0 8px 30px rgba(0,0,0,.6);
+    padding:6px 0;
+    animation:menuIn .12s ease-out;
+}
+
+.mobile-ctx-menu.open{display:block}
+
+.mobile-ctx-menu button{
     width:100%;
-    border-radius:4px;
+    background:transparent;
+    border:none;
+    border-radius:0;
+    padding:11px 16px;
+    justify-content:flex-start;
+    font-size:14px;
+    gap:10px;
+}
+
+.mobile-ctx-menu button:active{background:var(--accent)}
+
+.mobile-ctx-menu button i{
+    width:18px;
+    text-align:center;
+    color:#888;
+}
+
+.mobile-ctx-menu button:active i{color:white}
+
+/* ===== SELECTION ACTION BAR (smartphone) ===== */
+.selection-bar{
+    display:none;
+    position:fixed;
+    z-index:2000;
+    background:var(--menu-bg);
+    border:1px solid var(--border);
+    border-radius:22px;
+    box-shadow:0 4px 24px rgba(0,0,0,.65);
+    padding:4px 6px;
+    gap:2px;
+    animation:selBarIn .15s ease-out;
+}
+
+.selection-bar.visible{display:flex}
+
+@keyframes selBarIn{
+    from{opacity:0;transform:translateY(10px) scale(.95)}
+    to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+.selection-bar button{
+    background:transparent;
+    border:none;
+    border-radius:50%;
+    width:38px;
+    height:38px;
+    padding:0;
+    justify-content:center;
+    font-size:14px;
+}
+
+.selection-bar button:active{background:var(--accent)}
+
+/* Freccina sotto la bar */
+.selection-bar::after{
+    content:'';
+    position:absolute;
+    bottom:-6px;
+    left:50%;
+    transform:translateX(-50%);
+    width:0;height:0;
+    border-left:6px solid transparent;
+    border-right:6px solid transparent;
+    border-top:6px solid var(--border);
+}
+
+.selection-bar::before{
+    content:'';
+    position:absolute;
+    bottom:-5px;
+    left:50%;
+    transform:translateX(-50%);
+    width:0;height:0;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent;
+    border-top:5px solid var(--menu-bg);
+    z-index:1;
 }
 
 /* ===== TABS ===== */
@@ -178,6 +260,7 @@ button.toggle-on{
     align-items:center;
     cursor:pointer;
     border-right:1px solid var(--border);
+    -webkit-tap-highlight-color:transparent;
 }
 
 .tab.active{background:#1e1e1e;color:white}
@@ -206,9 +289,10 @@ button.toggle-on{
 /* ===== EDITOR ===== */
 #editor-container{
     height:calc(100% - 48px - 34px);
+    touch-action:manipulation;
 }
 
-/* ===== SEPARATORE TOOLBAR ===== */
+/* ===== SEPARATORE ===== */
 .toolbar-sep{
     width:1px;
     height:24px;
@@ -219,6 +303,7 @@ button.toggle-on{
 @media(max-width:768px){
     button span{display:none}
     .menu-panel{min-width:200px}
+    .selection-bar button{width:42px;height:42px;font-size:15px}
 }
 </style>
 </head>
@@ -234,31 +319,24 @@ button.toggle-on{
                 <i class="fas fa-bars"></i><span>Menu</span>
             </button>
             <div id="menuPanel" class="menu-panel">
-
                 <button onclick="newFile(); closeMenu()">
                     <i class="fas fa-file"></i> Nuovo file
                 </button>
                 <button onclick="openFile(); closeMenu()">
                     <i class="fas fa-folder-open"></i> Apri file
                 </button>
-
                 <div class="menu-separator"></div>
-
                 <button onclick="saveFile(); closeMenu()">
                     <i class="fas fa-save"></i> Salva
                 </button>
                 <button onclick="saveFileAs(); closeMenu()">
                     <i class="fas fa-file-export"></i> Salva con nome
                 </button>
-
                 <div class="menu-separator"></div>
-
                 <button onclick="toggleSearchBar(); closeMenu()">
                     <i class="fas fa-search"></i> Cerca e sostituisci
                 </button>
-
                 <div class="menu-separator"></div>
-
                 <div class="menu-lang">
                     <label>Linguaggio</label>
                     <select id="languageSelector" onchange="changeLanguage()">
@@ -290,8 +368,8 @@ button.toggle-on{
 
         <div class="toolbar-sep"></div>
 
-        <!-- MENU CONTESTUALE EDITOR (MOBILE) -->
-        <button onclick="openEditorContextMenu()" title="Menu contestuale editor">
+        <!-- MENU CONTESTUALE (手机用) -->
+        <button id="ctxMenuBtn" onclick="openEditorContextMenu()" title="Menu contestuale">
             <i class="fas fa-ellipsis-vertical"></i>
         </button>
     </div>
@@ -311,14 +389,35 @@ button.toggle-on{
 
 <div id="editor-container"></div>
 
+<!-- Barra azioni selezione (smartphone, appare automaticamente) -->
+<div id="selectionBar" class="selection-bar">
+    <button onclick="mobileAction('selectAll')" title="Seleziona tutto"><i class="fas fa-object-group"></i></button>
+    <button onclick="mobileAction('copy')" title="Copia"><i class="fas fa-copy"></i></button>
+    <button onclick="mobileAction('cut')" title="Taglia"><i class="fas fa-cut"></i></button>
+    <button onclick="mobileAction('paste')" title="Incolla"><i class="fas fa-paste"></i></button>
+</div>
+
+<!-- Menu contestuale mobile (da pulsante ⋮) -->
+<div id="mobileCtxMenu" class="mobile-ctx-menu">
+    <button onclick="mobileAction('selectAll')"><i class="fas fa-object-group"></i> Seleziona tutto</button>
+    <button onclick="mobileAction('copy')"><i class="fas fa-copy"></i> Copia</button>
+    <button onclick="mobileAction('cut')"><i class="fas fa-cut"></i> Taglia</button>
+    <button onclick="mobileAction('paste')"><i class="fas fa-paste"></i> Incolla</button>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
 
 <script>
+/* Rileva dispositivo touch */
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
 let editor, tabs=[], activeTab=null, untitledCount=1;
 let fontSize = 14;
 let searchBarVisible = false;
 let wordWrapEnabled = false;
 let menuOpen = false;
+let mobileCtxOpen = false;
+let selBarTimer = null;
 
 /* ===== MONACO INIT ===== */
 require.config({paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs'}});
@@ -328,10 +427,13 @@ require(['vs/editor/editor.main'],()=>{
         language:'plaintext',
         automaticLayout:true,
         fontSize,
-        wordWrap:'off'
+        wordWrap:'off',
+        /* Disabilita il menu contestuale nativo di Monaco sui dispositivi touch
+           per non interferire con la selezione nativa e le nostre UI personalizzate */
+        contextmenu: !isTouchDevice
     });
 
-    /* Select All nel menu contestuale */
+    /* Select All (funziona nel menu contestuale desktop e nelle nostre UI mobile) */
     editor.addAction({
         id:'context-select-all',
         label:'Select All',
@@ -352,18 +454,134 @@ require(['vs/editor/editor.main'],()=>{
         }
     });
 
+    /* === Selezione su smartphone: barra azioni automatica === */
+    if(isTouchDevice){
+        editor.onDidChangeCursorSelection(function(e){
+            clearTimeout(selBarTimer);
+
+            if(!e.selection.isEmpty()){
+                /* Aspetta che l'utente finisca di trascinare la selezione */
+                selBarTimer = setTimeout(function(){
+                    positionSelectionBar(e.selection);
+                }, 350);
+            } else {
+                hideSelectionBar();
+            }
+        });
+    }
+
     /* Chiudi menu cliccando fuori */
     document.addEventListener('click',function(e){
         if(menuOpen && !e.target.closest('.menu-wrapper')){
             closeMenu();
         }
+        if(mobileCtxOpen && !e.target.closest('.mobile-ctx-menu') && !e.target.closest('#ctxMenuBtn')){
+            closeMobileCtxMenu();
+        }
+        /* Chiudi barra selezione toccando fuori dall'editor */
+        if(isTouchDevice && !e.target.closest('.selection-bar') && !e.target.closest('#editor-container')){
+            hideSelectionBar();
+        }
     });
 });
 
-/* ===== MENU ===== */
+/* ===== SELECTION BAR (smartphone) ===== */
+function positionSelectionBar(selection){
+    var bar = document.getElementById('selectionBar');
+    var startPos = selection.getStartPosition();
+    var pos = editor.getScrolledVisiblePosition(startPos);
+
+    if(!pos){ hideSelectionBar(); return; }
+
+    var containerRect = document.getElementById('editor-container').getBoundingClientRect();
+    var barWidth = isTouchDevice && window.innerWidth <= 768 ? 190 : 168;
+
+    /* Posiziona sopra l'inizio della selezione */
+    var top = containerRect.top + pos.top - 52;
+    var left = containerRect.left + pos.left + (pos.width / 2) - (barWidth / 2);
+
+    /* Se non c'è spazio sopra, metti sotto */
+    if(top < 8){
+        top = containerRect.top + pos.top + pos.height + 12;
+    }
+
+    /* Mantieni dentro il viewport */
+    if(left < 8) left = 8;
+    if(left + barWidth > window.innerWidth - 8) left = window.innerWidth - barWidth - 8;
+
+    bar.style.top = top + 'px';
+    bar.style.left = left + 'px';
+    bar.classList.add('visible');
+
+    /* Nascondi il menu contestuale mobile se visibile */
+    closeMobileCtxMenu();
+}
+
+function hideSelectionBar(){
+    document.getElementById('selectionBar').classList.remove('visible');
+}
+
+/* ===== MOBILE CONTEXT MENU (da ⋮) ===== */
+function openEditorContextMenu(){
+    if(!editor) return;
+    closeMenu();
+    hideSelectionBar();
+
+    if(isTouchDevice){
+        /* Mostra menu personalizzato per smartphone */
+        var btn = document.getElementById('ctxMenuBtn');
+        var rect = btn.getBoundingClientRect();
+        var menu = document.getElementById('mobileCtxMenu');
+
+        menu.style.top = (rect.bottom + 4) + 'px';
+        menu.style.right = (window.innerWidth - rect.right) + 'px';
+        menu.style.left = 'auto';
+        menu.classList.add('open');
+        mobileCtxOpen = true;
+    } else {
+        /* Desktop: usa il menu contestuale nativo di Monaco */
+        editor.focus();
+        var contrib = editor.getContribution('editor.contrib.contextmenu');
+        if(contrib && contrib.showContextMenu){
+            contrib.showContextMenu();
+        }
+    }
+}
+
+function closeMobileCtxMenu(){
+    mobileCtxOpen = false;
+    document.getElementById('mobileCtxMenu').classList.remove('open');
+}
+
+/* ===== AZIONI MOBILE ===== */
+function mobileAction(action){
+    if(!editor) return;
+    editor.focus();
+
+    switch(action){
+        case 'cut':
+            editor.trigger('mobileCtx','editor.action.clipboardCutAction');
+            break;
+        case 'copy':
+            editor.trigger('mobileCtx','editor.action.clipboardCopyAction');
+            break;
+        case 'paste':
+            editor.trigger('mobileCtx','editor.action.clipboardPasteAction');
+            break;
+        case 'selectAll':
+            editor.setSelection(editor.getModel().getFullModelRange());
+            break;
+    }
+
+    hideSelectionBar();
+    closeMobileCtxMenu();
+}
+
+/* ===== MENU PRINCIPALE ===== */
 function toggleMenu(){
     menuOpen = !menuOpen;
     document.getElementById('menuPanel').classList.toggle('open', menuOpen);
+    if(menuOpen){ hideSelectionBar(); closeMobileCtxMenu(); }
 }
 
 function closeMenu(){
@@ -371,29 +589,20 @@ function closeMenu(){
     document.getElementById('menuPanel').classList.remove('open');
 }
 
-/* ===== CONTEXT MENU EDITOR (MOBILE) ===== */
-function openEditorContextMenu(){
-    if(!editor) return;
-    closeMenu();
-    editor.focus();
-    const contrib = editor.getContribution('editor.contrib.contextmenu');
-    if(contrib && contrib.showContextMenu){
-        contrib.showContextMenu();
-    }
-}
-
-/* ===== WRAP TOGGLE ===== */
+/* ===== WRAP ===== */
 function toggleWrap(){
     wordWrapEnabled = !wordWrapEnabled;
     editor.updateOptions({wordWrap: wordWrapEnabled ? 'on' : 'off'});
     document.getElementById('wrapBtn').classList.toggle('toggle-on', wordWrapEnabled);
 }
 
-/* ===== SEARCH BAR TOGGLE ===== */
+/* ===== SEARCH BAR ===== */
 function toggleSearchBar(){
-    const bar = document.getElementById('search-bar');
+    var bar = document.getElementById('search-bar');
     searchBarVisible = !searchBarVisible;
     bar.classList.toggle('visible', searchBarVisible);
+    hideSelectionBar();
+    closeMobileCtxMenu();
     if(searchBarVisible){
         document.getElementById('searchInput').focus();
     } else {
@@ -401,7 +610,7 @@ function toggleSearchBar(){
     }
 }
 
-/* ===== FONT SIZE ===== */
+/* ===== FONT ===== */
 function increaseFont(){
     fontSize++;
     editor.updateOptions({fontSize});
@@ -412,24 +621,27 @@ function decreaseFont(){
 }
 
 /* ===== CORE ===== */
-function createTab(name,content='',lang='plaintext',handle=null){
-    const id='tab-'+Date.now()+Math.random();
-    const model=monaco.editor.createModel(content,lang);
-    const tab={id,name,model,handle};
+function createTab(name,content,lang,handle){
+    content = content || '';
+    lang = lang || 'plaintext';
+    var id='tab-'+Date.now()+Math.random();
+    var model=monaco.editor.createModel(content,lang);
+    var tab={id:id,name:name,model:model,handle:handle||null};
     tabs.push(tab);
 
-    const el=document.createElement('div');
-    el.className='tab'; el.dataset.id=id;
+    var el=document.createElement('div');
+    el.className='tab';
+    el.dataset.id=id;
 
-    const title=document.createElement('span');
+    var title=document.createElement('span');
     title.textContent=name;
 
-    title.ondblclick=()=>{
-        const inp=document.createElement('input');
+    title.ondblclick=function(){
+        var inp=document.createElement('input');
         inp.value=tab.name;
         el.replaceChild(inp,title);
         inp.focus();
-        inp.onkeydown=e=>{
+        inp.onkeydown=function(e){
             if(e.key==='Enter'){
                 tab.name=inp.value;
                 title.textContent=tab.name;
@@ -439,54 +651,54 @@ function createTab(name,content='',lang='plaintext',handle=null){
         };
     };
 
-    const close=document.createElement('i');
+    var close=document.createElement('i');
     close.className='fas fa-times';
-    close.onclick=e=>{
+    close.onclick=function(e){
         e.stopPropagation();
         closeTab(id);
     };
 
-    el.onclick=()=>switchTab(id);
+    el.onclick=function(){ switchTab(id); };
     el.append(title,close);
     document.getElementById('tabs').appendChild(el);
     switchTab(id);
 }
 
 function switchTab(id){
-    activeTab=tabs.find(t=>t.id===id);
+    hideSelectionBar();
+    closeMobileCtxMenu();
+    activeTab=tabs.find(function(t){return t.id===id;});
     editor.setModel(activeTab.model);
     document.querySelectorAll('.tab')
-        .forEach(t=>t.classList.toggle('active',t.dataset.id===id));
+        .forEach(function(t){t.classList.toggle('active',t.dataset.id===id);});
     fileNameDisplay.textContent=activeTab.name;
     languageSelector.value=activeTab.model.getLanguageId();
 }
 
 function closeTab(id){
-    const i=tabs.findIndex(t=>t.id===id);
+    var i=tabs.findIndex(function(t){return t.id===id;});
     if(i>=0){
         tabs[i].model.dispose();
-        document.querySelector(`.tab[data-id="${id}"]`).remove();
+        document.querySelector('.tab[data-id="'+id+'"]').remove();
         tabs.splice(i,1);
         if(tabs.length) switchTab(tabs[0].id);
     }
 }
 
-function newFile(){createTab(`Senza nome ${untitledCount++}.txt`);}
+function newFile(){createTab('Senza nome '+untitledCount+++'.txt');}
 
 async function openFile(){
     try{
-        const [h]=await window.showOpenFilePicker();
-        const f=await h.getFile();
+        var h=(await window.showOpenFilePicker())[0];
+        var f=await h.getFile();
         createTab(f.name,await f.text(),getLang(f.name),h);
     }catch(e){}
 }
 
 async function saveFile(){
-    if(!activeTab.handle){
-        return saveFileAs();
-    }
+    if(!activeTab.handle) return saveFileAs();
     try{
-        const w=await activeTab.handle.createWritable();
+        var w=await activeTab.handle.createWritable();
         await w.write(editor.getValue());
         await w.close();
     }catch(e){}
@@ -494,17 +706,17 @@ async function saveFile(){
 
 async function saveFileAs(){
     try{
-        const handle=await window.showSaveFilePicker({suggestedName:activeTab.name});
-        const w=await handle.createWritable();
+        var handle=await window.showSaveFilePicker({suggestedName:activeTab.name});
+        var w=await handle.createWritable();
         await w.write(editor.getValue());
         await w.close();
         activeTab.handle=handle;
-        const newName=handle.name;
+        var newName=handle.name;
         activeTab.name=newName;
-        const tabEl=document.querySelector(`.tab[data-id="${activeTab.id}"] span`);
+        var tabEl=document.querySelector('.tab[data-id="'+activeTab.id+'"] span');
         if(tabEl) tabEl.textContent=newName;
         fileNameDisplay.textContent=newName;
-        const newLang=getLang(newName);
+        var newLang=getLang(newName);
         if(newLang!==activeTab.model.getLanguageId()){
             monaco.editor.setModelLanguage(activeTab.model,newLang);
             languageSelector.value=newLang;
@@ -514,9 +726,9 @@ async function saveFileAs(){
 
 /* ===== SEARCH ===== */
 function findNext(){
-    const term=document.getElementById('searchInput').value;
+    var term=document.getElementById('searchInput').value;
     if(!term) return;
-    const r=editor.getModel()
+    var r=editor.getModel()
         .findNextMatch(term,editor.getPosition(),false,false,null,true);
     if(r){
         editor.setSelection(r.range);
@@ -525,9 +737,9 @@ function findNext(){
 }
 
 function findPrevious(){
-    const term=document.getElementById('searchInput').value;
+    var term=document.getElementById('searchInput').value;
     if(!term) return;
-    const r=editor.getModel()
+    var r=editor.getModel()
         .findPreviousMatch(term,editor.getPosition(),false,false,null,true);
     if(r){
         editor.setSelection(r.range);
@@ -536,10 +748,10 @@ function findPrevious(){
 }
 
 function replaceOnce(){
-    const term=document.getElementById('searchInput').value;
-    const replacement=document.getElementById('replaceInput').value;
+    var term=document.getElementById('searchInput').value;
+    var replacement=document.getElementById('replaceInput').value;
     if(!term) return;
-    const sel=editor.getSelection();
+    var sel=editor.getSelection();
     if(!sel.isEmpty() && editor.getModel().getValueInRange(sel)===term){
         editor.executeEdits("",[{range:sel,text:replacement}]);
     }
@@ -547,21 +759,18 @@ function replaceOnce(){
 }
 
 function replaceAll(){
-    const term=document.getElementById('searchInput').value;
-    const replacement=document.getElementById('replaceInput').value;
+    var term=document.getElementById('searchInput').value;
+    var replacement=document.getElementById('replaceInput').value;
     if(!term) return;
-    const m=editor.getModel();
-    const ms=m.findMatches(term,true,false,false,null,true);
-    editor.executeEdits("",ms.map(x=>({range:x.range,text:replacement})));
+    var m=editor.getModel();
+    var ms=m.findMatches(term,true,false,false,null,true);
+    editor.executeEdits("",ms.map(function(x){return{range:x.range,text:replacement};}));
 }
 
 /* ===== UTILS ===== */
 function getLang(name){
-    return{
-        js:'javascript',java:'java',py:'python',
-        html:'html',css:'css',json:'json',
-        cpp:'cpp',md:'markdown',txt:'plaintext'
-    }[name.split('.').pop()]||'plaintext';
+    var ext=name.split('.').pop();
+    return{js:'javascript',java:'java',py:'python',html:'html',css:'css',json:'json',cpp:'cpp',md:'markdown',txt:'plaintext'}[ext]||'plaintext';
 }
 
 function changeLanguage(){
