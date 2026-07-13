@@ -407,6 +407,7 @@ button.toggle-on{
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
 
+
 <script>
 /* Rileva dispositivo touch */
 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -428,8 +429,6 @@ require(['vs/editor/editor.main'],()=>{
         automaticLayout:true,
         fontSize,
         wordWrap:'off',
-        /* Disabilita il menu contestuale nativo di Monaco sui dispositivi touch
-           per non interferire con la selezione nativa e le nostre UI personalizzate */
         contextmenu: !isTouchDevice
     });
 
@@ -445,7 +444,59 @@ require(['vs/editor/editor.main'],()=>{
         }
     });
 
-    newFile();
+    // === GESTIONE AVVIO DA FILE MANAGER ===
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasLoadParam = urlParams.get('load');
+
+    if (hasLoadParam) {
+        try {
+            // 1. Legge la stringa grezza (non usa più JSON)
+            const rawTransfer = localStorage.getItem('webEditPlus_transfer');
+            
+            if (rawTransfer && rawTransfer.length > 10) {
+                // 2. Cancella immediatamente la memoria
+                localStorage.removeItem('webEditPlus_transfer');
+                
+                // 3.estrae i dati usando gli indicatori di inizio/fine (ignora eventuali errori di codifica)
+                const fileNameStart = rawTransfer.indexOf('|||N_START|||') + 14;
+                const fileNameEnd = rawTransfer.indexOf('|||N_END|||');
+                const filePathStart = rawTransfer.indexOf('|||P_START|||') + 14;
+                const filePathEnd = rawTransfer.indexOf('|||P_END|||');
+                const contentStart = rawTransfer.indexOf('|||C_START|||') + 14;
+                const contentEnd = rawTransfer.indexOf('|||C_END|||');
+
+                const fileName = rawTransfer.substring(fileNameStart, fileNameEnd);
+                const filePath = rawTransfer.substring(filePathStart, filePathEnd);
+                const content = rawTransfer.substring(contentStart, contentEnd);
+
+                if (fileName && content) {
+                    // 4. Indovina il linguaggio dall'estensione del file
+                    const lang = getLang(fileName);
+                    
+                    // 5. Crea la scheda con il contenuto reale
+                    createTab(fileName, content, lang, null);
+                    
+                    // 6. Aggiorna il titolo della pagina
+                    if (filePath) {
+                        document.title = `Modifica: ${filePath}`;
+                    }
+                } else {
+                    console.error("Formato dati non valido.");
+                    newFile();
+                }
+            } else {
+                console.log("Nessun dato trovato nella memoria locale.");
+                newFile();
+            }
+        } catch (e) {
+            console.error("Errore lettura dati da localStorage:", e);
+            alert("Impossibile caricare il file dal File Manager.\nDettagli: " + e.message);
+            newFile(); // Fallback: apre un file vuoto
+        }
+    } else {
+        // Se aperto normalmente (senza parametri), crea un file "Senza nome"
+        newFile();
+    }
 
     document.getElementById('searchInput').addEventListener('keydown',function(e){
         if(e.key==='Enter'){
@@ -483,7 +534,7 @@ require(['vs/editor/editor.main'],()=>{
             hideSelectionBar();
         }
     });
-});
+}); // <--- CHIUSURA CORRETTA DEL BLOCCO REQUIRE DI MONACO
 
 /* ===== SELECTION BAR (smartphone) ===== */
 function positionSelectionBar(selection){
@@ -496,24 +547,16 @@ function positionSelectionBar(selection){
     var containerRect = document.getElementById('editor-container').getBoundingClientRect();
     var barWidth = isTouchDevice && window.innerWidth <= 768 ? 190 : 168;
 
-    /* Posiziona sopra l'inizio della selezione */
     var top = containerRect.top + pos.top - 52;
     var left = containerRect.left + pos.left + (pos.width / 2) - (barWidth / 2);
 
-    /* Se non c'è spazio sopra, metti sotto */
-    if(top < 8){
-        top = containerRect.top + pos.top + pos.height + 12;
-    }
-
-    /* Mantieni dentro il viewport */
+    if(top < 8){ top = containerRect.top + pos.top + pos.height + 12; }
     if(left < 8) left = 8;
     if(left + barWidth > window.innerWidth - 8) left = window.innerWidth - barWidth - 8;
 
     bar.style.top = top + 'px';
     bar.style.left = left + 'px';
     bar.classList.add('visible');
-
-    /* Nascondi il menu contestuale mobile se visibile */
     closeMobileCtxMenu();
 }
 
@@ -528,23 +571,18 @@ function openEditorContextMenu(){
     hideSelectionBar();
 
     if(isTouchDevice){
-        /* Mostra menu personalizzato per smartphone */
         var btn = document.getElementById('ctxMenuBtn');
         var rect = btn.getBoundingClientRect();
         var menu = document.getElementById('mobileCtxMenu');
-
         menu.style.top = (rect.bottom + 4) + 'px';
         menu.style.right = (window.innerWidth - rect.right) + 'px';
         menu.style.left = 'auto';
         menu.classList.add('open');
         mobileCtxOpen = true;
     } else {
-        /* Desktop: usa il menu contestuale nativo di Monaco */
         editor.focus();
         var contrib = editor.getContribution('editor.contrib.contextmenu');
-        if(contrib && contrib.showContextMenu){
-            contrib.showContextMenu();
-        }
+        if(contrib && contrib.showContextMenu){ contrib.showContextMenu(); }
     }
 }
 
@@ -557,22 +595,12 @@ function closeMobileCtxMenu(){
 function mobileAction(action){
     if(!editor) return;
     editor.focus();
-
     switch(action){
-        case 'cut':
-            editor.trigger('mobileCtx','editor.action.clipboardCutAction');
-            break;
-        case 'copy':
-            editor.trigger('mobileCtx','editor.action.clipboardCopyAction');
-            break;
-        case 'paste':
-            editor.trigger('mobileCtx','editor.action.clipboardPasteAction');
-            break;
-        case 'selectAll':
-            editor.setSelection(editor.getModel().getFullModelRange());
-            break;
+        case 'cut': editor.trigger('mobileCtx','editor.action.clipboardCutAction'); break;
+        case 'copy': editor.trigger('mobileCtx','editor.action.clipboardCopyAction'); break;
+        case 'paste': editor.trigger('mobileCtx','editor.action.clipboardPasteAction'); break;
+        case 'selectAll': editor.setSelection(editor.getModel().getFullModelRange()); break;
     }
-
     hideSelectionBar();
     closeMobileCtxMenu();
 }
@@ -603,22 +631,13 @@ function toggleSearchBar(){
     bar.classList.toggle('visible', searchBarVisible);
     hideSelectionBar();
     closeMobileCtxMenu();
-    if(searchBarVisible){
-        document.getElementById('searchInput').focus();
-    } else {
-        editor.focus();
-    }
+    if(searchBarVisible){ document.getElementById('searchInput').focus(); } 
+    else { editor.focus(); }
 }
 
 /* ===== FONT ===== */
-function increaseFont(){
-    fontSize++;
-    editor.updateOptions({fontSize});
-}
-function decreaseFont(){
-    if(fontSize>8){fontSize--;}
-    editor.updateOptions({fontSize});
-}
+function increaseFont(){ fontSize++; editor.updateOptions({fontSize}); }
+function decreaseFont(){ if(fontSize>8){fontSize--;} editor.updateOptions({fontSize}); }
 
 /* ===== CORE ===== */
 function createTab(name,content,lang,handle){
@@ -653,10 +672,7 @@ function createTab(name,content,lang,handle){
 
     var close=document.createElement('i');
     close.className='fas fa-times';
-    close.onclick=function(e){
-        e.stopPropagation();
-        closeTab(id);
-    };
+    close.onclick=function(e){ e.stopPropagation(); closeTab(id); };
 
     el.onclick=function(){ switchTab(id); };
     el.append(title,close);
@@ -669,8 +685,7 @@ function switchTab(id){
     closeMobileCtxMenu();
     activeTab=tabs.find(function(t){return t.id===id;});
     editor.setModel(activeTab.model);
-    document.querySelectorAll('.tab')
-        .forEach(function(t){t.classList.toggle('active',t.dataset.id===id);});
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.id===id);});
     fileNameDisplay.textContent=activeTab.name;
     languageSelector.value=activeTab.model.getLanguageId();
 }
@@ -728,23 +743,15 @@ async function saveFileAs(){
 function findNext(){
     var term=document.getElementById('searchInput').value;
     if(!term) return;
-    var r=editor.getModel()
-        .findNextMatch(term,editor.getPosition(),false,false,null,true);
-    if(r){
-        editor.setSelection(r.range);
-        editor.revealRangeInCenter(r.range);
-    }
+    var r=editor.getModel().findNextMatch(term,editor.getPosition(),false,false,null,true);
+    if(r){ editor.setSelection(r.range); editor.revealRangeInCenter(r.range); }
 }
 
 function findPrevious(){
     var term=document.getElementById('searchInput').value;
     if(!term) return;
-    var r=editor.getModel()
-        .findPreviousMatch(term,editor.getPosition(),false,false,null,true);
-    if(r){
-        editor.setSelection(r.range);
-        editor.revealRangeInCenter(r.range);
-    }
+    var r=editor.getModel().findPreviousMatch(term,editor.getPosition(),false,false,null,true);
+    if(r){ editor.setSelection(r.range); editor.revealRangeInCenter(r.range); }
 }
 
 function replaceOnce(){
@@ -777,6 +784,5 @@ function changeLanguage(){
     monaco.editor.setModelLanguage(activeTab.model,languageSelector.value);
 }
 </script>
-
 </body>
 </html>
