@@ -32,7 +32,6 @@
             user-select: none; text-shadow: 0 0 4px rgba(0,0,0,0.8);
         }
 
-        /* --- TOOLBAR --- */
         #path-bar {
             display: flex; padding: 6px 8px; gap: 6px; background-color: var(--bg-panel);
             border-bottom: 1px solid var(--border); align-items: center;
@@ -62,7 +61,6 @@
         }
         .btn-sync:hover { background: var(--accent); color: var(--bg-main); }
 
-        /* --- PANNELLI --- */
         #panels-container { display: flex; flex: 1; overflow: hidden; padding: 6px; gap: 6px; }
         
         .panel {
@@ -84,7 +82,7 @@
         .file-header > div.sortable { cursor: pointer; border-radius: 2px; }
         .file-header > div.sortable:hover { color: var(--accent); background: var(--bg-hover); }
 
-        .file-list { flex: 1; overflow-y: auto; outline: none; }
+        .file-list { flex: 1; overflow-y: auto; outline: none; position: relative; }
         .file-list::-webkit-scrollbar { width: 6px; }
         .file-list::-webkit-scrollbar-track { background: var(--bg-panel); }
         .file-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -103,7 +101,6 @@
         .col-date { flex: 1.5; text-align: right; color: var(--text-dim);}
         .zip-icon { color: var(--yellow); }
 
-        /* --- FOOTER --- */
         #status-bar { 
             padding: 5px 12px; background-color: var(--bg-panel); border-top: 1px solid var(--border); 
             font-size: 12px; color: var(--text-dim); letter-spacing: 0.5px;
@@ -183,7 +180,6 @@
         selected: { left: new Set(), right: new Set() },
         paths: { left: '', right: '' },
         history: { left: [], right: [] },
-        // MODIFICA 1: Default sort su 'type'
         sort: { 
             left: { col: 'type', dir: 'asc' }, 
             right: { col: 'type', dir: 'asc' } 
@@ -192,6 +188,11 @@
 
     let inMemoryZip = null; 
     let inMemoryZipPath = '';
+    
+    // Variabili per il drag di selezione multipla (tasto destro)
+    let isDragging = false;
+    let dragStartIndex = -1;
+    let dragPane = '';
 
     async function openDirectory(pane) {
         try {
@@ -203,7 +204,6 @@
             document.getElementById(`path-${pane}`).value = dirHandle.name;
             await listFiles(pane);
 
-            // MODIFICA 2: Allinea automaticamente se l'altro pannello è vuoto
             const otherPane = pane === 'left' ? 'right' : 'left';
             if (!state.handles[otherPane]) {
                 syncViews();
@@ -222,7 +222,10 @@
         }
 
         if (inMemoryZip) {
-            const currentZipFolder = inMemoryZip.folder(state.paths[pane].substring(inMemoryZipPath.length + 1));
+            let zipSubPath = state.paths[pane].substring(inMemoryZipPath.length);
+            if (zipSubPath.startsWith('/')) zipSubPath = zipSubPath.substring(1);
+            
+            const currentZipFolder = inMemoryFolder(inMemoryZip, zipSubPath);
             for (const [relativePath, zipEntry] of Object.entries(currentZipFolder.files)) {
                 const name = relativePath.split('/').pop();
                 if (!name) continue;
@@ -256,6 +259,17 @@
         render(pane);
     }
 
+    function inMemoryFolder(zip, folderPath) {
+        if (!folderPath || folderPath === '' || folderPath === '/') return zip.root;
+        let currentDir = zip;
+        const parts = folderPath.split('/').filter(p => p !== '');
+        for (const part of parts) {
+            currentDir = currentDir.folder(part);
+            if (!currentDir) return zip.root;
+        }
+        return currentDir;
+    }
+
     function handleSort(pane, column) {
         setActive(pane);
         const sortState = state.sort[pane];
@@ -283,6 +297,21 @@
         });
     }
 
+    // Aggiorna SOLO le classi CSS della selezione senza ricreare il DOM.
+    // Questo è fondamentale per non distruggere l'elemento durante click/dblclick.
+    function updateSelectionUI(pane) {
+        const listEl = document.getElementById(`list-${pane}`);
+        const items = listEl.querySelectorAll('.file-item');
+        items.forEach((item, i) => {
+            if (state.selected[pane].has(i)) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+        updateStatus();
+    }
+
     function render(pane) {
         const listEl = document.getElementById(`list-${pane}`); listEl.innerHTML = '';
         state.files[pane].forEach((file, index) => {
@@ -296,20 +325,99 @@
                 <div class="col-size">${sizeStr}</div>
                 <div class="col-date">${file.modified}</div>
             `;
-            item.addEventListener('click', (e) => {
-                e.stopPropagation(); setActive(pane);
-                if (e.ctrlKey) { if (state.selected[pane].has(index)) state.selected[pane].delete(index); else state.selected[pane].add(index); } 
-                else { state.selected[pane].clear(); state.selected[pane].add(index); }
-                render(pane); updateStatus();
-            });
-            item.addEventListener('dblclick', async (e) => {
+            item.dataset.index = index;
+
+            // --- TASTO SINISTRO: selezione singola (NO render, solo CSS) ---
+            item.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                e.preventDefault(); 
                 e.stopPropagation();
-                if (file.isUp) navigateBack(pane); else if (file.kind === 'directory') navigateInto(pane, file.name); else openFile(pane, file.name);
+                setActive(pane);
+
+                if (e.ctrlKey) {
+                    if (state.selected[pane].has(index)) {
+                        state.selected[pane].delete(index);
+                    } else {
+                        state.selected[pane].add(index);
+                    }
+                } else if (e.shiftKey) {
+                    const selArr = Array.from(state.selected[pane]).sort((a, b) => a - b);
+                    const anchor = selArr.length > 0 ? selArr[selArr.length - 1] : 0;
+                    state.selected[pane].clear();
+                    selectRange(pane, anchor, index);
+                } else {
+                    state.selected[pane].clear();
+                    state.selected[pane].add(index);
+                }
+                // Aggiorna solo le classi, NON il DOM
+                updateSelectionUI(pane);
             });
+
+            // --- TASTO DESTRO: inizia drag per selezione multipla (NO render) ---
+            item.addEventListener('mousedown', (e) => {
+                if (e.button !== 2) return;
+                e.preventDefault(); 
+                e.stopPropagation();
+                setActive(pane);
+
+                isDragging = true;
+                dragStartIndex = index;
+                dragPane = pane;
+                state.selected[pane].clear();
+                state.selected[pane].add(index);
+                updateSelectionUI(pane);
+            });
+
+            // --- MOUSEENTER durante drag destro: espandi range (NO render) ---
+            item.addEventListener('mouseenter', () => {
+                if (!isDragging || dragPane !== pane) return;
+                const currentIndex = parseInt(item.dataset.index);
+                state.selected[pane].clear();
+                selectRange(pane, dragStartIndex, currentIndex);
+                updateSelectionUI(pane);
+            });
+
+            // --- DOPPIO CLICK SINISTRO: naviga ---
+            item.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                isDragging = false;
+                dragStartIndex = -1;
+                if (file.isUp) navigateBack(pane); 
+                else if (file.kind === 'directory') navigateInto(pane, file.name); 
+                else openFile(pane, file.name);
+            });
+
+            // --- CONTEXTMENU: impedisci menu nativo ---
+            item.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
             listEl.appendChild(item);
         });
         updateStatus();
     }
+
+    function selectRange(pane, start, end) {
+        const min = Math.max(0, Math.min(start, end));
+        const max = Math.min(state.files[pane].length - 1, Math.max(start, end));
+        for (let i = min; i <= max; i++) {
+            state.selected[pane].add(i);
+        }
+    }
+
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            dragStartIndex = -1;
+            dragPane = '';
+        }
+    });
+
+    document.addEventListener('contextmenu', (e) => {
+        if (e.target.closest('.file-list')) e.preventDefault();
+    });
 
     // --- NAVIGAZIONE & ZIP ---
     async function navigateInto(pane, dirName) {
@@ -322,8 +430,8 @@
                     const file = await handle.getFile();
                     zipData = await file.arrayBuffer();
                 } else if (inMemoryZip) {
-                    const relativePath = state.paths[pane].substring(inMemoryZipPath.length + 1) + dirName;
-                    zipData = await inMemoryZip.file(relativePath).async('arraybuffer');
+                    let subPath = state.paths[pane].substring(inMemoryZipPath.length + 1) + dirName;
+                    zipData = await inMemoryZip.file(subPath).async('arraybuffer');
                 } else return;
                 
                 inMemoryZip = await JSZip.loadAsync(zipData);
@@ -356,8 +464,9 @@
         try {
             let fileObj;
             if (inMemoryZip) {
-                const relativePath = state.paths[pane].substring(inMemoryZipPath.length + 1) + fileName;
-                const content = await inMemoryZip.file(relativePath).async('string');
+                let subPath = state.paths[pane].substring(inMemoryZipPath.length + 1) + fileName;
+                if (subPath.startsWith('/')) subPath = subPath.substring(1);
+                const content = await inMemoryZip.file(subPath).async('string');
                 fileObj = new Blob([content], { type: 'text/plain' });
             } else {
                 const fileHandle = await state.handles[pane].getFileHandle(fileName);
@@ -375,16 +484,22 @@
     }
 
     async function syncViews() {
-        const src = state.active, dst = src === 'left' ? 'right' : 'left';
-        if (inMemoryZip) return alert("Impossibile sincronizzare da una vista ZIP.");
-        if (!state.handles[src]) return alert("Nessuna cartella aperta.");
-        state.handles[dst] = state.handles[src]; state.paths[dst] = state.paths[src];
-        state.history[dst] = [...state.history[src]]; state.sort[dst] = {...state.sort[src]};
-        document.getElementById(`path-${dst}`).value = state.paths[src];
+        const dst = state.active === 'left' ? 'right' : 'left';
+        let sourcePane = state.active;
+        while(sourcePane !== dst && !state.handles[sourcePane]) {
+            sourcePane = sourcePane === 'left' ? 'right' : 'left';
+            if (!state.handles[sourcePane]) continue;
+        }
+        if (!state.handles[sourcePane]) return alert("Nessuna cartella aperta da cui allineare.");
+
+        state.handles[dst] = state.handles[sourcePane]; 
+        state.paths[dst] = state.paths[sourcePane];
+        state.history[dst] = [...state.history[sourcePane]]; 
+        state.sort[dst] = {...state.sort[sourcePane]};
+        document.getElementById(`path-${dst}`).value = state.paths[sourcePane];
         await listFiles(dst);
     }
 
-    // --- FUNZIONI FILE ---
     function formatSize(bytes) {
         if (bytes === 0) return '0';
         const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -407,8 +522,13 @@
     }
 
     async function handleF3() {
-        if (inMemoryZip) { const f = getSelectedData(state.active); if(f.length===1 && !f[0].isUp) return openFile(state.active, f[0].name); return alert("Seleziona un file.");}
-        const pane = state.active; const selectedArr = Array.from(state.selected[pane]);
+        if (inMemoryZip) { 
+            const f = getSelectedData(state.active); 
+            if(f.length===1 && !f[0].isUp) return openFile(state.active, f[0].name); 
+            return alert("Seleziona un file."); }
+        
+        const pane = state.active; 
+        const selectedArr = Array.from(state.selected[pane]);
         if (selectedArr.length === 0) return alert("Nessun file selezionato.");
         if (selectedArr.length > 1) return alert("Seleziona un solo file.");
         const fileData = state.files[pane][selectedArr[0]];
@@ -418,29 +538,45 @@
             const file = await (await state.handles[pane].getFileHandle(fileData.name)).getFile();
             if (file.size > 5 * 1024 * 1024) return alert("File troppo grande (maggiore di 5MB).");
             const textContent = await file.text();
-            const transferData = `|||N_START|||${fileData.name}|||N_END|||` + `|||P_START|||${state.paths[pane]}/${fileData.name}|||P_END|||` + `|||C_START|||${textContent}|||C_END|||`;
+            const transferData = `|||N_START|||${fileData.name}|||N_END|||` + 
+                              `|||P_START|||${state.paths[pane]}/${fileData.name}|||P_END|||` + 
+                              `|||C_START|||${textContent}|||C_END|||` +
+                              `|||T_START|||${file.type}|||T_END|||`;
             localStorage.setItem('webEditPlus_transfer', transferData);
             window.open('WebEditPlus.html?load=1', '_blank');
             document.getElementById('status-bar').innerText = `EDITOR APERTO: ${fileData.name}`;
         } catch (err) { alert("Errore lettura: " + err.message); }
     }
 
-    // --- OPERAZIONI (Copia, Sposta, Zip, Elimina) ---
-    function getSelectedData(pane) { return Array.from(state.selected[pane]).map(i => state.files[pane][i]).filter(f => !f.isUp); }
+    function getSelectedData(pane) { 
+        return Array.from(state.selected[pane]).map(i => state.files[pane][i]).filter(f => !f.isUp); 
+    }
 
     async function getDiskHandles(pane) {
-        const dirHandle = state.handles[pane]; const files = [];
+        const dirHandle = state.handles[pane]; 
+        const files = [];
         for (const idx of state.selected[pane]) {
-            const fData = state.files[pane][idx]; if (fData.isUp) continue;
-            try { const handle = fData.kind === 'file' ? await dirHandle.getFileHandle(fData.name) : await dirHandle.getDirectoryHandle(fData.name); files.push({ handle, data: fData }); } catch(e) {}
+            const fData = state.files[pane][idx]; 
+            if (fData.isUp) continue;
+            try { 
+                const handle = fData.kind === 'file' ? await dirHandle.getFileHandle(fData.name) : await dirHandle.getDirectoryHandle(fData.name); 
+                files.push({ handle, data: fData }); 
+            } catch(e) { console.warn("Permessi negato su:", fData.name); }
         }
         return files;
     }
 
     async function copyDiskDirectory(srcDir, dstDir) {
         for await (const entry of srcDir.values()) {
-            if (entry.kind === 'file') { const f = await entry.getFile(); const c = await f.arrayBuffer(); const nf = await dstDir.getFileHandle(entry.name, { create: true }); const w = await nf.createWritable(); await w.write(c); await w.close(); } 
-            else { const nd = await dstDir.getDirectoryHandle(entry.name, { create: true }); await copyDiskDirectory(await srcDir.getDirectoryHandle(entry.name), nd); }
+            if (entry.kind === 'file') { 
+                const f = await entry.getFile(); 
+                const c = await f.arrayBuffer(); 
+                const nf = await dstDir.getFileHandle(entry.name, { create: true }); 
+                const w = await nf.createWritable(); await w.write(c); await w.close(); 
+            } else { 
+                const nd = await dstDir.getDirectoryHandle(entry.name, { create: true }); 
+                await copyDiskDirectory(await srcDir.getDirectoryHandle(entry.name), nd); 
+            }
         }
     }
 
@@ -453,14 +589,18 @@
             if (filesToExtract.length === 1 && filesToExtract[0].isZip) {
                 if (!confirm(`Estrarre ${filesToExtract[0].name} ?`)) return;
                 try {
-                    const relativePath = state.paths[src].substring(inMemoryZipPath.length + 1) + filesToExtract[0].name;
-                    const zipData = await inMemoryZip.file(relativePath).async('arraybuffer');
+                    let subPath = state.paths[src].substring(inMemoryZipPath.length + 1) + filesToExtract[0].name;
+                    if (subPath.startsWith('/')) subPath = subPath.substring(1);
+                    const zipData = await inMemoryZip.file(subPath).async('arraybuffer');
                     const zipToExtract = await JSZip.loadAsync(zipData);
                     zipToExtract.forEach(async (path, zipEntry) => {
                         if (!zipEntry.dir) {
                             const blob = await zipEntry.async('blob');
                             const parts = path.split('/');
-                            const createDirChain = async (dirHandle, folders) => { if (folders.length === 0) return dirHandle; return createDirChain(await dirHandle.getDirectoryHandle(folders[0], { create: true }), folders.slice(1)); };
+                            const createDirChain = async (dirHandle, folders) => { 
+                                if (folders.length === 0) return dirHandle; 
+                                return createDirChain(await dirHandle.getDirectoryHandle(folders[0], { create: true }), folders.slice(1)); 
+                            };
                             const finalDir = await createDirChain(state.handles[dst], parts.slice(0, -1));
                             const fh = await finalDir.getFileHandle(parts[parts.length-1], { create: true });
                             const w = await fh.createWritable(); await w.write(blob); await w.close();
@@ -468,13 +608,15 @@
                     });
                     await listFiles(dst); return;
                 } catch(e) { alert("Errore estrazione: " + e.message); }
-            } else if (filesToExtract.length > 0) {
-                if (!confirm(`Estrarre ${filesToExtract.length} file nello ZIP?`)) return;
+            } 
+            else if (filesToExtract.length > 0) {
+                if (!confirm(`Estrarre ${filesToExtract.length} file dallo ZIP?`)) return;
                 for (const fData of filesToExtract) {
                     if (fData.kind === 'file') {
                         try {
-                            const relativePath = state.paths[src].substring(inMemoryZipPath.length + 1) + fData.name;
-                            const content = await inMemoryZip.file(relativePath).async('blob');
+                            let subPath = state.paths[src].substring(inMemoryZipPath.length + 1) + fData.name;
+                            if (subPath.startsWith('/')) subPath = subPath.substring(1);
+                            const content = await inMemoryZip.file(subPath).async('blob');
                             const fh = await state.handles[dst].getFileHandle(fData.name, { create: true });
                             const w = await fh.createWritable(); await w.write(content); await w.close();
                         } catch(e) { alert(`Errore su ${fData.name}: ${e.message}`); }
@@ -497,7 +639,10 @@
                     if (!zipEntry.dir) {
                         const blob = await zipEntry.async('blob');
                         const parts = path.split('/');
-                        const createDirChain = async (dirHandle, folders) => { if (folders.length === 0) return dirHandle; return createDirChain(await dirHandle.getDirectoryHandle(folders[0], { create: true }), folders.slice(1)); };
+                        const createDirChain = async (dirHandle, folders) => { 
+                            if (folders.length === 0) return dirHandle; 
+                            return createDirChain(await dirHandle.getDirectoryHandle(folders[0], { create: true }), folders.slice(1)); 
+                        };
                         const finalDir = await createDirChain(state.handles[dst], parts.slice(0, -1));
                         const fh = await finalDir.getFileHandle(parts[parts.length-1], { create: true });
                         const w = await fh.createWritable(); await w.write(blob); await w.close();
@@ -509,7 +654,18 @@
         }
 
         if (!confirm(`Copiare ${files.length} elemento/i?`)) return;
-        for (const item of files) { try { if (item.data.kind === 'file') { const f = await item.handle.getFile(); const c = await f.arrayBuffer(); const h = await state.handles[dst].getFileHandle(item.data.name, { create: true }); const w = await h.createWritable(); await w.write(c); await w.close(); } else { await copyDiskDirectory(item.handle, await state.handles[dst].getDirectoryHandle(item.data.name, { create: true })); } } catch(e) { alert(`Errore: ${e.message}`); } }
+        for (const item of files) { 
+            try { 
+                if (item.data.kind === 'file') { 
+                    const f = await item.handle.getFile(); 
+                    const c = await f.arrayBuffer(); 
+                    const h = await state.handles[dst].getFileHandle(item.data.name, { create: true }); 
+                    const w = await h.createWritable(); await w.write(c); await w.close(); 
+                } else { 
+                    await copyDiskDirectory(item.handle, await state.handles[dst].getDirectoryHandle(item.data.name, { create: true })); 
+                } 
+            } catch(e) { alert(`Errore: ${e.message}`); }
+        }
         await listFiles(dst);
     }
 
@@ -517,7 +673,8 @@
         if (inMemoryZip) return alert("Impossibile zippare dall'interno di un ZIP.");
         const src = state.active, dst = src === 'left' ? 'right' : 'left';
         if (!state.handles[src] || !state.handles[dst]) return alert("Servono cartelle reali.");
-        const files = await getDiskHandles(src); if (files.length === 0) return;
+        const files = await getDiskHandles(src); 
+        if (files.length === 0) return;
         const zipName = prompt("Nome archivio:", "archivio.zip");
         if (!zipName) return;
         if (!zipName.toLowerCase().endsWith('.zip')) zipName += '.zip';
@@ -533,7 +690,9 @@
             }
             const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
             const newHandle = await state.handles[dst].getFileHandle(zipName, { create: true });
-            const writable = await newHandle.createWritable(); await writable.write(blob); await writable.close();
+            const writable = await newHandle.createWritable(); 
+            await writable.write(blob); 
+            await writable.close();
             await listFiles(dst);
             document.getElementById('status-bar').innerText = `ZIP CREATO: ${zipName}`;
         } catch (e) { alert("Errore ZIP: " + e.message); }
@@ -545,29 +704,48 @@
         if (!state.handles[src] || !state.handles[dst]) return alert("Servono cartelle reali."); 
         if ((await getDiskHandles(src)).length === 0) return; 
         if (!confirm("Spostare?")) return; 
-        await handleF5(); await handleF8(true); 
+        await handleF5(); 
+        await handleF8(true); 
     }
 
     async function handleF7() { 
         if (inMemoryZip) return alert("Impossibile creare cartelle in un archivio ZIP.");
-        const p = state.active; if (!state.handles[p]) return alert("Nessuna cartella aperta."); 
+        const p = state.active; 
+        if (!state.handles[p]) return alert("Nessuna cartella aperta."); 
         const n = prompt("Nome cartella:"); 
-        if (n) { try { await state.handles[p].getDirectoryHandle(n, { create: true }); await listFiles(p); } catch(e) { alert("Errore creazione cartella."); } } 
+        if (n) { 
+            try { 
+                await state.handles[p].getDirectoryHandle(n, { create: true }); 
+                await listFiles(p); 
+            } catch(e) { 
+                alert("Errore creazione cartella: " + e.message); 
+            } 
+        } 
     }
 
     async function handleF8(silent = false) { 
         if (inMemoryZip) return alert("Impossibile eliminare dall'interno di un archivio ZIP.");
-        const p = state.active; if (!state.handles[p]) return; 
-        const files = await getDiskHandles(p); if (files.length === 0) return; 
+        const p = state.active; 
+        if (!state.handles[p]) return; 
+        const files = await getDiskHandles(p); 
+        if (files.length === 0) return; 
         if (!silent && !confirm(`Eliminare ${files.length} elemento/i PERMANENTEMENTE?`)) return; 
-        for (const item of files) { try { await state.handles[p].removeEntry(item.data.name, { recursive: true }); } catch(e) { if(!silent) alert(`Errore: ${item.data.name}`); } } 
+        for (const item of files) { 
+            try { 
+                await state.handles[p].removeEntry(item.data.name, { recursive: true }); 
+            } catch(e) { 
+                if(!silent) alert(`Errore eliminando ${item.data.name}`); 
+            } 
+        } 
         await listFiles(p); 
     }
 
     // --- TASTIERA ---
     document.addEventListener('keydown', (e) => {
-        const list = document.getElementById(`list-${state.active}`); const files = state.files[state.active];
-        const selectedArr = Array.from(state.selected[state.active]); const currentIdx = selectedArr.length > 0 ? selectedArr[0] : -1;
+        const list = document.getElementById(`list-${state.active}`); 
+        const files = state.files[state.active];
+        const selectedArr = Array.from(state.selected[state.active]).sort((a,b) => a-b); 
+        const currentIdx = selectedArr.length > 0 ? selectedArr[selectedArr.length - 1] : -1;
 
         if (e.key === 'Tab') { e.preventDefault(); setActive(state.active === 'left' ? 'right' : 'left'); }
         else if (e.key === 'Backspace') { e.preventDefault(); navigateBack(state.active); }
@@ -577,12 +755,39 @@
         else if (e.key === 'F6') { e.preventDefault(); handleF6(); }
         else if (e.key === 'F7') { e.preventDefault(); handleF7(); }
         else if (e.key === 'F8') { e.preventDefault(); handleF8(); }
-        else if (e.key === 'ArrowDown') { e.preventDefault(); let next = currentIdx + 1; if (next < files.length) { state.selected[state.active].clear(); state.selected[state.active].add(next); render(state.active); list.children[next]?.scrollIntoView({ block: 'nearest' }); } }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); let prev = currentIdx - 1; if (prev >= 0) { state.selected[state.active].clear(); state.selected[state.active].add(prev); render(state.active); list.children[prev]?.scrollIntoView({ block: 'nearest' }); } }
-        else if (e.key === 'Enter') { e.preventDefault(); if (currentIdx >= 0) { const file = files[currentIdx]; if (file.isUp) navigateBack(state.active); else if (file.kind === 'directory') navigateInto(state.active, file.name); else openFile(state.active, file.name); } }
+        else if (e.key === 'ArrowDown') { 
+            e.preventDefault(); 
+            let next = currentIdx + 1; 
+            if (next < files.length) { 
+                if (!e.shiftKey && !e.ctrlKey) state.selected[state.active].clear(); 
+                state.selected[state.active].add(next); 
+                updateSelectionUI(state.active); 
+                list.children[next]?.scrollIntoView({ block: 'nearest' }); 
+            } 
+        }
+        else if (e.key === 'ArrowUp') { 
+            e.preventDefault(); 
+            let prev = currentIdx - 1; 
+            if (prev >= 0) { 
+                if (!e.shiftKey && !e.ctrlKey) state.selected[state.active].clear(); 
+                state.selected[state.active].add(prev); 
+                updateSelectionUI(state.active); 
+                list.children[prev]?.scrollIntoView({ block: 'nearest' }); 
+            } 
+        }
+        else if (e.key === 'Enter') { 
+            e.preventDefault(); 
+            if (currentIdx >= 0) { 
+                const file = files[currentIdx]; 
+                if (file.isUp) navigateBack(state.active); 
+                else if (file.kind === 'directory') navigateInto(state.active, file.name); 
+                else openFile(state.active, file.name); 
+            } 
+        }
     });
 
     document.getElementById('list-left').focus();
 </script>
+
 </body>
 </html>
