@@ -54,24 +54,55 @@
         .btn-sync { padding: 6px 8px; cursor: pointer; background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: bold; font-family: inherit; border-radius: 3px; box-shadow: 0 0 5px var(--accent-glow); transition: all 0.2s; }
         .btn-sync:hover { background: var(--accent); color: var(--bg-main); }
 
-        #panels-container { display: flex; flex: 1; overflow: hidden; padding: 6px; gap: 6px; }
-        .panel { flex: 1; display: flex; flex-direction: column; border: 1px solid var(--border); background-color: var(--bg-panel); overflow: hidden; border-radius: 4px; transition: border-color 0.2s, box-shadow 0.2s; }
+        #panels-container { display: flex; flex: 1; overflow: hidden; padding: 6px; gap: 0; }
+        .panel { display: flex; flex-direction: column; border: 1px solid var(--border); background-color: var(--bg-panel); overflow: hidden; border-radius: 4px; transition: border-color 0.2s, box-shadow 0.2s; min-width: 150px; }
         .panel.active { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow), inset 0 0 15px rgba(0, 243, 255, 0.03); }
-        .file-header { display: flex; padding: 5px 8px; background-color: var(--bg-header); border-bottom: 1px solid var(--border); font-weight: bold; font-size: 12px; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
-        .file-header > div { padding: 2px; }
+        .file-header { display: flex; padding: 5px 8px; background-color: var(--bg-header); border-bottom: 1px solid var(--border); font-weight: bold; font-size: 12px; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; align-items: stretch; }
+        .file-header > div.col-cell { padding: 2px; overflow: hidden; }
         .file-header > div.sortable { cursor: pointer; border-radius: 2px; }
         .file-header > div.sortable:hover { color: var(--accent); background: var(--bg-hover); }
+
+        /* === RESIZE HANDLE COLONNE === */
+        .col-resize-handle {
+            width: 7px; flex-shrink: 0; cursor: col-resize; position: relative; margin: 0 -3px; z-index: 5;
+        }
+        .col-resize-handle::before {
+            content: ''; position: absolute; left: 50%; top: 15%; bottom: 15%;
+            width: 1px; background: transparent; transform: translateX(-50%); transition: background 0.15s, box-shadow 0.15s;
+        }
+        .col-resize-handle:hover::before, .col-resize-handle.active::before {
+            background: var(--accent); box-shadow: 0 0 6px var(--accent-glow);
+        }
+        .col-resize-handle:hover, .col-resize-handle.active { background: rgba(0, 243, 255, 0.04); }
+
+        /* === DIVISORE PANNELLI === */
+        .panel-divider {
+            width: 8px; flex-shrink: 0; cursor: col-resize; background: var(--border);
+            border-radius: 4px; transition: background 0.2s, box-shadow 0.2s; position: relative; margin: 0 3px;
+        }
+        .panel-divider::before {
+            content: ''; position: absolute; left: 50%; top: 20%; bottom: 20%;
+            width: 2px; background: transparent; transform: translateX(-50%); border-radius: 1px;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .panel-divider:hover::before, .panel-divider.active::before {
+            background: var(--accent); box-shadow: 0 0 8px var(--accent-glow);
+        }
+        .panel-divider:hover, .panel-divider.active {
+            background: rgba(0, 243, 255, 0.08); box-shadow: 0 0 12px var(--accent-glow);
+        }
+
         .file-list { flex: 1; overflow-y: auto; outline: none; position: relative; }
         .file-list::-webkit-scrollbar { width: 6px; }
         .file-list::-webkit-scrollbar-track { background: var(--bg-panel); }
         .file-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        .file-item { display: flex; padding: 3px 8px; cursor: pointer; font-size: 14px; border-bottom: 1px solid var(--bg-main); transition: background 0.1s; }
+        .file-item { display: flex; padding: 3px 8px; cursor: pointer; font-size: 14px; border-bottom: 1px solid var(--bg-main); transition: background 0.1s; align-items: center; }
         .file-item:hover { background-color: var(--bg-hover); }
         .file-item.selected { background-color: var(--selection-bg); color: var(--selection-text); text-shadow: 0 0 4px rgba(0,0,0,0.5); }
-        .col-name { flex: 3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px;}
-        .col-type { flex: 1; text-align: left; padding-left: 10px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
-        .col-size { flex: 1; text-align: right; padding-right: 10px; color: var(--text-dim);}
-        .col-date { flex: 1.5; text-align: right; color: var(--text-dim);}
+        .col-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+        .col-type { text-align: left; padding-left: 10px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .col-size { text-align: right; padding-right: 10px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .col-date { text-align: right; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .zip-icon { color: var(--yellow); }
 
         #status-bar { padding: 5px 12px; background-color: var(--bg-panel); border-top: 1px solid var(--border); font-size: 12px; color: var(--text-dim); letter-spacing: 0.5px; }
@@ -148,19 +179,17 @@
         <div class="tb-sep"></div>
         <button class="tb-btn c-red" onclick="handleF8()" title="Elimina (CANC / F8)">&#128465;</button>
         <div class="tb-sep"></div>
-        <div class="tb-sep"></div>    
-        <button class="tb-btn c-purple" onclick="window.open('WebEditPlus.html', '_blank')" title="Editor">&#9997;</button>        
-        <button class="tb-btn c-purple" onclick="window.open('Calcolatrice.html', '_blank')" title="Calcolatrice">🧮</button>        
-        <button class="tb-btn c-purple" onclick="window.open('WEB_WORD.html', '_blank')" title="WORD">📝</button>        
-        <button class="tb-btn c-purple" onclick="window.open('IMG_TO_TEXT.html', '_blank')" title="OCR">📄</button>        
-        <button class="tb-btn c-purple" onclick="window.open('CAM_SCANNER.html', '_blank')" title="SCANNER">📸</button>  
-        <button class="tb-btn c-purple" onclick="window.open('PASSWORD_MANAGER.html', '_blank')" title="PASS_KEEPR">🔑</button>    
-        <button class="tb-btn c-purple" onclick="window.open('CLOCK_NIGHT_DAY.html', '_blank')" title="PASS_KEEPR">🌤️</button>    
-        <button class="tb-btn c-purple" onclick="window.open('LUXURY_AGENDA.html', '_blank')" title="AGENDA">📅</button>    
-        <button class="tb-btn c-purple" onclick="window.open('WORK_GANTT_PROJECT.html', '_blank')" title="GANTT">📊</button>    
-        <button class="tb-btn c-purple" onclick="window.open('EBOOK_READER.html', '_blank')" title="E-BOOK">📖</button>    
+        <button class="tb-btn c-purple" onclick="window.open('WebEditPlus.html', '_blank')" title="Editor">&#9997;</button>
+        <button class="tb-btn c-purple" onclick="window.open('Calcolatrice.html', '_blank')" title="Calcolatrice">🧮</button>
+        <button class="tb-btn c-purple" onclick="window.open('WEB_WORD.html', '_blank')" title="WORD">📝</button>
+        <button class="tb-btn c-purple" onclick="window.open('IMG_TO_TEXT.html', '_blank')" title="OCR">📄</button>
+        <button class="tb-btn c-purple" onclick="window.open('CAM_SCANNER.html', '_blank')" title="SCANNER">📸</button>
+        <button class="tb-btn c-purple" onclick="window.open('PASSWORD_MANAGER.html', '_blank')" title="PASS_KEEPR">🔑</button>
+        <button class="tb-btn c-purple" onclick="window.open('CLOCK_NIGHT_DAY.html', '_blank')" title="CLOCK">🌤️</button>
+        <button class="tb-btn c-purple" onclick="window.open('LUXURY_AGENDA.html', '_blank')" title="AGENDA">📅</button>
+        <button class="tb-btn c-purple" onclick="window.open('WORK_GANTT_PROJECT.html', '_blank')" title="GANTT">📊</button>
+        <button class="tb-btn c-purple" onclick="window.open('EBOOK_READER.html', '_blank')" title="E-BOOK">📖</button>
         <div class="tb-sep"></div>
-                    
         <div style="flex:1"></div>
         <button class="tb-btn" onclick="syncViews()" title="Sincronizza (Dest = Src)">&#8644;</button>
     </div>
@@ -184,19 +213,29 @@
     <div id="panels-container">
         <div id="panel-left" class="panel active">
             <div class="file-header" onclick="setActive('left')">
-                <div class="col-name sortable" onclick="event.stopPropagation(); handleSort('left', 'name')">Nome <span id="sort-left-name"></span></div>
-                <div class="col-type sortable" onclick="event.stopPropagation(); handleSort('left', 'type')">Tipo <span id="sort-left-type"></span></div>
-                <div class="col-size sortable" onclick="event.stopPropagation(); handleSort('left', 'size')">Dim <span id="sort-left-size"></span></div>
-                <div class="col-date sortable" onclick="event.stopPropagation(); handleSort('left', 'timestamp')">Data <span id="sort-left-timestamp"></span></div>
+                <div class="col-name col-cell sortable" onclick="event.stopPropagation(); handleSort('left', 'name')">Nome <span id="sort-left-name"></span></div>
+                <div class="col-resize-handle" data-col-idx="0"></div>
+                <div class="col-type col-cell sortable" onclick="event.stopPropagation(); handleSort('left', 'type')">Tipo <span id="sort-left-type"></span></div>
+                <div class="col-resize-handle" data-col-idx="1"></div>
+                <div class="col-size col-cell sortable" onclick="event.stopPropagation(); handleSort('left', 'size')">Dim <span id="sort-left-size"></span></div>
+                <div class="col-resize-handle" data-col-idx="2"></div>
+                <div class="col-date col-cell sortable" onclick="event.stopPropagation(); handleSort('left', 'timestamp')">Data <span id="sort-left-timestamp"></span></div>
             </div>
             <div id="list-left" class="file-list" tabindex="0"></div>
         </div>
+
+        <!-- === DIVISORE TRASCINABILE TRA I DUE PANNELLI === -->
+        <div class="panel-divider" id="panel-divider"></div>
+
         <div id="panel-right" class="panel">
             <div class="file-header" onclick="setActive('right')">
-                <div class="col-name sortable" onclick="event.stopPropagation(); handleSort('right', 'name')">Nome <span id="sort-right-name"></span></div>
-                <div class="col-type sortable" onclick="event.stopPropagation(); handleSort('right', 'type')">Tipo <span id="sort-right-type"></span></div>
-                <div class="col-size sortable" onclick="event.stopPropagation(); handleSort('right', 'size')">Dim <span id="sort-right-size"></span></div>
-                <div class="col-date sortable" onclick="event.stopPropagation(); handleSort('right', 'timestamp')">Data <span id="sort-right-timestamp"></span></div>
+                <div class="col-name col-cell sortable" onclick="event.stopPropagation(); handleSort('right', 'name')">Nome <span id="sort-right-name"></span></div>
+                <div class="col-resize-handle" data-col-idx="0"></div>
+                <div class="col-type col-cell sortable" onclick="event.stopPropagation(); handleSort('right', 'type')">Tipo <span id="sort-right-type"></span></div>
+                <div class="col-resize-handle" data-col-idx="1"></div>
+                <div class="col-size col-cell sortable" onclick="event.stopPropagation(); handleSort('right', 'size')">Dim <span id="sort-right-size"></span></div>
+                <div class="col-resize-handle" data-col-idx="2"></div>
+                <div class="col-date col-cell sortable" onclick="event.stopPropagation(); handleSort('right', 'timestamp')">Data <span id="sort-right-timestamp"></span></div>
             </div>
             <div id="list-right" class="file-list" tabindex="0"></div>
         </div>
@@ -269,6 +308,9 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
+    /* ============================================================
+       STATO PRINCIPALE
+       ============================================================ */
     let state = {
         active: 'left', handles: { left: null, right: null }, files: { left: [], right: [] },
         selected: { left: new Set(), right: new Set() }, paths: { left: '', right: '' },
@@ -278,6 +320,21 @@
     let inMemoryZip = null, inMemoryZipPath = '', isDragging = false, dragStartIndex = -1, dragPane = '', hasDragged = false;
     let renameTargetIndex = -1, renameTargetPane = '', copyTargetData = null;
 
+    /* ============================================================
+       RESIZE COLONNE — stato e proporzioni
+       ============================================================ */
+    let colResizing = false, colResizeIdx = -1, colResizeStartX = 0;
+    // Proporzioni normalizzate delle 4 colonne: nome, tipo, dim, data
+    let colProportions = [3 / 6.5, 1 / 6.5, 1 / 6.5, 1.5 / 6.5];
+
+    /* ============================================================
+       RESIZE PANNELLI — stato
+       ============================================================ */
+    let panelResizing = false, panelResizeStartX = 0, panelLeftStartW = 0;
+
+    /* ============================================================
+       UTILITÀ
+       ============================================================ */
     function showProgress(t) {
         document.getElementById('progress-title').textContent = t;
         document.getElementById('progress-fill').style.width = '0%';
@@ -309,6 +366,179 @@
     document.getElementById('base-left').addEventListener('input', (e) => { state.basePath.left = e.target.value; });
     document.getElementById('base-right').addEventListener('input', (e) => { state.basePath.right = e.target.value; });
 
+    /* ============================================================
+       RESIZE COLONNE — applica le larghezze a tutti gli elementi
+       ============================================================ */
+    function applyColumnWidths() {
+        const colClasses = ['col-name', 'col-type', 'col-size', 'col-date'];
+        document.querySelectorAll('.file-header').forEach(header => {
+            // Larghezza disponibile = larghezza header - 3 handle × 7px
+            const totalW = header.offsetWidth - 21;
+            if (totalW <= 0) return;
+            const pixels = colProportions.map(p => Math.max(30, Math.round(p * totalW)));
+            // Correggi l'ultima colonna per riempire esattamente
+            const used = pixels[0] + pixels[1] + pixels[2];
+            pixels[3] = Math.max(30, totalW - used);
+
+            colClasses.forEach((cls, i) => {
+                const el = header.querySelector('.' + cls);
+                if (el) {
+                    el.style.flex = '0 0 ' + pixels[i] + 'px';
+                    el.style.minWidth = '30px';
+                    el.style.width = pixels[i] + 'px';
+                }
+            });
+        });
+        // Applica le stesse larghezze ai file-item del rispettivo pannello
+        ['left', 'right'].forEach(pane => {
+            const header = document.querySelector('#panel-' + pane + ' .file-header');
+            if (!header) return;
+            const totalW = header.offsetWidth - 21;
+            if (totalW <= 0) return;
+            const pixels = colProportions.map(p => Math.max(30, Math.round(p * totalW)));
+            const used = pixels[0] + pixels[1] + pixels[2];
+            pixels[3] = Math.max(30, totalW - used);
+
+            const list = document.getElementById('list-' + pane);
+            if (!list) return;
+            colClasses.forEach((cls, i) => {
+                list.querySelectorAll('.' + cls).forEach(el => {
+                    el.style.flex = '0 0 ' + pixels[i] + 'px';
+                    el.style.minWidth = '30px';
+                    el.style.width = pixels[i] + 'px';
+                });
+            });
+        });
+    }
+
+    /* ============================================================
+       RESIZE PANNELLI — inizializza larghezze uguali
+       ============================================================ */
+    function initPanelWidths() {
+        const container = document.getElementById('panels-container');
+        if (!container) return;
+        const totalW = container.offsetWidth - 8 - 12; // divisor (8px) + padding (12px) + margin divisor (6px)
+        if (totalW <= 300) return;
+        const half = Math.floor(totalW / 2);
+        document.getElementById('panel-left').style.flex = '0 0 ' + half + 'px';
+        document.getElementById('panel-right').style.flex = '0 0 ' + (totalW - half) + 'px';
+    }
+
+    /* ============================================================
+       EVENTI RESIZE COLONNE — mousedown sugli handle
+       ============================================================ */
+    document.querySelectorAll('.col-resize-handle').forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            colResizing = true;
+            colResizeIdx = parseInt(handle.dataset.colIdx);
+            colResizeStartX = e.clientX;
+            // Evidenzia tutti gli handle con lo stesso indice in entrambe le intestazioni
+            document.querySelectorAll('.col-resize-handle[data-col-idx="' + colResizeIdx + '"]').forEach(h => h.classList.add('active'));
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+        });
+    });
+
+    /* ============================================================
+       EVENTI RESIZE PANNELLI — mousedown sul divisore
+       ============================================================ */
+    document.getElementById('panel-divider').addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        panelResizing = true;
+        panelResizeStartX = e.clientX;
+        panelLeftStartW = document.getElementById('panel-left').offsetWidth;
+        document.getElementById('panel-divider').classList.add('active');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+    });
+
+    /* ============================================================
+       MOUSEMOVE GLOBALE — gestisce resize colonne e pannelli
+       ============================================================ */
+    document.addEventListener('mousemove', (e) => {
+        if (colResizing) {
+            const header = document.querySelector('#panel-left .file-header');
+            if (!header) return;
+            const totalW = header.offsetWidth - 21;
+            if (totalW <= 0) return;
+            const dx = e.clientX - colResizeStartX;
+            const minProp = 30 / totalW; // larghezza minima colonna in proporzione
+            const newL = colProportions[colResizeIdx] + dx / totalW;
+            const newR = colProportions[colResizeIdx + 1] - dx / totalW;
+            if (newL >= minProp && newR >= minProp) {
+                colProportions[colResizeIdx] = newL;
+                colProportions[colResizeIdx + 1] = newR;
+                colResizeStartX = e.clientX;
+                applyColumnWidths();
+            }
+            return;
+        }
+        if (panelResizing) {
+            const container = document.getElementById('panels-container');
+            const totalW = container.offsetWidth - 8 - 12;
+            const minW = 180;
+            const dx = e.clientX - panelResizeStartX;
+            const newL = panelLeftStartW + dx;
+            const newR = totalW - newL;
+            if (newL >= minW && newR >= minW) {
+                document.getElementById('panel-left').style.flex = '0 0 ' + newL + 'px';
+                document.getElementById('panel-right').style.flex = '0 0 ' + newR + 'px';
+                applyColumnWidths();
+            }
+            return;
+        }
+    });
+
+    /* ============================================================
+       MOUSEUP GLOBALE — rilascia resize colonne/pannelli + drag selezione
+       ============================================================ */
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            if (!hasDragged) {
+                state.selected[dragPane].has(dragStartIndex)
+                    ? state.selected[dragPane].delete(dragStartIndex)
+                    : state.selected[dragPane].add(dragStartIndex);
+                updateSelectionUI(dragPane);
+            }
+            isDragging = false; hasDragged = false; dragStartIndex = -1; dragPane = '';
+        }
+        if (colResizing) {
+            colResizing = false;
+            document.querySelectorAll('.col-resize-handle').forEach(h => h.classList.remove('active'));
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        }
+        if (panelResizing) {
+            panelResizing = false;
+            document.getElementById('panel-divider').classList.remove('active');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        }
+    });
+    document.addEventListener('contextmenu', (e) => { if (e.target.closest('.file-list')) e.preventDefault(); });
+
+    /* ============================================================
+       INIZIALIZZAZIONE LARGHEZZE AL CARICAMENTO
+       ============================================================ */
+    window.addEventListener('load', () => {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                initPanelWidths();
+                applyColumnWidths();
+            });
+        });
+    });
+    window.addEventListener('resize', () => {
+        initPanelWidths();
+        applyColumnWidths();
+    });
+
+    /* ============================================================
+       NAVIGAZIONE E VISTE
+       ============================================================ */
     async function refreshRelevantPanes(...paths) {
         const ap = paths.filter(p => p && p.length > 0);
         if (!ap.length) return;
@@ -317,7 +547,6 @@
             if (state.paths.left !== state.paths.right) await listFiles('right');
         }
     }
-
     function setView(type) {
         document.getElementById('btn-view-list').classList.toggle('active', type === 'list');
         document.getElementById('btn-view-tree').classList.toggle('active', type === 'tree');
@@ -411,17 +640,15 @@
             item.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); isDragging = false; if (file.isUp) navigateBack(pane); else if (file.kind === 'directory') navigateInto(pane, file.name); else openFile(pane, file.name); });
             item.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); });
             l.appendChild(item);
-        }); updateStatus();
+        });
+        updateStatus();
+        // Riapplica le larghezze colonne ai nuovi elementi
+        applyColumnWidths();
     }
 
-    document.addEventListener('mouseup', () => {
-        if (isDragging) {
-            if (!hasDragged) { state.selected[dragPane].has(dragStartIndex) ? state.selected[dragPane].delete(dragStartIndex) : state.selected[dragPane].add(dragStartIndex); updateSelectionUI(dragPane); }
-            isDragging = false; hasDragged = false; dragStartIndex = -1; dragPane = '';
-        }
-    });
-    document.addEventListener('contextmenu', (e) => { if (e.target.closest('.file-list')) e.preventDefault(); });
-
+    /* ============================================================
+       NAVIGAZIONE DIRECTORY
+       ============================================================ */
     async function navigateInto(p, dn) {
         try {
             if (dn.toLowerCase().endsWith('.zip')) {
@@ -480,6 +707,9 @@
         await listFiles(d); showToast("Sincronizzate", "success");
     }
 
+    /* ============================================================
+       RINOMINA
+       ============================================================ */
     function handleRename() {
         const p = state.active;
         if (inMemoryZip) return showToast("Impossibile nello ZIP", "error");
@@ -515,6 +745,9 @@
         } catch (e) { ed.textContent = "Errore: " + e.message; }
     }
 
+    /* ============================================================
+       PERCORSO (F4)
+       ============================================================ */
     function handleF4() {
         const p = state.active, sa = Array.from(state.selected[p]).sort((a, b) => a - b);
         if (!sa.length) return showToast("Nessun elemento", "error");
@@ -527,13 +760,16 @@
     async function copyPathFromModal() { const i = document.getElementById('path-modal-input'); try { await navigator.clipboard.writeText(i.value); showToast(`Copiato`, "success"); closePathModal(); } catch (e) { i.select(); showToast("USA CTRL+C", "error"); } }
     function closePathModal() { document.getElementById('path-modal-overlay').classList.remove('active'); document.getElementById(`list-${state.active}`).focus(); }
 
+    /* ============================================================
+       RICERCA
+       ============================================================ */
     function openSearchModal() { if (!state.handles[state.active] && !inMemoryZip) return showToast("Nessuna cartella aperta", "error"); document.getElementById('search-input').value = ''; document.getElementById('search-results').innerHTML = ''; document.getElementById('search-modal-overlay').classList.add('active'); document.getElementById('search-input').focus(); }
     function closeSearchModal() { document.getElementById('search-modal-overlay').classList.remove('active'); document.getElementById(`list-${state.active}`).focus(); }
     async function executeSearch() {
         const t = document.getElementById('search-input').value.trim(); if (!t) return;
         const rd = document.getElementById('search-results'); rd.innerHTML = '<div style="padding:10px;color:var(--yellow)">Cercando...</div>';
         const p = state.active, rh = state.handles[p], rp = state.paths[p], res = [];
-        async function rs(dh, cp) { for await (const e of dh.values()) { if (e.name.toLowerCase().includes(t.toLowerCase())) res.push({ name: e.name, kind: e.kind, path: cp + '/' + e.name }); if (e.kind === 'directory') { try { await rs(await dh.getDirectoryHandle(e.name), cp + '/' + e.name); } catch (e) { } } } }
+        async function rs(dh, cp) { for await (const e of dh.values()) { if (e.name.toLowerCase().includes(t.toLowerCase())) res.push({ name: e.name, kind: e.kind, path: cp + '/' + e.name }); if (e.kind === 'directory') { try { await rs(await dh.getDirectoryHandle(e.name), cp + '/' + e.name); } catch (ex) { } } } }
         try {
             await rs(rh, rp); rd.innerHTML = '';
             if (!res.length) { rd.innerHTML = '<div style="padding:10px;color:var(--text-dim)">Nessun risultato.</div>'; return; }
@@ -542,6 +778,9 @@
         } catch (e) { rd.innerHTML = `<div style="padding:10px;color:var(--red)">Errore: ${e.message}</div>`; }
     }
 
+    /* ============================================================
+       EDITOR (F3)
+       ============================================================ */
     async function handleF3() {
         if (inMemoryZip) { const f = getSelectedData(state.active); if (f.length === 1 && !f[0].isUp) return openFile(state.active, f[0].name); return showToast("Seleziona un file", "error"); }
         const p = state.active, sa = Array.from(state.selected[p]); let fn = 'nuovo.txt', fp = '', ft = 'TXT', c = '';
@@ -550,10 +789,166 @@
         try { localStorage.setItem('webEditPlus_transfer', `|||N_START|||${fn}|||N_END|||` + `|||P_START|||${fp}|||P_END|||` + `|||C_START|||${c}|||C_END|||` + `|||T_START|||${ft}|||T_END|||`); window.open('WebEditPlus.html?load=1', '_blank'); document.getElementById('status-bar').innerText = `EDITOR: ${fn}`; showToast(c ? `Editor: ${fn}` : "Editor vuoto", c ? "success" : "info"); } catch (e) { showToast("Errore editor: " + e.message, "error"); }
     }
 
+    /* ============================================================
+       UTILITY FILE SYSTEM
+       ============================================================ */
     function getSelectedData(p) { return Array.from(state.selected[p]).map(i => state.files[p][i]).filter(f => !f.isUp); }
     async function getDiskHandles(p) { const dh = state.handles[p], f = []; for (const i of state.selected[p]) { const d = state.files[p][i]; if (d.isUp) continue; try { const h = d.kind === 'file' ? await dh.getFileHandle(d.name) : await dh.getDirectoryHandle(d.name); f.push({ handle: h, data: d }); } catch (e) { } } return f; }
     async function copyDiskDirectory(s, d) { for await (const e of s.values()) { if (e.kind === 'file') { const f = await e.getFile(), c = await f.arrayBuffer(), n = await d.getFileHandle(e.name, { create: true }), w = await n.createWritable(); await w.write(c); await w.close(); } else { const nd = await d.getDirectoryHandle(e.name, { create: true }); await copyDiskDirectory(await s.getDirectoryHandle(e.name), nd); } } }
 
+    /* ============================================================
+       COPIA (F5)
+       ============================================================ */
+    async function handleF5() {
+        const s = state.active, d = s === 'left' ? 'right' : 'left';
+        if (inMemoryZip) return showToast("Impossibile nello ZIP", "error");
+        if (!state.handles[s] || !state.handles[d]) return showToast("Servono src e dst", "error");
+        const files = await getDiskHandles(s);
+        if (!files.length) return showToast("Nessun elemento", "error");
+        if (files.length === 1) {
+            copyTargetData = { files, dest: d, src: s };
+            document.getElementById('copy-src-name').textContent = files[0].data.name;
+            document.getElementById('copy-dst-path').textContent = state.paths[d];
+            document.getElementById('copy-new-name').value = files[0].data.name;
+            document.getElementById('copy-error').textContent = '';
+            document.getElementById('copy-modal-overlay').classList.add('active');
+            document.getElementById('copy-new-name').focus();
+            return;
+        }
+        if (!confirm(`Copiare ${files.length} elementi?`)) return;
+        showProgress("COPIA FILE"); let c = 0;
+        for (const f of files) {
+            updateProgress((c / files.length) * 100, f.data.name);
+            try {
+                if (f.data.kind === 'file') { const file = await f.handle.getFile(), content = await file.arrayBuffer(); const nh = await state.handles[d].getFileHandle(f.data.name, { create: true }); const w = await nh.createWritable(); await w.write(content); await w.close(); }
+                else { const nd = await state.handles[d].getDirectoryHandle(f.data.name, { create: true }); await copyDiskDirectory(f.handle, nd); }
+                c++;
+            } catch (e) { showToast(`Err: ${f.data.name}`, "error"); }
+        }
+        updateProgress(100, 'Completato'); hideProgress();
+        await refreshRelevantPanes(state.paths[d], state.paths[s]);
+        showToast(`Copiati ${c} elementi`, "success");
+    }
+    async function executeCopy() {
+        if (!copyTargetData) return;
+        const { files, dest, src } = copyTargetData;
+        const nn = document.getElementById('copy-new-name').value.trim();
+        const errEl = document.getElementById('copy-error');
+        if (!nn) { errEl.textContent = "Nome vuoto."; return; }
+        try {
+            const f = files[0];
+            if (f.data.kind === 'file') { const file = await f.handle.getFile(), content = await file.arrayBuffer(); const nh = await state.handles[dest].getFileHandle(nn, { create: true }); const w = await nh.createWritable(); await w.write(content); await w.close(); }
+            else { const nd = await state.handles[dest].getDirectoryHandle(nn, { create: true }); await copyDiskDirectory(f.handle, nd); }
+            closeCopyModal(); await refreshRelevantPanes(state.paths[dest], state.paths[src]);
+            showToast(`Copiato: ${nn}`, "success");
+        } catch (e) { errEl.textContent = "Errore: " + e.message; }
+    }
+    function closeCopyModal() { document.getElementById('copy-modal-overlay').classList.remove('active'); copyTargetData = null; document.getElementById(`list-${state.active}`).focus(); }
+
+    /* ============================================================
+       SPOSTA (F6)
+       ============================================================ */
+    async function handleF6() {
+        const s = state.active, d = s === 'left' ? 'right' : 'left';
+        if (inMemoryZip) return showToast("Impossibile nello ZIP", "error");
+        if (!state.handles[s] || !state.handles[d]) return showToast("Servono src e dst", "error");
+        const files = await getDiskHandles(s);
+        if (!files.length) return showToast("Nessun elemento", "error");
+        if (!confirm(`Spostare ${files.length} elementi?`)) return;
+        showProgress("SPOSTAMENTO FILE"); let c = 0;
+        for (const f of files) {
+            updateProgress((c / files.length) * 100, f.data.name);
+            try {
+                if (f.data.kind === 'file') { const file = await f.handle.getFile(), content = await file.arrayBuffer(); const nh = await state.handles[d].getFileHandle(f.data.name, { create: true }); const w = await nh.createWritable(); await w.write(content); await w.close(); await state.handles[s].removeEntry(f.data.name); }
+                else { const nd = await state.handles[d].getDirectoryHandle(f.data.name, { create: true }); await copyDiskDirectory(f.handle, nd); await state.handles[s].removeEntry(f.data.name, { recursive: true }); }
+                c++;
+            } catch (e) { showToast(`Err: ${f.data.name}`, "error"); }
+        }
+        updateProgress(100, 'Completato'); hideProgress();
+        await refreshRelevantPanes(state.paths[d], state.paths[s]);
+        showToast(`Spostati ${c} elementi`, "success");
+    }
+
+    /* ============================================================
+       NUOVA CARTELLA (F7)
+       ============================================================ */
+    async function handleF7() {
+        if (inMemoryZip) return showToast("Impossibile nello ZIP", "error");
+        if (!state.handles[state.active]) return showToast("Nessuna cartella aperta", "error");
+        const name = prompt("Nome nuova cartella:");
+        if (!name || !name.trim()) return;
+        if (/[\/\\:*?"<>|]/.test(name)) return showToast("Nome non valido", "error");
+        try { await state.handles[state.active].getDirectoryHandle(name.trim(), { create: true }); await listFiles(state.active); showToast(`Creata: ${name}`, "success"); }
+        catch (e) { showToast("Errore: " + e.message, "error"); }
+    }
+
+    /* ============================================================
+       ELIMINA (F8)
+       ============================================================ */
+    async function handleF8() {
+        if (inMemoryZip) return showToast("Impossibile nello ZIP", "error");
+        if (!state.handles[state.active]) return showToast("Nessuna cartella aperta", "error");
+        const p = state.active, sa = Array.from(state.selected[p]).filter(i => !state.files[p][i].isUp);
+        if (!sa.length) return showToast("Nessun elemento", "error");
+        const names = sa.map(i => state.files[p][i].name);
+        if (!confirm(`Eliminare ${names.length} elemento/i?\n${names.join('\n')}`)) return;
+        showProgress("ELIMINAZIONE"); let c = 0;
+        for (const i of sa) {
+            const f = state.files[p][i];
+            updateProgress((c / sa.length) * 100, f.name);
+            try { await state.handles[p].removeEntry(f.name, { recursive: f.kind === 'directory' }); c++; }
+            catch (e) { showToast(`Err: ${f.name}`, "error"); }
+        }
+        updateProgress(100, 'Completato'); hideProgress();
+        await refreshRelevantPanes(state.paths[p]);
+        showToast(`Eliminati ${c} elementi`, "success");
+    }
+
+    /* ============================================================
+       CREA ZIP
+       ============================================================ */
+    async function handleZip() {
+        const s = state.active, d = s === 'left' ? 'right' : 'left';
+        if (inMemoryZip) return showToast("Impossibile nello ZIP", "error");
+        if (!state.handles[s] || !state.handles[d]) return showToast("Servono src e dst", "error");
+        const files = await getDiskHandles(s);
+        if (!files.length) return showToast("Nessun elemento", "error");
+        const zipName = prompt("Nome archivio ZIP:", "archivio.zip");
+        if (!zipName || !zipName.trim()) return;
+        if (!zipName.trim().toLowerCase().endsWith('.zip')) return showToast("Estensione .zip richiesta", "error");
+        if (!confirm(`Creare ZIP con ${files.length} elementi?`)) return;
+        showProgress("CREAZIONE ZIP"); let c = 0;
+        try {
+            const zip = new JSZip();
+            for (const f of files) {
+                updateProgress((c / files.length) * 50, f.data.name);
+                if (f.data.kind === 'file') { const file = await f.handle.getFile(); zip.file(f.data.name, file); }
+                else {
+                    async function addDirToZip(dh, path) {
+                        for await (const e of dh.values()) {
+                            const ep = path + '/' + e.name;
+                            if (e.kind === 'file') { const file = await e.getFile(); zip.file(ep, file); }
+                            else { zip.folder(ep); await addDirToZip(await dh.getDirectoryHandle(e.name), ep); }
+                        }
+                    }
+                    zip.folder(f.data.name);
+                    await addDirToZip(f.handle, f.data.name);
+                }
+                c++;
+            }
+            updateProgress(60, 'Compressione...');
+            const blob = await zip.generateAsync({ type: 'blob' }, (m) => { updateProgress(60 + m.percent * 0.4, 'Compressione...'); });
+            updateProgress(100, 'Scrittura...');
+            const h = await state.handles[d].getFileHandle(zipName.trim(), { create: true });
+            const w = await h.createWritable(); await w.write(blob); await w.close();
+            hideProgress(); await refreshRelevantPanes(state.paths[d]);
+            showToast(`ZIP creato: ${zipName}`, "success");
+        } catch (e) { hideProgress(); showToast("Errore ZIP: " + e.message, "error"); }
+    }
+
+    /* ============================================================
+       ESTRAI ZIP
+       ============================================================ */
     async function handleUnzip() {
         const s = state.active, d = s === 'left' ? 'right' : 'left';
         if (inMemoryZip) {
@@ -566,151 +961,60 @@
         const files = await getDiskHandles(s); if (!files.length) return showToast("Nessun elemento", "error");
         if (files.length !== 1 || !files[0].data.isZip || files[0].data.kind !== 'file') return showToast("Seleziona un singolo .zip", "error");
         if (!confirm(`Estrarre ${files[0].data.name}?`)) return;
-        showProgress("LETTURA ARCHIVIO ZIP"); updateProgress(0, 'Apertura file...');
+        showProgress("ESTRAZIONE ZIP"); updateProgress(0, 'Lettura archivio...');
         try {
-            const f = await files[0].handle.getFile(); updateProgress(10, 'Parsing archivio...');
-            const z = await JSZip.loadAsync(await f.arrayBuffer()); const en = []; z.forEach((p, e) => { if (!e.dir) en.push({ path: p, entry: e }); });
-            const tf = en.length; if (!tf) { hideProgress(); return showToast("ZIP vuoto", "info"); }
-            updateProgress(15, `${tf} file`, 'Dim: ' + formatSize(f.size));
-            const cdc = async (dh, fl) => { if (!fl.length) return dh; return cdc(await dh.getDirectoryHandle(fl[0], { create: true }), fl.slice(1)); };
-            let c = 0;
-            for (const { path, entry } of en) { const b = await entry.async('blob'), pt = path.split('/'), fd = await cdc(state.handles[d], pt.slice(0, -1)), fh = await fd.getFileHandle(pt[pt.length - 1], { create: true }), w = await fh.createWritable(); await w.write(b); await w.close(); c++; updateProgress(15 + ((c / tf) * 85), pt[pt.length - 1], `${c}/${tf} | ${formatSize(b.size)}`); }
-            updateProgress(100, 'Completato', `${tf} file`); await refreshRelevantPanes(state.paths[d]);
-            document.getElementById('status-bar').innerText = `UNZIP OK: ${tf} FILE`; await new Promise(r => setTimeout(r, 400)); hideProgress(); showToast(`Estratti ${tf} file`, "success");
-        } catch (e) { hideProgress(); showToast("Errore unzip: " + e.message, "error"); }
-    }
-
-    async function handleF5() {
-        const s = state.active, d = s === 'left' ? 'right' : 'left';
-        if (!state.handles[d]) return showToast("Destinazione non aperta", "error");
-        if (inMemoryZip) return handleUnzip();
-        if (!state.handles[s]) return showToast("Origine non valida", "error");
-        const files = await getDiskHandles(s); if (!files.length) return showToast("Nessun elemento", "error");
-        if (files.length === 1 && files[0].data.isZip && files[0].data.kind === 'file') { if (confirm("File .zip.\n\nOK = Estrai\nAnnulla = Copia con nome")) return handleUnzip(); }
-        if (files.length > 1) {
-            if (!confirm(`Copiare ${files.length} elemento/i?`)) return;
-            for (const i of files) { try { if (i.data.kind === 'file') { const f = await i.handle.getFile(), c = await f.arrayBuffer(), h = await state.handles[d].getFileHandle(i.data.name, { create: true }), w = await h.createWritable(); await w.write(c); await w.close(); } else { await copyDiskDirectory(i.handle, await state.handles[d].getDirectoryHandle(i.data.name, { create: true })); } } catch (e) { showToast(e.message, "error"); } }
-            await refreshRelevantPanes(state.paths[s], state.paths[d]); showToast(`Copiati ${files.length} elemento/i`, "success"); return;
-        }
-        const file = files[0];
-        if (file.data.kind === 'directory') { if (!confirm(`Copiare "${file.data.name}"?`)) return; await copyDiskDirectory(file.handle, await state.handles[d].getDirectoryHandle(file.data.name, { create: true })); await refreshRelevantPanes(state.paths[s], state.paths[d]); showToast(`Copiata: ${file.data.name}`, "success"); return; }
-        copyTargetData = { handle: file.handle, data: file.data, dest: d };
-        document.getElementById('copy-src-name').textContent = file.data.name;
-        document.getElementById('copy-dst-path').textContent = state.paths[d] || '/';
-        document.getElementById('copy-new-name').value = file.data.name;
-        document.getElementById('copy-error').textContent = '';
-        document.getElementById('copy-modal-overlay').classList.add('active');
-        document.getElementById('copy-new-name').focus();
-        document.getElementById('copy-new-name').select();
-    }
-    function closeCopyModal() { document.getElementById('copy-modal-overlay').classList.remove('active'); copyTargetData = null; document.getElementById(`list-${state.active}`).focus(); }
-    async function executeCopy() {
-        if (!copyTargetData) return;
-        const inp = document.getElementById('copy-new-name'), ed = document.getElementById('copy-error');
-        let nn = inp.value.trim();
-        if (nn && /[\/\\:*?"<>|]/.test(nn)) { ed.textContent = "Caratteri non validi."; inp.focus(); return; }
-        if (!nn) nn = copyTargetData.data.name;
-        try {
-            const f = await copyTargetData.handle.getFile(), c = await f.arrayBuffer(), h = await state.handles[copyTargetData.dest].getFileHandle(nn, { create: true }), w = await h.createWritable(); await w.write(c); await w.close();
-            closeCopyModal(); await refreshRelevantPanes(state.paths[copyTargetData.dest]);
-            showToast(nn !== copyTargetData.data.name ? `Copiato come: ${nn}` : `Copiato: ${nn}`, "success");
-        } catch (e) { ed.textContent = "Errore: " + e.message; }
-    }
-
-    async function handleZip() {
-        if (inMemoryZip) return showToast("Impossibile dentro ZIP", "error");
-        const s = state.active, d = s === 'left' ? 'right' : 'left';
-        if (!state.handles[s] || !state.handles[d]) return showToast("Servono src e dst", "error");
-        const files = await getDiskHandles(s); if (!files.length) return showToast("Nessun elemento", "error");
-        const n = prompt("Nome archivio:", "archivio.zip"); if (!n) return;
-        const zn = n.toLowerCase().endsWith('.zip') ? n : n + '.zip';
-        showProgress("CREAZIONE ARCHIVIO ZIP"); updateProgress(0, 'Scansione strutture...');
-        try {
-            async function sar(dh, bp = '') {
-                const it = [];
-                for await (const e of dh.values()) {
-                    if (e.kind === 'file') { const f = await e.getFile(), dt = await f.arrayBuffer(); it.push({ path: bp + e.name, type: 'file', data: dt }); }
-                    else { it.push({ path: bp + e.name, type: 'dir', data: null }); const sd = await dh.getDirectoryHandle(e.name), si = await sar(sd, bp + e.name + '/'); it.push(...si); }
-                } return it;
+            const f = await files[0].handle.getFile();
+            updateProgress(10, 'Parsing archivio...');
+            const buf = await f.arrayBuffer();
+            const zip = await JSZip.loadAsync(buf);
+            const entries = [];
+            zip.forEach((path, entry) => { entries.push({ path, entry }); });
+            let c = 0, total = entries.length;
+            for (const { path, entry } of entries) {
+                updateProgress(10 + (c / total) * 85, path);
+                const parts = path.split('/'); let current = state.handles[d];
+                for (let i = 0; i < parts.length - 1; i++) { if (parts[i]) current = await current.getDirectoryHandle(parts[i], { create: true }); }
+                const fn = parts[parts.length - 1];
+                if (fn && !entry.dir) {
+                    const blob = await entry.async('blob');
+                    const h = await current.getFileHandle(fn, { create: true });
+                    const w = await h.createWritable(); await w.write(blob); await w.close();
+                }
+                c++;
             }
-            let ai = [];
-            for (const i of files) {
-                if (i.data.kind === 'file') { const f = await i.handle.getFile(), dt = await f.arrayBuffer(); ai.push({ path: i.data.name, type: 'file', data: dt }); }
-                else if (i.data.kind === 'directory') { ai.push({ path: i.data.name, type: 'dir', data: null }); const si = await sar(i.handle, i.data.name + '/'); ai.push(...si); }
-            }
-            const fz = ai.filter(i => i.type === 'file');
-            if (!fz.length) { hideProgress(); return showToast("Nessun contenuto", "error"); }
-            updateProgress(5, `${fz.length} file`);
-            const z = new JSZip(); ai.forEach(i => { if (i.type === 'dir') z.folder(i.path); else z.file(i.path, i.data); });
-            updateProgress(60, 'Compressione DEFLATE...', 'Letti: ' + formatSize(fz.reduce((a, b) => a + b.data.byteLength, 0)));
-            const b = await z.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } }, function (m) { updateProgress(60 + (m.percent * 0.4), 'Compressione...'); });
-            updateProgress(95, 'Scrittura...', 'Finale: ' + formatSize(b.size));
-            const h = await state.handles[d].getFileHandle(zn, { create: true }), w = await h.createWritable(); await w.write(b); await w.close();
-            updateProgress(100, 'Completato', `${fz.length} file | ${formatSize(b.size)}`);
+            updateProgress(100, 'Completato'); hideProgress();
             await refreshRelevantPanes(state.paths[d]);
-            document.getElementById('status-bar').innerText = `ZIP CREATO: ${zn} (${fz.length} elem)`;
-            await new Promise(r => setTimeout(r, 500)); hideProgress(); showToast(`ZIP creato: ${zn} (${formatSize(b.size)})`, "success");
-        } catch (e) { hideProgress(); document.getElementById('status-bar').innerText = "ERRORE ZIP"; showToast("Errore ZIP: " + e.message, "error"); }
+            showToast(`Estratti ${c} elementi`, "success");
+        } catch (e) { hideProgress(); showToast("Errore estrazione: " + e.message, "error"); }
     }
 
-    async function handleF6() {
-        if (inMemoryZip) return showToast("Impossibile dentro ZIP", "error");
-        const s = state.active, d = s === 'left' ? 'right' : 'left';
-        if (!state.handles[s] || !state.handles[d]) return showToast("Servono src e dst", "error");
-        const f = await getDiskHandles(s); if (!f.length) return showToast("Nessun elemento", "error");
-        if (!confirm("Spostare gli elementi?")) return;
-        try {
-            for (const i of f) {
-                try {
-                    if (i.data.kind === 'file') { const fl = await i.handle.getFile(), c = await fl.arrayBuffer(), h = await state.handles[d].getFileHandle(i.data.name, { create: true }), w = await h.createWritable(); await w.write(c); await w.close(); }
-                    else { await copyDiskDirectory(i.handle, await state.handles[d].getDirectoryHandle(i.data.name, { create: true })); }
-                } catch (e) { }
-            }
-            for (const i of f) { try { await state.handles[s].removeEntry(i.data.name, { recursive: true }); } catch (e) { } }
-            await refreshRelevantPanes(state.paths[s], state.paths[d]);
-            showToast("Spostati", "success");
-        } catch (e) { showToast("Errore: " + e.message, "error"); }
+    /* ============================================================
+       SELEZIONE CON TASTIERA
+       ============================================================ */
+    function moveSelection(p, dir) {
+        const files = state.files[p];
+        if (!files.length) return;
+        const sa = Array.from(state.selected[p]).sort((a, b) => a - b);
+        const cur = sa.length > 0 ? sa[sa.length - 1] : 0;
+        let next = cur + dir;
+        if (next < 0) next = 0;
+        if (next >= files.length) next = files.length - 1;
+        state.selected[p].clear();
+        state.selected[p].add(next);
+        updateSelectionUI(p);
+        const list = document.getElementById(`list-${p}`);
+        const items = list.querySelectorAll('.file-item');
+        if (items[next]) items[next].scrollIntoView({ block: 'nearest' });
     }
 
-    async function handleF7() {
-        if (inMemoryZip) return showToast("Impossibile dentro ZIP", "error");
-        const p = state.active; if (!state.handles[p]) return showToast("Nessuna cartella aperta", "error");
-        const n = prompt("Nome cartella:"); if (!n) return;
-        try { await state.handles[p].getDirectoryHandle(n, { create: true }); await refreshRelevantPanes(state.paths[p]); showToast(`Creata: ${n}`, "success"); } catch (e) { showToast(e.message, "error"); }
-    }
-
-    async function handleF8(silent = false) {
-        if (inMemoryZip) return;
-        const p = state.active; if (!state.handles[p]) return;
-        const files = await getDiskHandles(p); if (!files.length) return;
-        if (!silent && !confirm(`Eliminare ${files.length} elemento/i?`)) return;
-        let count = 0;
-        for (const i of files) { try { await state.handles[p].removeEntry(i.data.name, { recursive: true }); count++; } catch (e) { if (!silent) showToast(`Err: ${i.data.name}`, "error"); } }
-        await refreshRelevantPanes(state.paths[p]);
-        if (!silent) showToast(`Eliminati ${count} elemento/i`, "success");
-    }
-
+    /* ============================================================
+       SHORTCUT TASTIERA
+       ============================================================ */
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            if (document.getElementById('copy-modal-overlay').classList.contains('active')) { closeCopyModal(); e.preventDefault(); return; }
-            if (document.getElementById('rename-modal-overlay').classList.contains('active')) { closeRenameModal(); e.preventDefault(); return; }
-            if (document.getElementById('path-modal-overlay').classList.contains('active')) { closePathModal(); e.preventDefault(); return; }
-            if (document.getElementById('search-modal-overlay').classList.contains('active')) { closeSearchModal(); e.preventDefault(); return; }
-        }
-        if (e.key === 'Enter' && document.getElementById('copy-modal-overlay').classList.contains('active')) { e.preventDefault(); executeCopy(); return; }
-        if (e.key === 'Enter' && document.getElementById('search-modal-overlay').classList.contains('active')) { e.preventDefault(); executeSearch(); return; }
-        if (e.key === 'Enter' && document.getElementById('rename-modal-overlay').classList.contains('active')) { e.preventDefault(); executeRename(); return; }
-        if (e.ctrlKey && e.key === 'f') { e.preventDefault(); openSearchModal(); return; }
-        if (document.querySelector('.modal-overlay.active')) return;
-
-        const list = document.getElementById(`list-${state.active}`), files = state.files[state.active];
-        const sa = Array.from(state.selected[state.active]).sort((a, b) => a - b);
-        const ci = sa.length > 0 ? sa[sa.length - 1] : -1;
-
-        if (e.key === 'Tab') { e.preventDefault(); setActive(state.active === 'left' ? 'right' : 'left'); }
-        else if (e.key === 'Backspace') { e.preventDefault(); navigateBack(state.active); }
-        else if (e.key === 'Delete') { e.preventDefault(); handleF8(); }
-        else if (e.key === 'F2' && e.shiftKey) { e.preventDefault(); e.stopPropagation(); handleRename(); }
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        if (e.key === 'Backspace') { e.preventDefault(); navigateBack(state.active); }
+        else if (e.key === 'F2' && e.shiftKey) { e.preventDefault(); handleRename(); }
         else if (e.key === 'F2') { e.preventDefault(); refreshPane(state.active); }
         else if (e.key === 'F3') { e.preventDefault(); handleF3(); }
         else if (e.key === 'F4') { e.preventDefault(); handleF4(); }
@@ -718,16 +1022,45 @@
         else if (e.key === 'F6') { e.preventDefault(); handleF6(); }
         else if (e.key === 'F7') { e.preventDefault(); handleF7(); }
         else if (e.key === 'F8') { e.preventDefault(); handleF8(); }
-        else if (e.key === 'ArrowDown') { e.preventDefault(); let n = ci + 1; if (n < files.length) { if (!e.shiftKey && !e.ctrlKey) state.selected[state.active].clear(); state.selected[state.active].add(n); updateSelectionUI(state.active); list.children[n]?.scrollIntoView({ block: 'nearest' }); } }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); let p = ci - 1; if (p >= 0) { if (!e.shiftKey && !e.ctrlKey) state.selected[state.active].clear(); state.selected[state.active].add(p); updateSelectionUI(state.active); list.children[p]?.scrollIntoView({ block: 'nearest' }); } }
-        else if (e.key === 'Enter') { e.preventDefault(); if (ci >= 0) { const f = files[ci]; if (f.isUp) navigateBack(state.active); else if (f.kind === 'directory') navigateInto(state.active, f.name); else openFile(state.active, f.name); } }
+        else if (e.key === 'Delete') { e.preventDefault(); handleF8(); }
+        else if (e.ctrlKey && e.key === 'f') { e.preventDefault(); openSearchModal(); }
+        else if (e.ctrlKey && e.key === 'a') { e.preventDefault(); handleSelectAll(); }
+        else if (e.key === 'Escape') {
+            if (document.querySelector('.modal-overlay.active')) {
+                document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+                document.getElementById(`list-${state.active}`).focus();
+            }
+        }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); moveSelection(state.active, 1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); moveSelection(state.active, -1); }
+        else if (e.key === 'Enter') {
+            e.preventDefault();
+            const sa = Array.from(state.selected[state.active]);
+            if (sa.length === 1) {
+                const f = state.files[state.active][sa[0]];
+                if (f.isUp) navigateBack(state.active);
+                else if (f.kind === 'directory') navigateInto(state.active, f.name);
+                else openFile(state.active, f.name);
+            }
+        }
+        else if (e.key === 'Tab') { e.preventDefault(); setActive(state.active === 'left' ? 'right' : 'left'); }
     });
 
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'F2' && e.shiftKey) { e.preventDefault(); e.stopPropagation(); if (!document.querySelector('.modal-overlay.active')) handleRename(); }
-    }, true);
-
-    document.getElementById('list-left').focus();
+    /* ============================================================
+       ENTER/ESC NEI MODAL
+       ============================================================ */
+    document.getElementById('rename-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); executeRename(); }
+        if (e.key === 'Escape') { e.preventDefault(); closeRenameModal(); }
+    });
+    document.getElementById('search-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); executeSearch(); }
+        if (e.key === 'Escape') { e.preventDefault(); closeSearchModal(); }
+    });
+    document.getElementById('copy-new-name').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); executeCopy(); }
+        if (e.key === 'Escape') { e.preventDefault(); closeCopyModal(); }
+    });
 </script>
 </body>
 </html>
