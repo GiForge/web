@@ -43,18 +43,20 @@
         .tb-sep { width: 1px; height: 24px; background-color: var(--border); margin: 0 3px; flex-shrink: 0; }
 
         #path-bar { display: flex; padding: 4px 8px; gap: 6px; background-color: var(--bg-panel); border-bottom: 1px solid var(--border); align-items: center; }
-        .path-container { display: flex; flex: 1; gap: 4px; align-items: center; background: var(--bg-main); border: 1px solid var(--border); padding: 2px 4px; border-radius: 4px; }
+        .path-wrap { flex: 1; min-width: 0; }
+        .path-container { display: flex; gap: 4px; align-items: center; background: var(--bg-main); border: 1px solid var(--border); padding: 2px 4px; border-radius: 4px; }
         .path-label { color: var(--accent); font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
         .path-input { flex: 1; padding: 4px 6px; border: none; background: transparent; font-family: inherit; font-size: 13px; color: var(--text-main); outline: none; min-width: 0; }
         .path-input.base-path { flex: 0 1 160px; border-right: 1px solid var(--border); padding-right: 8px; color: var(--green); font-style: italic; }
-        .path-input.base-path::placeholder { color: var(--text-dim); font-style: normal; font-size: 11px;}
+        .path-input.base-path::placeholder { color: var(--text-dim); font-style: normal; font-size: 11px; }
         .path-input.base-path:focus { color: #ffffff; }
         .btn-open { padding: 4px 10px; cursor: pointer; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); font-weight: bold; font-size: 12px; border-radius: 3px; text-transform: uppercase; white-space: nowrap; }
         .btn-open:hover { background: var(--accent); color: var(--bg-main); box-shadow: 0 0 10px var(--accent-glow); }
+        .path-sync-wrap { flex-shrink: 0; }
         .btn-sync { padding: 6px 8px; cursor: pointer; background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: bold; font-family: inherit; border-radius: 3px; box-shadow: 0 0 5px var(--accent-glow); transition: all 0.2s; }
         .btn-sync:hover { background: var(--accent); color: var(--bg-main); }
 
-        #panels-container { display: flex; flex: 1; overflow: hidden; padding: 6px; gap: 0; }
+        #panels-container { display: flex; flex: 1; overflow: hidden; padding: 6px; gap: 0; position: relative; }
         .panel { display: flex; flex-direction: column; border: 1px solid var(--border); background-color: var(--bg-panel); overflow: hidden; border-radius: 4px; transition: border-color 0.2s, box-shadow 0.2s; min-width: 150px; }
         .panel.active { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow), inset 0 0 15px rgba(0, 243, 255, 0.03); }
         .file-header { display: flex; padding: 5px 8px; background-color: var(--bg-header); border-bottom: 1px solid var(--border); font-weight: bold; font-size: 12px; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; align-items: stretch; }
@@ -62,7 +64,6 @@
         .file-header > div.sortable { cursor: pointer; border-radius: 2px; }
         .file-header > div.sortable:hover { color: var(--accent); background: var(--bg-hover); }
 
-        /* === RESIZE HANDLE COLONNE === */
         .col-resize-handle {
             width: 7px; flex-shrink: 0; cursor: col-resize; position: relative; margin: 0 -3px; z-index: 5;
         }
@@ -75,7 +76,6 @@
         }
         .col-resize-handle:hover, .col-resize-handle.active { background: rgba(0, 243, 255, 0.04); }
 
-        /* === DIVISORE PANNELLI === */
         .panel-divider {
             width: 8px; flex-shrink: 0; cursor: col-resize; background: var(--border);
             border-radius: 4px; transition: background 0.2s, box-shadow 0.2s; position: relative; margin: 0 3px;
@@ -117,8 +117,8 @@
         .modal-input, .modal-textarea { width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); font-family: inherit; font-size: 13px; border-radius: 4px; outline: none; margin-bottom: 15px; }
         .modal-input:focus, .modal-textarea:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
         .modal-textarea { color: var(--green); resize: none; height: 80px; word-break: break-all; }
-        .search-results { flex: 1; overflow-y: auto; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 15px; padding: 0; min-height: 150px;}
-        .search-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 12px; display: flex; justify-content: space-between;}
+        .search-results { flex: 1; overflow-y: auto; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 15px; padding: 0; min-height: 150px; }
+        .search-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 12px; display: flex; justify-content: space-between; }
         .search-item:hover { background: var(--bg-hover); color: var(--accent); }
         .search-item span.path { color: var(--text-dim); margin-left: 15px; font-size: 11px; }
         .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
@@ -128,7 +128,8 @@
         .modal-btn.primary:hover { background: var(--accent); color: var(--bg-main); }
         .modal-btn.primary-yellow { background: rgba(255,166,87,0.1); border-color: var(--yellow); color: var(--yellow); }
         .modal-btn.primary-yellow:hover { background: var(--yellow); color: var(--bg-main); }
-        .copy-info { margin-bottom: 12px; font-size: 13px; color: var(--text-dim); word-break: break-all;} .copy-info span { color: var(--text-main); font-weight: bold; }
+        .copy-info { margin-bottom: 12px; font-size: 13px; color: var(--text-dim); word-break: break-all; }
+        .copy-info span { color: var(--text-main); font-weight: bold; }
 
         #progress-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(6px); }
         #progress-overlay.active { display: flex; }
@@ -150,6 +151,85 @@
         .toast.info { background: rgba(0,243,255,0.1); border-color: var(--accent); color: var(--accent); }
         @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+
+        /* ============================================
+           PULSANTE SWITCH MOBILE
+           ============================================ */
+        #mobile-switch {
+            display: none;
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            z-index: 50;
+            padding: 10px 20px;
+            background: var(--bg-panel);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 24px;
+            cursor: pointer;
+            box-shadow: 0 0 16px var(--accent-glow), 0 4px 12px rgba(0,0,0,0.6);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            backdrop-filter: blur(6px);
+        }
+        #mobile-switch:hover { background: var(--accent); color: var(--bg-main); box-shadow: 0 0 24px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.7); }
+        #mobile-switch:active { transform: scale(0.93); }
+        #mobile-switch .sw-active { color: var(--accent); font-weight: 900; }
+        #mobile-switch .sw-dim { color: var(--text-dim); }
+        #mobile-switch .sw-arrow { color: var(--border); margin: 0 4px; }
+        #mobile-switch:hover .sw-active, #mobile-switch:hover .sw-dim, #mobile-switch:hover .sw-arrow { color: var(--bg-main); }
+
+        /* ============================================
+           MOBILE — una sola view alla volta
+           ============================================ */
+        @media (max-width: 768px) {
+            #mobile-switch { display: flex; align-items: center; justify-content: center; }
+
+            /* Nascondi divisore pannello */
+            .panel-divider { display: none !important; }
+
+            /* Solo il pannello attivo è visibile, occupa tutto lo spazio */
+            .panel { display: none !important; flex: 1 1 0% !important; width: 100% !important; min-width: 0 !important; border-radius: 4px; }
+            .panel.active { display: flex !important; }
+
+            /* Nascondi handle resize colonne su mobile */
+            .col-resize-handle { display: none !important; }
+
+            /* Path bar: mostra solo il path del pannello attivo */
+            .path-wrap { display: none !important; }
+            .path-wrap.mobile-visible { display: block !important; flex: 1; min-width: 0; }
+            .path-sync-wrap { display: none !important; }
+            #path-bar { flex-wrap: nowrap; }
+
+            /* Le colonne su mobile tornano flex proporzionale */
+            .col-name, .col-type, .col-size, .col-date {
+                flex: unset !important; width: unset !important; min-width: unset !important;
+            }
+            .col-name { flex: 3 !important; }
+            .col-type { flex: 1 !important; }
+            .col-size { flex: 1 !important; }
+            .col-date { flex: 1.5 !important; }
+
+            /* Toolbar più compatto su mobile */
+            #toolbar { padding: 3px 4px; gap: 1px; }
+            .tb-btn { min-width: 26px; min-height: 26px; padding: 4px 5px; font-size: 14px; }
+            .tb-sep { margin: 0 2px; }
+
+            /* Status bar e function keys più compatti */
+            #status-bar { padding: 4px 8px; font-size: 11px; }
+            #function-keys { padding: 4px; gap: 4px; }
+            .fkey { padding: 4px 8px; font-size: 10px; }
+        }
+
+        /* Per schermi molto stretti, nascondi i pulsanti app esterne */
+        @media (max-width: 480px) {
+            .tb-ext { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -179,34 +259,40 @@
         <div class="tb-sep"></div>
         <button class="tb-btn c-red" onclick="handleF8()" title="Elimina (CANC / F8)">&#128465;</button>
         <div class="tb-sep"></div>
-        <button class="tb-btn c-purple" onclick="window.open('WebEditPlus.html', '_blank')" title="Editor">&#9997;</button>
-        <button class="tb-btn c-purple" onclick="window.open('Calcolatrice.html', '_blank')" title="Calcolatrice">🧮</button>
-        <button class="tb-btn c-purple" onclick="window.open('WEB_WORD.html', '_blank')" title="WORD">📝</button>
-        <button class="tb-btn c-purple" onclick="window.open('IMG_TO_TEXT.html', '_blank')" title="OCR">📄</button>
-        <button class="tb-btn c-purple" onclick="window.open('CAM_SCANNER.html', '_blank')" title="SCANNER">📸</button>
-        <button class="tb-btn c-purple" onclick="window.open('PASSWORD_MANAGER.html', '_blank')" title="PASS_KEEPR">🔑</button>
-        <button class="tb-btn c-purple" onclick="window.open('CLOCK_NIGHT_DAY.html', '_blank')" title="CLOCK">🌤️</button>
-        <button class="tb-btn c-purple" onclick="window.open('LUXURY_AGENDA.html', '_blank')" title="AGENDA">📅</button>
-        <button class="tb-btn c-purple" onclick="window.open('WORK_GANTT_PROJECT.html', '_blank')" title="GANTT">📊</button>
-        <button class="tb-btn c-purple" onclick="window.open('EBOOK_READER.html', '_blank')" title="E-BOOK">📖</button>
-        <div class="tb-sep"></div>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('WebEditPlus.html', '_blank')" title="Editor">&#9997;</button>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('Calcolatrice.html', '_blank')" title="Calcolatrice">🧮</button>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('WEB_WORD.html', '_blank')" title="WORD">📝</button>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('IMG_TO_TEXT.html', '_blank')" title="OCR">📄</button>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('CAM_SCANNER.html', '_blank')" title="SCANNER">📸</button>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('PASSWORD_MANAGER.html', '_blank')" title="PASS_KEEPR">🔑</button>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('CLOCK_NIGHT_DAY.html', '_blank')" title="CLOCK">🌤️</button>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('LUXURY_AGENDA.html', '_blank')" title="AGENDA">📅</button>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('WORK_GANTT_PROJECT.html', '_blank')" title="GANTT">📊</button>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('EBOOK_READER.html', '_blank')" title="E-BOOK">📖</button>
+        <div class="tb-sep tb-ext"></div>
         <div style="flex:1"></div>
         <button class="tb-btn" onclick="syncViews()" title="Sincronizza (Dest = Src)">&#8644;</button>
     </div>
 
     <div id="path-bar">
-        <div class="path-container">
-            <span class="path-label">Src</span>
-            <input type="text" id="base-left" class="path-input base-path" placeholder="C:\...\radice">
-            <input type="text" id="path-left" class="path-input" readonly placeholder="Nessun percorso">
-            <button class="btn-open" onclick="openDirectory('left')">Apri</button>
+        <div id="path-left-wrap" class="path-wrap mobile-visible">
+            <div class="path-container">
+                <span class="path-label">Src</span>
+                <input type="text" id="base-left" class="path-input base-path" placeholder="C:\...\radice">
+                <input type="text" id="path-left" class="path-input" readonly placeholder="Nessun percorso">
+                <button class="btn-open" onclick="openDirectory('left')">Apri</button>
+            </div>
         </div>
-        <div style="padding: 0 4px;"><button class="btn-sync" onclick="syncViews()" title="Allinea la vista">&lt;=&gt;</button></div>
-        <div class="path-container">
-            <span class="path-label">Dst</span>
-            <input type="text" id="base-right" class="path-input base-path" placeholder="C:\...\radice">
-            <input type="text" id="path-right" class="path-input" readonly placeholder="Nessun percorso">
-            <button class="btn-open" onclick="openDirectory('right')">Apri</button>
+        <div id="path-sync-wrap" class="path-sync-wrap">
+            <button class="btn-sync" onclick="syncViews()" title="Allinea la vista">&lt;=&gt;</button>
+        </div>
+        <div id="path-right-wrap" class="path-wrap">
+            <div class="path-container">
+                <span class="path-label">Dst</span>
+                <input type="text" id="base-right" class="path-input base-path" placeholder="C:\...\radice">
+                <input type="text" id="path-right" class="path-input" readonly placeholder="Nessun percorso">
+                <button class="btn-open" onclick="openDirectory('right')">Apri</button>
+            </div>
         </div>
     </div>
 
@@ -224,7 +310,6 @@
             <div id="list-left" class="file-list" tabindex="0"></div>
         </div>
 
-        <!-- === DIVISORE TRASCINABILE TRA I DUE PANNELLI === -->
         <div class="panel-divider" id="panel-divider"></div>
 
         <div id="panel-right" class="panel">
@@ -239,6 +324,13 @@
             </div>
             <div id="list-right" class="file-list" tabindex="0"></div>
         </div>
+
+        <!-- Pulsante switch visibile solo su mobile -->
+        <button id="mobile-switch" onclick="switchMobilePanel()">
+            <span class="sw-active" id="sw-src">SRC</span>
+            <span class="sw-arrow">&#10132;</span>
+            <span class="sw-dim" id="sw-dst">DST</span>
+        </button>
     </div>
 
     <div id="status-bar">PRONTO // USA "APRI" PER CARICARE UNA CARTELLA</div>
@@ -324,7 +416,6 @@
        RESIZE COLONNE — stato e proporzioni
        ============================================================ */
     let colResizing = false, colResizeIdx = -1, colResizeStartX = 0;
-    // Proporzioni normalizzate delle 4 colonne: nome, tipo, dim, data
     let colProportions = [3 / 6.5, 1 / 6.5, 1 / 6.5, 1.5 / 6.5];
 
     /* ============================================================
@@ -335,6 +426,8 @@
     /* ============================================================
        UTILITÀ
        ============================================================ */
+    function isMobile() { return window.innerWidth <= 768; }
+
     function showProgress(t) {
         document.getElementById('progress-title').textContent = t;
         document.getElementById('progress-fill').style.width = '0%';
@@ -367,19 +460,53 @@
     document.getElementById('base-right').addEventListener('input', (e) => { state.basePath.right = e.target.value; });
 
     /* ============================================================
-       RESIZE COLONNE — applica le larghezze a tutti gli elementi
+       MOBILE — switch pannello e aggiornamento visibilità
+       ============================================================ */
+    function switchMobilePanel() {
+        const other = state.active === 'left' ? 'right' : 'left';
+        setActive(other);
+    }
+
+    function updateMobileVisibility() {
+        // Aggiorna path bar: mostra solo il wrap del pannello attivo
+        const lw = document.getElementById('path-left-wrap');
+        const rw = document.getElementById('path-right-wrap');
+        if (lw) lw.classList.toggle('mobile-visible', state.active === 'left');
+        if (rw) rw.classList.toggle('mobile-visible', state.active === 'right');
+
+        // Aggiorna testo pulsante switch
+        const swSrc = document.getElementById('sw-src');
+        const swDst = document.getElementById('sw-dst');
+        if (swSrc && swDst) {
+            if (state.active === 'left') {
+                swSrc.className = 'sw-active';
+                swDst.className = 'sw-dim';
+            } else {
+                swSrc.className = 'sw-dim';
+                swDst.className = 'sw-active';
+            }
+        }
+
+        // Su mobile, ricalcola le colonne per il pannello pieno
+        if (isMobile()) {
+            requestAnimationFrame(() => applyColumnWidths());
+        }
+    }
+
+    /* ============================================================
+       RESIZE COLONNE — applica le larghezze
        ============================================================ */
     function applyColumnWidths() {
+        // Su mobile non forzare larghezze fisse, usa flex naturale
+        if (isMobile()) return;
+
         const colClasses = ['col-name', 'col-type', 'col-size', 'col-date'];
         document.querySelectorAll('.file-header').forEach(header => {
-            // Larghezza disponibile = larghezza header - 3 handle × 7px
             const totalW = header.offsetWidth - 21;
             if (totalW <= 0) return;
             const pixels = colProportions.map(p => Math.max(30, Math.round(p * totalW)));
-            // Correggi l'ultima colonna per riempire esattamente
             const used = pixels[0] + pixels[1] + pixels[2];
             pixels[3] = Math.max(30, totalW - used);
-
             colClasses.forEach((cls, i) => {
                 const el = header.querySelector('.' + cls);
                 if (el) {
@@ -389,7 +516,6 @@
                 }
             });
         });
-        // Applica le stesse larghezze ai file-item del rispettivo pannello
         ['left', 'right'].forEach(pane => {
             const header = document.querySelector('#panel-' + pane + ' .file-header');
             if (!header) return;
@@ -398,7 +524,6 @@
             const pixels = colProportions.map(p => Math.max(30, Math.round(p * totalW)));
             const used = pixels[0] + pixels[1] + pixels[2];
             pixels[3] = Math.max(30, totalW - used);
-
             const list = document.getElementById('list-' + pane);
             if (!list) return;
             colClasses.forEach((cls, i) => {
@@ -412,12 +537,13 @@
     }
 
     /* ============================================================
-       RESIZE PANNELLI — inizializza larghezze uguali
+       RESIZE PANNELLI — inizializza larghezze
        ============================================================ */
     function initPanelWidths() {
+        if (isMobile()) return;
         const container = document.getElementById('panels-container');
         if (!container) return;
-        const totalW = container.offsetWidth - 8 - 12; // divisor (8px) + padding (12px) + margin divisor (6px)
+        const totalW = container.offsetWidth - 8 - 12;
         if (totalW <= 300) return;
         const half = Math.floor(totalW / 2);
         document.getElementById('panel-left').style.flex = '0 0 ' + half + 'px';
@@ -425,16 +551,15 @@
     }
 
     /* ============================================================
-       EVENTI RESIZE COLONNE — mousedown sugli handle
+       EVENTI RESIZE COLONNE
        ============================================================ */
     document.querySelectorAll('.col-resize-handle').forEach(handle => {
         handle.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+            if (isMobile()) return;
+            e.preventDefault(); e.stopPropagation();
             colResizing = true;
             colResizeIdx = parseInt(handle.dataset.colIdx);
             colResizeStartX = e.clientX;
-            // Evidenzia tutti gli handle con lo stesso indice in entrambe le intestazioni
             document.querySelectorAll('.col-resize-handle[data-col-idx="' + colResizeIdx + '"]').forEach(h => h.classList.add('active'));
             document.body.style.cursor = 'col-resize';
             document.body.style.userSelect = 'none';
@@ -442,11 +567,11 @@
     });
 
     /* ============================================================
-       EVENTI RESIZE PANNELLI — mousedown sul divisore
+       EVENTI RESIZE PANNELLI
        ============================================================ */
     document.getElementById('panel-divider').addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+        if (isMobile()) return;
+        e.preventDefault(); e.stopPropagation();
         panelResizing = true;
         panelResizeStartX = e.clientX;
         panelLeftStartW = document.getElementById('panel-left').offsetWidth;
@@ -456,7 +581,7 @@
     });
 
     /* ============================================================
-       MOUSEMOVE GLOBALE — gestisce resize colonne e pannelli
+       MOUSEMOVE GLOBALE
        ============================================================ */
     document.addEventListener('mousemove', (e) => {
         if (colResizing) {
@@ -465,7 +590,7 @@
             const totalW = header.offsetWidth - 21;
             if (totalW <= 0) return;
             const dx = e.clientX - colResizeStartX;
-            const minProp = 30 / totalW; // larghezza minima colonna in proporzione
+            const minProp = 30 / totalW;
             const newL = colProportions[colResizeIdx] + dx / totalW;
             const newR = colProportions[colResizeIdx + 1] - dx / totalW;
             if (newL >= minProp && newR >= minProp) {
@@ -493,7 +618,7 @@
     });
 
     /* ============================================================
-       MOUSEUP GLOBALE — rilascia resize colonne/pannelli + drag selezione
+       MOUSEUP GLOBALE
        ============================================================ */
     document.addEventListener('mouseup', () => {
         if (isDragging) {
@@ -521,19 +646,21 @@
     document.addEventListener('contextmenu', (e) => { if (e.target.closest('.file-list')) e.preventDefault(); });
 
     /* ============================================================
-       INIZIALIZZAZIONE LARGHEZZE AL CARICAMENTO
+       INIZIALIZZAZIONE
        ============================================================ */
     window.addEventListener('load', () => {
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 initPanelWidths();
                 applyColumnWidths();
+                updateMobileVisibility();
             });
         });
     });
     window.addEventListener('resize', () => {
         initPanelWidths();
         applyColumnWidths();
+        updateMobileVisibility();
     });
 
     /* ============================================================
@@ -554,7 +681,13 @@
     }
     function handleSelectAll() { const p = state.active; state.selected[p].clear(); state.files[p].forEach((f, i) => { if (!f.isUp) state.selected[p].add(i); }); updateSelectionUI(p); }
     function handleDeselectAll() { state.selected[state.active].clear(); updateSelectionUI(state.active); }
-    function setActive(p) { state.active = p; document.getElementById('panel-left').classList.toggle('active', p === 'left'); document.getElementById('panel-right').classList.toggle('active', p === 'right'); document.getElementById(`list-${p}`).focus(); }
+    function setActive(p) {
+        state.active = p;
+        document.getElementById('panel-left').classList.toggle('active', p === 'left');
+        document.getElementById('panel-right').classList.toggle('active', p === 'right');
+        document.getElementById(`list-${p}`).focus();
+        updateMobileVisibility();
+    }
     function updateStatus() {
         const p = state.active, c = state.selected[p].size;
         if (c === 0) { document.getElementById('status-bar').innerText = `PERCORSO: ${state.paths[p] || 'NESSUNO'}`; return; }
@@ -578,6 +711,8 @@
             state.history[pane] = []; state.forwardHistory[pane] = [];
             inMemoryZip = null; inMemoryZipPath = '';
             document.getElementById(`path-${pane}`).value = d.name;
+            // Su mobile, se apro il pannello non attivo, ci switcho
+            if (isMobile() && pane !== state.active) setActive(pane);
             await listFiles(pane);
             const o = pane === 'left' ? 'right' : 'left';
             if (!state.handles[o]) syncViews();
@@ -642,7 +777,6 @@
             l.appendChild(item);
         });
         updateStatus();
-        // Riapplica le larghezze colonne ai nuovi elementi
         applyColumnWidths();
     }
 
@@ -704,7 +838,10 @@
         state.history[d] = [...state.history[sp]]; state.forwardHistory[d] = [];
         state.sort[d] = { ...state.sort[sp] }; state.basePath[d] = state.basePath[sp];
         document.getElementById(`path-${d}`).value = state.paths[sp]; document.getElementById(`base-${d}`).value = state.basePath[sp];
-        await listFiles(d); showToast("Sincronizzate", "success");
+        await listFiles(d);
+        // Su mobile, switcha al pannello sincronizzato
+        if (isMobile()) setActive(d);
+        showToast("Sincronizzate", "success");
     }
 
     /* ============================================================
