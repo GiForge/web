@@ -6,23 +6,12 @@
     <title>Cyber Commander</title>
     <style>
         :root {
-            --bg-main: #0d1117;
-            --bg-panel: #161b22;
-            --bg-header: #1c2128;
-            --bg-hover: #262c36;
-            --bg-active: #0d1f2d;
-            --accent: #00f3ff;
-            --accent-dim: #0e4f5c;
-            --accent-glow: rgba(0, 243, 255, 0.15);
-            --text-main: #e6edf3;
-            --text-dim: #8b949e;
-            --border: #30363d;
-            --red: #ff7b72;
-            --green: #7ee787;
-            --yellow: #ffa657;
-            --btn-bg: #21262d;
-            --selection-bg: #0e4f5c;
-            --selection-text: #ffffff;
+            --bg-main: #0d1117; --bg-panel: #161b22; --bg-header: #1c2128;
+            --bg-hover: #262c36; --bg-active: #0d1f2d;
+            --accent: #00f3ff; --accent-dim: #0e4f5c; --accent-glow: rgba(0, 243, 255, 0.15);
+            --text-main: #e6edf3; --text-dim: #8b949e; --border: #30363d;
+            --red: #ff7b72; --green: #7ee787; --yellow: #ffa657; --purple: #d2a8ff;
+            --btn-bg: #21262d; --selection-bg: #0e4f5c; --selection-text: #ffffff;
         }
         * { box-sizing: border-box; }
         body {
@@ -31,68 +20,44 @@
             display: flex; flex-direction: column; height: 100vh; overflow: hidden;
             user-select: none; text-shadow: 0 0 4px rgba(0,0,0,0.8);
         }
-
-        /* --- TOOLBAR SUPERIORE --- */
-        #toolbar {
-            display: flex; align-items: center; padding: 4px 8px; gap: 2px;
-            background-color: var(--bg-header); border-bottom: 1px solid var(--border);
-        }
+        #toolbar { display: flex; align-items: center; padding: 4px 8px; gap: 2px; background-color: var(--bg-header); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
         .tb-btn {
             background: transparent; border: 1px solid transparent; color: var(--text-dim);
-            padding: 5px 8px; cursor: pointer; border-radius: 3px; font-size: 16px;
+            padding: 5px 7px; cursor: pointer; border-radius: 3px; font-size: 15px;
             display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+            min-width: 28px; min-height: 28px;
         }
         .tb-btn:hover { background: var(--bg-hover); color: var(--text-main); border-color: var(--border); }
         .tb-btn:active { transform: scale(0.95); }
         .tb-btn.active { color: var(--accent); background: var(--accent-dim); border-color: var(--accent); }
-        .tb-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .tb-sep { width: 1px; height: 24px; background-color: var(--border); margin: 0 4px; }
+        .tb-btn.c-green { color: var(--green); border-color: rgba(126,231,135,0.3); }
+        .tb-btn.c-green:hover { background: rgba(126,231,135,0.1); border-color: var(--green); color: #fff; box-shadow: 0 0 8px rgba(126,231,135,0.2); }
+        .tb-btn.c-yellow { color: var(--yellow); border-color: rgba(255,166,87,0.3); }
+        .tb-btn.c-yellow:hover { background: rgba(255,166,87,0.1); border-color: var(--yellow); color: #fff; box-shadow: 0 0 8px rgba(255,166,87,0.2); }
+        .tb-btn.c-blue { color: var(--accent); border-color: rgba(0,243,255,0.3); }
+        .tb-btn.c-blue:hover { background: rgba(0,243,255,0.1); border-color: var(--accent); color: #fff; box-shadow: 0 0 8px var(--accent-glow); }
+        .tb-btn.c-purple { color: var(--purple); border-color: rgba(210,168,255,0.3); }
+        .tb-btn.c-purple:hover { background: rgba(210,168,255,0.1); border-color: var(--purple); color: #fff; box-shadow: 0 0 8px rgba(210,168,255,0.2); }
+        .tb-btn.c-red { color: var(--red); border-color: rgba(255,123,114,0.3); }
+        .tb-btn.c-red:hover { background: rgba(255,123,114,0.1); border-color: var(--red); color: #fff; box-shadow: 0 0 8px rgba(255,123,114,0.2); }
+        .tb-sep { width: 1px; height: 24px; background-color: var(--border); margin: 0 3px; flex-shrink: 0; }
 
-        /* --- PATH BAR --- */
-        #path-bar {
-            display: flex; padding: 4px 8px; gap: 6px; background-color: var(--bg-panel);
-            border-bottom: 1px solid var(--border); align-items: center;
-        }
-        .path-container { 
-            display: flex; flex: 1; gap: 4px; align-items: center; background: var(--bg-main); 
-            border: 1px solid var(--border); padding: 2px 4px; border-radius: 4px;
-        }
+        #path-bar { display: flex; padding: 4px 8px; gap: 6px; background-color: var(--bg-panel); border-bottom: 1px solid var(--border); align-items: center; }
+        .path-container { display: flex; flex: 1; gap: 4px; align-items: center; background: var(--bg-main); border: 1px solid var(--border); padding: 2px 4px; border-radius: 4px; }
         .path-label { color: var(--accent); font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
-        .path-input {
-            flex: 1; padding: 4px 6px; border: none; background: transparent;
-            font-family: inherit; font-size: 13px; color: var(--text-main); outline: none; min-width: 0;
-        }
-        .path-input.base-path {
-            flex: 0 1 160px; border-right: 1px solid var(--border); padding-right: 8px;
-            color: var(--green); font-style: italic;
-        }
+        .path-input { flex: 1; padding: 4px 6px; border: none; background: transparent; font-family: inherit; font-size: 13px; color: var(--text-main); outline: none; min-width: 0; }
+        .path-input.base-path { flex: 0 1 160px; border-right: 1px solid var(--border); padding-right: 8px; color: var(--green); font-style: italic; }
         .path-input.base-path::placeholder { color: var(--text-dim); font-style: normal; font-size: 11px;}
         .path-input.base-path:focus { color: #ffffff; }
-        .btn-open { 
-            padding: 4px 10px; cursor: pointer; background: var(--accent-dim); border: 1px solid var(--accent); 
-            color: var(--accent); font-weight: bold; font-size: 12px; border-radius: 3px; text-transform: uppercase; white-space: nowrap;
-        }
+        .btn-open { padding: 4px 10px; cursor: pointer; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); font-weight: bold; font-size: 12px; border-radius: 3px; text-transform: uppercase; white-space: nowrap; }
         .btn-open:hover { background: var(--accent); color: var(--bg-main); box-shadow: 0 0 10px var(--accent-glow); }
-        .btn-sync { 
-            padding: 6px 8px; cursor: pointer; background: transparent; color: var(--accent); 
-            border: 1px solid var(--accent); font-weight: bold; font-family: inherit; border-radius: 3px;
-            box-shadow: 0 0 5px var(--accent-glow); transition: all 0.2s;
-        }
+        .btn-sync { padding: 6px 8px; cursor: pointer; background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: bold; font-family: inherit; border-radius: 3px; box-shadow: 0 0 5px var(--accent-glow); transition: all 0.2s; }
         .btn-sync:hover { background: var(--accent); color: var(--bg-main); }
 
-        /* --- PANNELLI --- */
         #panels-container { display: flex; flex: 1; overflow: hidden; padding: 6px; gap: 6px; }
-        .panel {
-            flex: 1; display: flex; flex-direction: column; border: 1px solid var(--border);
-            background-color: var(--bg-panel); overflow: hidden; border-radius: 4px;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
+        .panel { flex: 1; display: flex; flex-direction: column; border: 1px solid var(--border); background-color: var(--bg-panel); overflow: hidden; border-radius: 4px; transition: border-color 0.2s, box-shadow 0.2s; }
         .panel.active { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow), inset 0 0 15px rgba(0, 243, 255, 0.03); }
-        .file-header {
-            display: flex; padding: 5px 8px; background-color: var(--bg-header);
-            border-bottom: 1px solid var(--border); font-weight: bold; font-size: 12px;
-            color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
-        }
+        .file-header { display: flex; padding: 5px 8px; background-color: var(--bg-header); border-bottom: 1px solid var(--border); font-weight: bold; font-size: 12px; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
         .file-header > div { padding: 2px; }
         .file-header > div.sortable { cursor: pointer; border-radius: 2px; }
         .file-header > div.sortable:hover { color: var(--accent); background: var(--bg-hover); }
@@ -100,10 +65,7 @@
         .file-list::-webkit-scrollbar { width: 6px; }
         .file-list::-webkit-scrollbar-track { background: var(--bg-panel); }
         .file-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        .file-item {
-            display: flex; padding: 3px 8px; cursor: pointer; font-size: 14px; border-bottom: 1px solid var(--bg-main);
-            transition: background 0.1s;
-        }
+        .file-item { display: flex; padding: 3px 8px; cursor: pointer; font-size: 14px; border-bottom: 1px solid var(--bg-main); transition: background 0.1s; }
         .file-item:hover { background-color: var(--bg-hover); }
         .file-item.selected { background-color: var(--selection-bg); color: var(--selection-text); text-shadow: 0 0 4px rgba(0,0,0,0.5); }
         .col-name { flex: 3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px;}
@@ -117,23 +79,11 @@
         .fkey { padding: 5px 10px; background: var(--btn-bg); border: 1px solid var(--border); cursor: pointer; font-family: inherit; font-size: 11px; font-weight: bold; color: var(--text-dim); border-radius: 3px; text-transform: uppercase; transition: all 0.2s; }
         .fkey:hover { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
 
-        /* --- MODALI --- */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8); z-index: 1000; justify-content: center; align-items: center;
-            backdrop-filter: blur(4px);
-        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal-overlay.active { display: flex; }
-        .modal-box {
-            background: var(--bg-panel); border: 1px solid var(--accent); padding: 20px; border-radius: 6px;
-            width: 90%; max-width: 700px; max-height: 80vh; display: flex; flex-direction: column;
-            box-shadow: 0 0 30px var(--accent-glow);
-        }
+        .modal-box { background: var(--bg-panel); border: 1px solid var(--accent); padding: 20px; border-radius: 6px; width: 90%; max-width: 700px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 0 30px var(--accent-glow); }
         .modal-box h3 { margin: 0 0 15px 0; color: var(--accent); font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
-        .modal-input, .modal-textarea {
-            width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border);
-            color: var(--text-main); font-family: inherit; font-size: 13px; border-radius: 4px; outline: none; margin-bottom: 15px;
-        }
+        .modal-input, .modal-textarea { width: 100%; padding: 10px; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); font-family: inherit; font-size: 13px; border-radius: 4px; outline: none; margin-bottom: 15px; }
         .modal-input:focus, .modal-textarea:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
         .modal-textarea { color: var(--green); resize: none; height: 80px; word-break: break-all; }
         .search-results { flex: 1; overflow-y: auto; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 15px; padding: 0; min-height: 150px;}
@@ -145,25 +95,61 @@
         .modal-btn:hover { border-color: var(--accent); color: var(--accent); }
         .modal-btn.primary { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
         .modal-btn.primary:hover { background: var(--accent); color: var(--bg-main); }
+        .modal-btn.primary-yellow { background: rgba(255,166,87,0.1); border-color: var(--yellow); color: var(--yellow); }
+        .modal-btn.primary-yellow:hover { background: var(--yellow); color: var(--bg-main); }
+        .copy-info { margin-bottom: 12px; font-size: 13px; color: var(--text-dim); word-break: break-all;} .copy-info span { color: var(--text-main); font-weight: bold; }
+
+        #progress-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(6px); }
+        #progress-overlay.active { display: flex; }
+        .progress-box { background: var(--bg-panel); border: 1px solid var(--accent); padding: 28px 36px; border-radius: 8px; width: 90%; max-width: 480px; text-align: center; box-shadow: 0 0 40px var(--accent-glow); }
+        .progress-title { color: var(--accent); font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; font-weight: bold; }
+        .progress-track { width: 100%; height: 14px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; position: relative; }
+        .progress-fill { height: 100%; width: 0%; border-radius: 7px; background: linear-gradient(90deg, var(--accent-dim), var(--accent)); box-shadow: 0 0 12px var(--accent-glow); transition: width 0.15s ease-out; position: relative; }
+        .progress-fill::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%); animation: progressShine 1.5s infinite; }
+        @keyframes progressShine { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .progress-info { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-dim); }
+        .progress-percent { color: var(--accent); font-weight: bold; font-size: 16px; letter-spacing: 1px; text-shadow: 0 0 8px var(--accent-glow); }
+        .progress-detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; text-align: right; }
+        .progress-size { margin-top: 8px; font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; }
+
+        #toast-container { position: fixed; top: 60px; right: 16px; z-index: 3000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+        .toast { padding: 10px 18px; border-radius: 4px; font-family: inherit; font-size: 12px; font-weight: bold; letter-spacing: 0.5px; pointer-events: auto; animation: toastIn 0.3s ease-out, toastOut 0.4s 2.2s ease-in forwards; border: 1px solid; text-transform: uppercase; }
+        .toast.success { background: rgba(126,231,135,0.12); border-color: var(--green); color: var(--green); }
+        .toast.error { background: rgba(255,123,114,0.12); border-color: var(--red); color: var(--red); }
+        .toast.info { background: rgba(0,243,255,0.1); border-color: var(--accent); color: var(--accent); }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
     </style>
 </head>
 <body>
 
     <div id="toolbar">
-        <button class="tb-btn" onclick="navigateBack(state.active)" title="Indietro (Backspace)">◀</button>
-        <button class="tb-btn" onclick="navigateForward(state.active)" title="Avanti">▶</button>
+        <button class="tb-btn" onclick="navigateBack(state.active)" title="Indietro (Backspace)">&#9664;</button>
+        <button class="tb-btn" onclick="navigateForward(state.active)" title="Avanti">&#9654;</button>
         <div class="tb-sep"></div>
-        <button class="tb-btn" onclick="refreshPane(state.active)" title="Ricarica (F2)">↻</button>
+        <button class="tb-btn" onclick="refreshPane(state.active)" title="Ricarica (F2)">&#8635;</button>
         <div class="tb-sep"></div>
-        <button class="tb-btn active" id="btn-view-list" onclick="setView('list')" title="Vista Elenco">☰</button>
-        <button class="tb-btn" id="btn-view-tree" onclick="setView('tree')" title="Vista Albero (Placeholder)"> dendro </button>
+        <button class="tb-btn active" id="btn-view-list" onclick="setView('list')" title="Vista Elenco">&#9776;</button>
+        <button class="tb-btn" id="btn-view-tree" onclick="setView('tree')" title="Vista Albero">&#9670;</button>
         <div class="tb-sep"></div>
-        <button class="tb-btn" onclick="handleSelectAll()" title="Seleziona Tutto">☑</button>
-        <button class="tb-btn" onclick="handleDeselectAll()" title="Deseleziona Tutto">☐</button>
+        <button class="tb-btn" onclick="handleSelectAll()" title="Seleziona Tutto">&#9745;</button>
+        <button class="tb-btn" onclick="handleDeselectAll()" title="Deseleziona Tutto">&#9744;</button>
         <div class="tb-sep"></div>
-        <button class="tb-btn" onclick="openSearchModal()" title="Cerca Ricorsivo (Ctrl+F)">🔍</button>
+        <button class="tb-btn" onclick="openSearchModal()" title="Cerca (Ctrl+F)">&#128269;</button>
+        <div class="tb-sep"></div>
+        <button class="tb-btn c-yellow" onclick="handleRename()" title="Rinomina (Shift+F2)">&#9998;</button>
+        <button class="tb-btn c-green" onclick="handleF3()" title="Editor (F3)">&#9997;</button>
+        <button class="tb-btn c-blue" onclick="handleF4()" title="Percorso (F4)">&#128279;</button>
+        <button class="tb-btn c-blue" onclick="handleF5()" title="Copia (F5)">&#10697;</button>
+        <button class="tb-btn c-purple" onclick="handleF6()" title="Sposta (F6)">&#9986;</button>
+        <button class="tb-btn c-blue" onclick="handleF7()" title="Nuova Cartella (F7)">&#10133;</button>
+        <div class="tb-sep"></div>
+        <button class="tb-btn c-yellow" onclick="handleZip()" title="Crea ZIP">&#128230;</button>
+        <button class="tb-btn c-blue" onclick="handleUnzip()" title="Estrai ZIP">&#128194;</button>
+        <div class="tb-sep"></div>
+        <button class="tb-btn c-red" onclick="handleF8()" title="Elimina (CANC / F8)">&#128465;</button>
         <div style="flex:1"></div>
-        <button class="tb-btn" onclick="syncViews()" title="Sincronizza Cartelle (Dest = Src)">⇄</button>
+        <button class="tb-btn" onclick="syncViews()" title="Sincronizza (Dest = Src)">&#8644;</button>
     </div>
 
     <div id="path-bar">
@@ -173,9 +159,7 @@
             <input type="text" id="path-left" class="path-input" readonly placeholder="Nessun percorso">
             <button class="btn-open" onclick="openDirectory('left')">Apri</button>
         </div>
-        <div style="padding: 0 4px;">
-            <button class="btn-sync" onclick="syncViews()" title="Allinea la vista"><= =></button>
-        </div>
+        <div style="padding: 0 4px;"><button class="btn-sync" onclick="syncViews()" title="Allinea la vista">&lt;=&gt;</button></div>
         <div class="path-container">
             <span class="path-label">Dst</span>
             <input type="text" id="base-right" class="path-input base-path" placeholder="C:\...\radice">
@@ -208,139 +192,207 @@
     <div id="status-bar">PRONTO // USA "APRI" PER CARICARE UNA CARTELLA</div>
 
     <div id="function-keys">
-        <button class="fkey" onclick="handleF3()">F3 Edit</button>
-        <button class="fkey" onclick="handleF4()" style="color: var(--green);">F4 Path</button>
-        <button class="fkey" onclick="handleF5()">F5 Copia/Unzip</button>
-        <button class="fkey" onclick="handleZip()" style="color: var(--yellow);">Zip -></button>
+        <button class="fkey" onclick="handleF3()" style="color:var(--green)">F3 Edit</button>
+        <button class="fkey" onclick="handleF4()" style="color:var(--accent)">F4 Path</button>
+        <button class="fkey" onclick="handleF5()">F5 Copia</button>
         <button class="fkey" onclick="handleF6()">F6 Sposta</button>
         <button class="fkey" onclick="handleF7()">F7 Nuova Dir</button>
-        <button class="fkey" onclick="handleF8()" style="color: var(--red);">F8 Elimina</button>
+        <button class="fkey" onclick="handleRename()" style="color:var(--yellow)">Shift+F2 Rinomina</button>
+        <button class="fkey" onclick="handleF8()" style="color:var(--red)">CANC / F8 Elimina</button>
     </div>
 
-    <!-- Modale Percorso (F4) -->
-    <div id="path-modal-overlay" class="modal-overlay">
-        <div class="modal-box">
-            <h3>Percorso Completo</h3>
-            <textarea id="path-modal-input" class="modal-textarea" readonly></textarea>
-            <div class="modal-btns">
-                <button class="modal-btn" onclick="closePathModal()">Chiudi (Esc)</button>
-                <button class="modal-btn primary" onclick="copyPathFromModal()">Copia Appunti</button>
-            </div>
-        </div>
-    </div>
+    <div id="progress-overlay"><div class="progress-box">
+        <div class="progress-title" id="progress-title">ELABORAZIONE</div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        <div class="progress-info"><span class="progress-percent" id="progress-percent">0%</span><span class="progress-detail" id="progress-detail"></span></div>
+        <div class="progress-size" id="progress-size"></div>
+    </div></div>
 
-    <!-- Modale Ricerca -->
-    <div id="search-modal-overlay" class="modal-overlay">
-        <div class="modal-box">
-            <h3>Cerca Ricorsivo</h3>
-            <input type="text" id="search-input" class="modal-input" placeholder="Inserisci nome file o cartella...">
-            <div id="search-results" class="search-results"></div>
-            <div class="modal-btns">
-                <button class="modal-btn" onclick="closeSearchModal()">Chiudi (Esc)</button>
-                <button class="modal-btn primary" onclick="executeSearch()">Cerca (Invio)</button>
-            </div>
+    <div id="copy-modal-overlay" class="modal-overlay"><div class="modal-box" style="max-width: 480px;">
+        <h3>&#10697; Copia File</h3>
+        <div class="copy-info">Origine: <span id="copy-src-name"></span></div>
+        <div class="copy-info" style="margin-bottom: 8px;">Destinazione: <span id="copy-dst-path"></span></div>
+        <input type="text" id="copy-new-name" class="modal-input" style="margin-bottom: 6px;" placeholder="Nome per il file di destinazione">
+        <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 18px;">Modifica per rinominare, altrimenti lascia invariato</div>
+        <div id="copy-error" style="color: var(--red); font-size: 11px; margin-bottom: 10px; min-height: 16px;"></div>
+        <div class="modal-btns">
+            <button class="modal-btn" onclick="closeCopyModal()">Annulla (Esc)</button>
+            <button class="modal-btn primary" onclick="executeCopy()">Copia (Invio)</button>
         </div>
-    </div>
+    </div></div>
+
+    <div id="path-modal-overlay" class="modal-overlay"><div class="modal-box">
+        <h3>Percorso Completo</h3>
+        <textarea id="path-modal-input" class="modal-textarea" readonly></textarea>
+        <div class="modal-btns">
+            <button class="modal-btn" onclick="closePathModal()">Chiudi (Esc)</button>
+            <button class="modal-btn primary" onclick="copyPathFromModal()">Copia Appunti</button>
+        </div>
+    </div></div>
+
+    <div id="search-modal-overlay" class="modal-overlay"><div class="modal-box">
+        <h3>Cerca Ricorsivo</h3>
+        <input type="text" id="search-input" class="modal-input" placeholder="Inserisci nome file o cartella...">
+        <div id="search-results" class="search-results"></div>
+        <div class="modal-btns">
+            <button class="modal-btn" onclick="closeSearchModal()">Chiudi (Esc)</button>
+            <button class="modal-btn primary" onclick="executeSearch()">Cerca (Invio)</button>
+        </div>
+    </div></div>
+
+    <div id="rename-modal-overlay" class="modal-overlay"><div class="modal-box" style="max-width: 480px;">
+        <h3 style="color: var(--yellow);">&#9998; Rinomina</h3>
+        <div style="margin-bottom: 8px; font-size: 12px; color: var(--text-dim);">Nome originale:</div>
+        <div id="rename-original" style="margin-bottom: 15px; font-size: 14px; color: var(--text-main); padding: 8px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 4px; word-break: break-all;"></div>
+        <input type="text" id="rename-input" class="modal-input" style="margin-bottom: 10px;" placeholder="Nuovo nome...">
+        <div id="rename-error" style="color: var(--red); font-size: 11px; margin-bottom: 10px; min-height: 16px;"></div>
+        <div class="modal-btns">
+            <button class="modal-btn" onclick="closeRenameModal()">Annulla (Esc)</button>
+            <button class="modal-btn primary-yellow" onclick="executeRename()">Rinomina (Invio)</button>
+        </div>
+    </div></div>
+
+    <div id="toast-container"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
     let state = {
-        active: 'left',
-        handles: { left: null, right: null },
-        files: { left: [], right: [] },
-        selected: { left: new Set(), right: new Set() },
-        paths: { left: '', right: '' },
-        history: { left: [], right: [] },
-        forwardHistory: { left: [], right: [] }, // Nuovo stack per il tasto Avanti
-        basePath: { left: '', right: '' },
-        sort: { left: { col: 'type', dir: 'asc' }, right: { col: 'type', dir: 'asc' } }
+        active: 'left', handles: { left: null, right: null }, files: { left: [], right: [] },
+        selected: { left: new Set(), right: new Set() }, paths: { left: '', right: '' },
+        history: { left: [], right: [] }, forwardHistory: { left: [], right: [] },
+        basePath: { left: '', right: '' }, sort: { left: { col: 'type', dir: 'asc' }, right: { col: 'type', dir: 'asc' } }
     };
+    let inMemoryZip = null, inMemoryZipPath = '', isDragging = false, dragStartIndex = -1, dragPane = '', hasDragged = false;
+    let renameTargetIndex = -1, renameTargetPane = '', copyTargetData = null;
 
-    let inMemoryZip = null; let inMemoryZipPath = '';
-    let isDragging = false; let dragStartIndex = -1; let dragPane = ''; let hasDragged = false;
+    function showProgress(t) {
+        document.getElementById('progress-title').textContent = t;
+        document.getElementById('progress-fill').style.width = '0%';
+        document.getElementById('progress-percent').textContent = '0%';
+        document.getElementById('progress-detail').textContent = '';
+        document.getElementById('progress-size').textContent = '';
+        document.getElementById('progress-overlay').classList.add('active');
+    }
+    function updateProgress(p, d, s) {
+        const pr = Math.min(100, Math.max(0, Math.round(p)));
+        document.getElementById('progress-fill').style.width = pr + '%';
+        document.getElementById('progress-percent').textContent = pr + '%';
+        if (d !== undefined) document.getElementById('progress-detail').textContent = d;
+        if (s !== undefined) document.getElementById('progress-size').textContent = s;
+    }
+    function hideProgress() { document.getElementById('progress-overlay').classList.remove('active'); }
+    function showToast(m, t = 'info') {
+        const c = document.getElementById('toast-container'), e = document.createElement('div');
+        e.className = `toast ${t}`; e.textContent = m; c.appendChild(e);
+        setTimeout(() => { if (e.parentNode) e.parentNode.removeChild(e); }, 2800);
+    }
+    function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+    function formatSize(b) {
+        if (b === 0) return '0'; const k = 1024, s = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(b) / Math.log(k));
+        return parseFloat((b / Math.pow(k, i)).toFixed(1)) + ' ' + s[i];
+    }
 
-    // Sincronizza campi base path
     document.getElementById('base-left').addEventListener('input', (e) => { state.basePath.left = e.target.value; });
     document.getElementById('base-right').addEventListener('input', (e) => { state.basePath.right = e.target.value; });
 
-    // --- TOOLBAR FUNCTIONS ---
+    async function refreshRelevantPanes(...paths) {
+        const ap = paths.filter(p => p && p.length > 0);
+        if (!ap.length) return;
+        if (state.handles.left && !inMemoryZip && ap.some(p => state.paths.left.startsWith(p))) await listFiles('left');
+        if (state.handles.right && !inMemoryZip && ap.some(p => state.paths.right.startsWith(p))) {
+            if (state.paths.left !== state.paths.right) await listFiles('right');
+        }
+    }
+
     function setView(type) {
         document.getElementById('btn-view-list').classList.toggle('active', type === 'list');
         document.getElementById('btn-view-tree').classList.toggle('active', type === 'tree');
-        if(type === 'tree') document.getElementById('status-bar').innerText = "ATTENZIONE: Vista ad albero non supportata dall'API Web. Attiva vista elenco.";
+        if (type === 'tree') showToast("Vista ad albero non supportata", "error");
+    }
+    function handleSelectAll() { const p = state.active; state.selected[p].clear(); state.files[p].forEach((f, i) => { if (!f.isUp) state.selected[p].add(i); }); updateSelectionUI(p); }
+    function handleDeselectAll() { state.selected[state.active].clear(); updateSelectionUI(state.active); }
+    function setActive(p) { state.active = p; document.getElementById('panel-left').classList.toggle('active', p === 'left'); document.getElementById('panel-right').classList.toggle('active', p === 'right'); document.getElementById(`list-${p}`).focus(); }
+    function updateStatus() {
+        const p = state.active, c = state.selected[p].size;
+        if (c === 0) { document.getElementById('status-bar').innerText = `PERCORSO: ${state.paths[p] || 'NESSUNO'}`; return; }
+        let s = 0; state.selected[p].forEach(i => { s += state.files[p][i].size; });
+        document.getElementById('status-bar').innerText = `SELEZIONATI: ${c} ELEMENTO(I) - DIM: ${formatSize(s)}`;
+    }
+    function updateSelectionUI(p) {
+        const l = document.getElementById(`list-${p}`);
+        l.querySelectorAll('.file-item').forEach((el, i) => { el.classList.toggle('selected', state.selected[p].has(i)); });
+        updateStatus();
+    }
+    function selectRange(p, s, e) {
+        const min = Math.max(0, Math.min(s, e)), max = Math.min(state.files[p].length - 1, Math.max(s, e));
+        for (let i = min; i <= max; i++) state.selected[p].add(i);
     }
 
-    function handleSelectAll() {
-        const pane = state.active;
-        state.selected[pane].clear();
-        state.files[pane].forEach((f, i) => { if (!f.isUp) state.selected[pane].add(i); });
-        updateSelectionUI(pane);
-    }
-
-    function handleDeselectAll() {
-        state.selected[state.active].clear();
-        updateSelectionUI(state.active);
-    }
-
-    // --- LOGICA PRINCIPALE ---
     async function openDirectory(pane) {
         try {
-            const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-            state.handles[pane] = dirHandle;
-            state.paths[pane] = dirHandle.name;
-            state.history[pane] = [];
-            state.forwardHistory[pane] = []; // Pulisci avanti alla radice
+            const d = await window.showDirectoryPicker({ mode: 'readwrite' });
+            state.handles[pane] = d; state.paths[pane] = d.name;
+            state.history[pane] = []; state.forwardHistory[pane] = [];
             inMemoryZip = null; inMemoryZipPath = '';
-            document.getElementById(`path-${pane}`).value = dirHandle.name;
+            document.getElementById(`path-${pane}`).value = d.name;
             await listFiles(pane);
-            const otherPane = pane === 'left' ? 'right' : 'left';
-            if (!state.handles[otherPane]) syncViews();
-        } catch (err) { if (err.name !== 'AbortError') alert("Errore nell'apertura della cartella."); }
+            const o = pane === 'left' ? 'right' : 'left';
+            if (!state.handles[o]) syncViews();
+            showToast(`Cartella aperta: ${d.name}`, "success");
+        } catch (e) { if (e.name !== 'AbortError') showToast("Errore apertura", "error"); }
     }
 
     async function listFiles(pane) {
         state.files[pane] = []; state.selected[pane].clear();
-        if (state.history[pane].length > 0 || inMemoryZip) {
-            state.files[pane].push({ name: '[..]', kind: 'directory', size: 0, timestamp: 0, modified: '', type: '', isUp: true, isZip: false });
-        }
+        if (state.history[pane].length > 0 || inMemoryZip) state.files[pane].push({ name: '[..]', kind: 'directory', size: 0, timestamp: 0, modified: '', type: '', isUp: true, isZip: false });
         if (inMemoryZip) {
-            let zipSubPath = state.paths[pane].substring(inMemoryZipPath.length); if (zipSubPath.startsWith('/')) zipSubPath = zipSubPath.substring(1);
-            const currentZipFolder = inMemoryFolder(inMemoryZip, zipSubPath);
-            for (const [relativePath, zipEntry] of Object.entries(currentZipFolder.files)) {
-                const name = relativePath.split('/').pop(); if (!name) continue; const isDir = zipEntry.dir; let size = 0;
-                if (!isDir) { const data = await zipEntry.async('string'); size = new Blob([data]).size; }
-                state.files[pane].push({ name, kind: isDir ? 'directory' : 'file', size, timestamp: 0, modified: '', type: isDir ? 'CARTELLA' : (name.split('.').pop().toUpperCase() || 'FILE'), isUp: false, isZip: name.toLowerCase().endsWith('.zip') });
+            let zp = state.paths[pane].substring(inMemoryZipPath.length);
+            if (zp.startsWith('/')) zp = zp.substring(1);
+            const cf = inMemoryFolder(inMemoryZip, zp);
+            for (const [rp, ze] of Object.entries(cf.files)) {
+                const n = rp.split('/').pop(); if (!n) continue; const id = ze.dir; let sz = 0;
+                if (!id) { const dt = await ze.async('string'); sz = new Blob([dt]).size; }
+                state.files[pane].push({ name: n, kind: id ? 'directory' : 'file', size: sz, timestamp: 0, modified: '', type: id ? 'CARTELLA' : (n.split('.').pop().toUpperCase() || 'FILE'), isUp: false, isZip: n.toLowerCase().endsWith('.zip') });
             }
         } else if (state.handles[pane]) {
-            for await (const entry of state.handles[pane].values()) {
-                let size = 0; let timestamp = 0; let modified = ''; let type = '';
-                if (entry.kind === 'file') { const file = await entry.getFile(); size = file.size; timestamp = file.lastModified || 0; modified = timestamp ? new Date(timestamp).toLocaleDateString('it-IT') : ''; const parts = entry.name.split('.'); type = parts.length > 1 ? parts.pop().toUpperCase() : 'FILE'; } 
-                else { type = 'CARTELLA'; }
-                state.files[pane].push({ name: entry.name, kind: entry.kind, size, timestamp, modified, type, isUp: false, isZip: entry.name.toLowerCase().endsWith('.zip') });
+            for await (const e of state.handles[pane].values()) {
+                let sz = 0, ts = 0, md = '', tp = '';
+                if (e.kind === 'file') { const f = await e.getFile(); sz = f.size; ts = f.lastModified || 0; md = ts ? new Date(ts).toLocaleDateString('it-IT') : ''; const p = e.name.split('.'); tp = p.length > 1 ? p.pop().toUpperCase() : 'FILE'; }
+                else { tp = 'CARTELLA'; }
+                state.files[pane].push({ name: e.name, kind: e.kind, size: sz, timestamp: ts, modified: md, type: tp, isUp: false, isZip: e.name.toLowerCase().endsWith('.zip') });
             }
         }
         applySort(pane); updateSortArrows(pane);
-        if (state.files[pane].length > 0) { const idxToSelect = state.files[pane].length > 1 && state.files[pane][0].isUp ? 1 : 0; state.selected[pane].add(idxToSelect); }
+        if (state.files[pane].length > 0) { const i = state.files[pane].length > 1 && state.files[pane][0].isUp ? 1 : 0; state.selected[pane].add(i); }
         render(pane);
     }
 
-    function inMemoryFolder(zip, folderPath) { if (!folderPath || folderPath === '' || folderPath === '/') return zip.root; let currentDir = zip; const parts = folderPath.split('/').filter(p => p !== ''); for (const part of parts) { currentDir = currentDir.folder(part); if (!currentDir) return zip.root; } return currentDir; }
-    
-    function handleSort(pane, column) { setActive(pane); const s = state.sort[pane]; if (s.col === column) { s.dir = s.dir === 'asc' ? 'desc' : 'asc'; } else { s.col = column; s.dir = 'asc'; } applySort(pane); updateSortArrows(pane); render(pane); }
-    function applySort(pane) { const s = state.sort[pane]; const f = state.files[pane]; const d = s.dir === 'asc' ? 1 : -1; f.sort((a, b) => { if (a.isUp) return -1; if (b.isUp) return 1; let c = 0; if (s.col === 'name') c = a.name.localeCompare(b.name); else if (s.col === 'type') c = a.type.localeCompare(b.type) || a.name.localeCompare(b.name); else if (s.col === 'size') c = (a.kind === 'directory' && b.kind === 'directory') ? a.name.localeCompare(b.name) : a.size - b.size; else if (s.col === 'timestamp') c = (a.timestamp === 0 && b.timestamp === 0 && a.kind === 'directory' && b.kind === 'directory') ? a.name.localeCompare(b.name) : a.timestamp - b.timestamp; return c * d; }); }
-    function updateSortArrows(pane) { const s = state.sort[pane]; const a = s.dir === 'asc' ? ' ▲' : ' ▼'; ['name', 'type', 'size', 'timestamp'].forEach(c => { document.getElementById(`sort-${pane}-${c}`).innerText = (s.col === c) ? a : ''; }); }
-    
-    function updateSelectionUI(pane) { const l = document.getElementById(`list-${pane}`); l.querySelectorAll('.file-item').forEach((el, i) => { el.classList.toggle('selected', state.selected[pane].has(i)); }); updateStatus(); }
+    function inMemoryFolder(z, fp) { if (!fp || fp === '' || fp === '/') return z.root; let c = z; const p = fp.split('/').filter(x => x !== ''); for (const x of p) { c = c.folder(x); if (!c) return z.root; } return c; }
+    function handleSort(p, c) { setActive(p); const s = state.sort[p]; if (s.col === c) { s.dir = s.dir === 'asc' ? 'desc' : 'asc'; } else { s.col = c; s.dir = 'asc'; } applySort(p); updateSortArrows(p); render(p); }
+    function applySort(p) {
+        const s = state.sort[p], f = state.files[p], d = s.dir === 'asc' ? 1 : -1;
+        f.sort((a, b) => {
+            if (a.isUp) return -1; if (b.isUp) return 1; let c = 0;
+            if (s.col === 'name') c = a.name.localeCompare(b.name);
+            else if (s.col === 'type') c = a.type.localeCompare(b.type) || a.name.localeCompare(b.name);
+            else if (s.col === 'size') c = (a.kind === 'directory' && b.kind === 'directory') ? a.name.localeCompare(b.name) : a.size - b.size;
+            else if (s.col === 'timestamp') c = (a.timestamp === 0 && b.timestamp === 0 && a.kind === 'directory' && b.kind === 'directory') ? a.name.localeCompare(b.name) : a.timestamp - b.timestamp;
+            return c * d;
+        });
+    }
+    function updateSortArrows(p) { const s = state.sort[p], a = s.dir === 'asc' ? ' \u25B2' : ' \u25BC'; ['name', 'type', 'size', 'timestamp'].forEach(c => { document.getElementById(`sort-${p}-${c}`).innerText = (s.col === c) ? a : ''; }); }
 
     function render(pane) {
         const l = document.getElementById(`list-${pane}`); l.innerHTML = '';
         state.files[pane].forEach((file, index) => {
-            const item = document.createElement('div'); item.className = 'file-item' + (state.selected[pane].has(index) ? ' selected' : '');
-            const sizeStr = file.kind === 'directory' ? '<DIR>' : formatSize(file.size);
-            const icon = file.isUp ? '⬆️' : (file.isZip ? '<span class="zip-icon">📦</span>' : (file.kind === 'directory' ? '📁' : '📄'));
-            item.innerHTML = `<div class="col-name">${icon} ${file.name}</div><div class="col-type">${file.type}</div><div class="col-size">${sizeStr}</div><div class="col-date">${file.modified}</div>`;
+            const item = document.createElement('div');
+            item.className = 'file-item' + (state.selected[pane].has(index) ? ' selected' : '');
+            const ss = file.kind === 'directory' ? '<DIR>' : formatSize(file.size);
+            const ic = file.isUp ? '\u2B06\uFE0F' : (file.isZip ? '<span class="zip-icon">\uD83D\uDCE6</span>' : (file.kind === 'directory' ? '\uD83D\uDCC1' : '\uD83D\uDCC4'));
+            item.innerHTML = `<div class="col-name">${ic} ${escapeHtml(file.name)}</div><div class="col-type">${escapeHtml(file.type)}</div><div class="col-size">${ss}</div><div class="col-date">${file.modified}</div>`;
             item.dataset.index = index;
-            item.addEventListener('mousedown', (e) => { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); setActive(pane); if (e.ctrlKey) { state.selected[pane].has(index) ? state.selected[pane].delete(index) : state.selected[pane].add(index); } else if (e.shiftKey) { const sa = Array.from(state.selected[pane]).sort((a,b)=>a-b); const an = sa.length > 0 ? sa[sa.length - 1] : 0; state.selected[pane].clear(); selectRange(pane, an, index); } else { state.selected[pane].clear(); state.selected[pane].add(index); } updateSelectionUI(pane); });
+            item.addEventListener('mousedown', (e) => { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); setActive(pane); if (e.ctrlKey) { state.selected[pane].has(index) ? state.selected[pane].delete(index) : state.selected[pane].add(index); } else if (e.shiftKey) { const sa = Array.from(state.selected[pane]).sort((a, b) => a - b); const an = sa.length > 0 ? sa[sa.length - 1] : 0; state.selected[pane].clear(); selectRange(pane, an, index); } else { state.selected[pane].clear(); state.selected[pane].add(index); } updateSelectionUI(pane); });
             item.addEventListener('mousedown', (e) => { if (e.button !== 2) return; e.preventDefault(); e.stopPropagation(); setActive(pane); isDragging = true; hasDragged = false; dragStartIndex = index; dragPane = pane; });
             item.addEventListener('mouseenter', () => { if (!isDragging || dragPane !== pane) return; const ci = parseInt(item.dataset.index); if (ci !== dragStartIndex) { hasDragged = true; state.selected[pane].clear(); selectRange(pane, dragStartIndex, ci); updateSelectionUI(pane); } });
             item.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); isDragging = false; if (file.isUp) navigateBack(pane); else if (file.kind === 'directory') navigateInto(pane, file.name); else openFile(pane, file.name); });
@@ -349,121 +401,303 @@
         }); updateStatus();
     }
 
-    function selectRange(pane, start, end) { const min = Math.max(0, Math.min(start, end)); const max = Math.min(state.files[pane].length - 1, Math.max(start, end)); for (let i = min; i <= max; i++) state.selected[pane].add(i); }
-    document.addEventListener('mouseup', () => { if (isDragging) { if (!hasDragged) { state.selected[dragPane].has(dragStartIndex) ? state.selected[dragPane].delete(dragStartIndex) : state.selected[dragPane].add(dragStartIndex); updateSelectionUI(dragPane); } isDragging = false; hasDragged = false; dragStartIndex = -1; dragPane = ''; } });
+    document.addEventListener('mouseup', () => {
+        if (isDragging) {
+            if (!hasDragged) { state.selected[dragPane].has(dragStartIndex) ? state.selected[dragPane].delete(dragStartIndex) : state.selected[dragPane].add(dragStartIndex); updateSelectionUI(dragPane); }
+            isDragging = false; hasDragged = false; dragStartIndex = -1; dragPane = '';
+        }
+    });
     document.addEventListener('contextmenu', (e) => { if (e.target.closest('.file-list')) e.preventDefault(); });
 
-    // --- NAVIGAZIONE CON FORWARD HISTORY ---
-    async function navigateInto(pane, dirName) {
+    async function navigateInto(p, dn) {
         try {
-            if (dirName.toLowerCase().endsWith('.zip')) { /* Logica zip invariata */ document.getElementById('status-bar').innerText = `ESTRAZIONE ZIP IN CORSO: ${dirName}...`; let zipData; if (state.handles[pane]) { const handle = await state.handles[pane].getFileHandle(dirName); const file = await handle.getFile(); zipData = await file.arrayBuffer(); } else if (inMemoryZip) { let subPath = state.paths[pane].substring(inMemoryZipPath.length + 1) + dirName; zipData = await inMemoryZip.file(subPath).async('arraybuffer'); } else return; inMemoryZip = await JSZip.loadAsync(zipData); inMemoryZipPath = state.paths[pane] + `/${dirName}`; state.history[pane].push({ handle: state.handles[pane], path: state.paths[pane], isZip: true }); state.forwardHistory[pane] = []; state.handles[pane] = null; state.paths[pane] = inMemoryZipPath; document.getElementById(`path-${pane}`).value = state.paths[pane] + " [ZIP]"; await listFiles(pane); return; }
-            state.history[pane].push({ handle: state.handles[pane], path: state.paths[pane], isZip: false });
-            state.forwardHistory[pane] = []; // Nuova navigazione cancella lo stack Avanti
-            const newDirHandle = await state.handles[pane].getDirectoryHandle(dirName);
-            state.handles[pane] = newDirHandle; state.paths[pane] += `/${dirName}`;
-            document.getElementById(`path-${pane}`).value = state.paths[pane]; await listFiles(pane);
-        } catch (err) { alert("Impossibile accedere: " + err.message); }
+            if (dn.toLowerCase().endsWith('.zip')) {
+                document.getElementById('status-bar').innerText = `CARICAMENTO ZIP: ${dn}...`;
+                let zd;
+                if (state.handles[p]) { const h = await state.handles[p].getFileHandle(dn); const f = await h.getFile(); zd = await f.arrayBuffer(); }
+                else if (inMemoryZip) { let sp = state.paths[p].substring(inMemoryZipPath.length + 1) + dn; zd = await inMemoryZip.file(sp).async('arraybuffer'); }
+                else return;
+                inMemoryZip = await JSZip.loadAsync(zd); inMemoryZipPath = state.paths[p] + `/${dn}`;
+                state.history[p].push({ handle: state.handles[p], path: state.paths[p], isZip: true });
+                state.forwardHistory[p] = []; state.handles[p] = null; state.paths[p] = inMemoryZipPath;
+                document.getElementById(`path-${p}`).value = state.paths[p] + " [ZIP]"; await listFiles(p); return;
+            }
+            state.history[p].push({ handle: state.handles[p], path: state.paths[p], isZip: false });
+            state.forwardHistory[p] = [];
+            const nd = await state.handles[p].getDirectoryHandle(dn);
+            state.handles[p] = nd; state.paths[p] += `/${dn}`;
+            document.getElementById(`path-${p}`).value = state.paths[p]; await listFiles(p);
+        } catch (e) { showToast("Impossibile accedere: " + e.message, "error"); }
+    }
+    async function navigateBack(p) {
+        if (state.history[p].length === 0) return;
+        state.forwardHistory[p].push({ handle: state.handles[p], path: state.paths[p] });
+        const pr = state.history[p].pop(); state.handles[p] = pr.handle; state.paths[p] = pr.path;
+        if (inMemoryZip && !state.history[p].some(h => h.isZip)) { inMemoryZip = null; inMemoryZipPath = ''; }
+        document.getElementById(`path-${p}`).value = state.paths[p]; await listFiles(p);
+    }
+    async function navigateForward(p) {
+        if (state.forwardHistory[p].length === 0) return;
+        state.history[p].push({ handle: state.handles[p], path: state.paths[p], isZip: false });
+        const nx = state.forwardHistory[p].pop(); state.handles[p] = nx.handle; state.paths[p] = nx.path;
+        document.getElementById(`path-${p}`).value = state.paths[p]; await listFiles(p);
+    }
+    async function openFile(p, fn) {
+        try {
+            let fo;
+            if (inMemoryZip) { let sp = state.paths[p].substring(inMemoryZipPath.length + 1) + fn; if (sp.startsWith('/')) sp = sp.substring(1); const c = await inMemoryZip.file(sp).async('string'); fo = new Blob([c], { type: 'text/plain' }); }
+            else { const fh = await state.handles[p].getFileHandle(fn); fo = await fh.getFile(); }
+            window.open(URL.createObjectURL(fo), '_blank');
+        } catch (e) { showToast("Impossibile aprire: " + e.message, "error"); }
+    }
+    async function refreshPane(p) {
+        if (inMemoryZip) return await listFiles(p);
+        if (!state.handles[p]) return showToast("Nessuna cartella aperta", "error");
+        try { await state.handles[p].requestPermission({ mode: 'readwrite' }); } catch (e) { }
+        await listFiles(p); showToast("Ricaricato", "info");
+    }
+    async function syncViews() {
+        const d = state.active === 'left' ? 'right' : 'left'; let sp = state.active;
+        while (sp !== d && !state.handles[sp]) { sp = sp === 'left' ? 'right' : 'left'; }
+        if (!state.handles[sp]) return showToast("Nessuna cartella da cui allineare", "error");
+        state.handles[d] = state.handles[sp]; state.paths[d] = state.paths[sp];
+        state.history[d] = [...state.history[sp]]; state.forwardHistory[d] = [];
+        state.sort[d] = { ...state.sort[sp] }; state.basePath[d] = state.basePath[sp];
+        document.getElementById(`path-${d}`).value = state.paths[sp]; document.getElementById(`base-${d}`).value = state.basePath[sp];
+        await listFiles(d); showToast("Sincronizzate", "success");
     }
 
-    async function navigateBack(pane) {
-        if (state.history[pane].length === 0) return;
-        // Salva stato attuale nello stack Avanti PRIMA di tornare indietro
-        state.forwardHistory[pane].push({ handle: state.handles[pane], path: state.paths[pane] });
-        const prev = state.history[pane].pop();
-        state.handles[pane] = prev.handle; state.paths[pane] = prev.path;
-        if (inMemoryZip && !state.history[pane].some(h => h.isZip)) { inMemoryZip = null; inMemoryZipPath = ''; }
-        document.getElementById(`path-${pane}`).value = state.paths[pane]; await listFiles(pane);
+    function handleRename() {
+        const p = state.active;
+        if (inMemoryZip) return showToast("Impossibile nello ZIP", "error");
+        if (!state.handles[p]) return showToast("Nessuna cartella aperta", "error");
+        const sa = Array.from(state.selected[p]).sort((a, b) => a - b);
+        if (!sa.length) return showToast("Nessun elemento", "error");
+        if (sa.length > 1) return showToast("Seleziona un solo elemento", "error");
+        const i = sa[0], fd = state.files[p][i];
+        if (fd.isUp) return showToast("Impossibile rinominare [..]", "error");
+        renameTargetIndex = i; renameTargetPane = p;
+        document.getElementById('rename-original').textContent = fd.name;
+        const inp = document.getElementById('rename-input'); inp.value = fd.name;
+        const di = fd.name.lastIndexOf('.');
+        if (di > 0 && fd.kind === 'file') { inp.setSelectionRange(0, di); } else { inp.select(); }
+        document.getElementById('rename-error').textContent = '';
+        document.getElementById('rename-modal-overlay').classList.add('active'); inp.focus();
+    }
+    function closeRenameModal() { document.getElementById('rename-modal-overlay').classList.remove('active'); renameTargetIndex = -1; renameTargetPane = ''; document.getElementById(`list-${state.active}`).focus(); }
+    async function executeRename() {
+        const p = renameTargetPane, i = renameTargetIndex, ed = document.getElementById('rename-error'), inp = document.getElementById('rename-input'), nn = inp.value.trim(), on = state.files[p][i].name;
+        if (!nn) { ed.textContent = "Nome vuoto."; inp.focus(); return; }
+        if (nn === on) { closeRenameModal(); return; }
+        if (/[\/\\:*?"<>|]/.test(nn)) { ed.textContent = "Caratteri non validi."; inp.focus(); return; }
+        if (state.files[p].find((f, x) => x !== i && !f.isUp && f.name.toLowerCase() === nn.toLowerCase())) { ed.textContent = `Esiste gia "${nn}"`; inp.focus(); return; }
+        try {
+            const dh = state.handles[p], fd = state.files[p][i];
+            if (fd.kind === 'file') { const oh = await dh.getFileHandle(on), of = await oh.getFile(), c = await of.arrayBuffer(), nh = await dh.getFileHandle(nn, { create: true }), w = await nh.createWritable(); await w.write(c); await w.close(); await dh.removeEntry(on); }
+            else { const oh = await dh.getDirectoryHandle(on), nh = await dh.getDirectoryHandle(nn, { create: true }); await copyDiskDirectory(oh, nh); await dh.removeEntry(on, { recursive: true }); }
+            closeRenameModal(); await refreshRelevantPanes(state.paths[p]);
+            const ni = state.files[p].findIndex(f => !f.isUp && f.name === nn);
+            if (ni >= 0) { state.selected[p].clear(); state.selected[p].add(ni); updateSelectionUI(p); }
+            showToast(`Rinominato: ${on} -> ${nn}`, "success");
+        } catch (e) { ed.textContent = "Errore: " + e.message; }
     }
 
-    async function navigateForward(pane) {
-        if (state.forwardHistory[pane].length === 0) return;
-        // Salva stato attuale nello stack Indietro PRIMA di andare avanti
-        state.history[pane].push({ handle: state.handles[pane], path: state.paths[pane], isZip: false });
-        const next = state.forwardHistory[pane].pop();
-        state.handles[pane] = next.handle; state.paths[pane] = next.path;
-        document.getElementById(`path-${pane}`).value = state.paths[pane]; await listFiles(pane);
+    function handleF4() {
+        const p = state.active, sa = Array.from(state.selected[p]).sort((a, b) => a - b);
+        if (!sa.length) return showToast("Nessun elemento", "error");
+        let paths = [], base = (state.basePath[p] || "").trim().replace(/\//g, '\\').replace(/[\\]+$/, '');
+        for (const i of sa) { const f = state.files[p][i]; if (f.isUp) continue; let lp = (state.paths[p] + '/' + f.name).replace(/\//g, '\\'); paths.push(base ? (base + '\\' + lp) : lp); }
+        if (!paths.length) return showToast("Nessun percorso", "error");
+        const m = document.getElementById('path-modal-input'); m.value = paths.join('\n'); m.select();
+        document.getElementById('path-modal-overlay').classList.add('active'); m.focus();
     }
-
-    async function openFile(pane, fileName) { try { let fileObj; if (inMemoryZip) { let subPath = state.paths[pane].substring(inMemoryZipPath.length + 1) + fileName; if (subPath.startsWith('/')) subPath = subPath.substring(1); const content = await inMemoryZip.file(subPath).async('string'); fileObj = new Blob([content], { type: 'text/plain' }); } else { const fileHandle = await state.handles[pane].getFileHandle(fileName); fileObj = await fileHandle.getFile(); } window.open(URL.createObjectURL(fileObj), '_blank'); } catch (err) { alert("Impossibile aprire: " + err.message); } }
-    async function refreshPane(pane) { if (inMemoryZip) return await listFiles(pane); if (!state.handles[pane]) return alert("Nessuna cartella aperta."); try { await state.handles[pane].requestPermission({ mode: 'readwrite' }); } catch(e) {} await listFiles(pane); }
-    async function syncViews() { const dst = state.active === 'left' ? 'right' : 'left'; let sourcePane = state.active; while(sourcePane !== dst && !state.handles[sourcePane]) { sourcePane = sourcePane === 'left' ? 'right' : 'left'; } if (!state.handles[sourcePane]) return alert("Nessuna cartella aperta da cui allineare."); state.handles[dst] = state.handles[sourcePane]; state.paths[dst] = state.paths[sourcePane]; state.history[dst] = [...state.history[sourcePane]]; state.forwardHistory[dst] = []; state.sort[dst] = {...state.sort[sourcePane]}; state.basePath[dst] = state.basePath[sourcePane]; document.getElementById(`path-${dst}`).value = state.paths[sourcePane]; document.getElementById(`base-${dst}`).value = state.basePath[sourcePane]; await listFiles(dst); }
-    function formatSize(bytes) { if (bytes === 0) return '0'; const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB']; const i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]; }
-    function setActive(pane) { state.active = pane; document.getElementById('panel-left').classList.toggle('active', pane === 'left'); document.getElementById('panel-right').classList.toggle('active', pane === 'right'); document.getElementById(`list-${pane}`).focus(); }
-    function updateStatus() { const p = state.active; const c = state.selected[p].size; if (c === 0) { document.getElementById('status-bar').innerText = `PERCORSO: ${state.paths[p] || 'NESSUNO'}`; return; } let s = 0; state.selected[p].forEach(i => { s += state.files[p][i].size; }); document.getElementById('status-bar').innerText = `SELEZIONATI: ${c} ELEMENTO(I) - DIM: ${formatSize(s)}`; }
-
-    // --- F4 PATH ---
-    function handleF4() { const p = state.active; const sa = Array.from(state.selected[p]).sort((a,b)=>a-b); if (sa.length === 0) return alert("Nessun elemento selezionato."); let paths = []; let base = (state.basePath[p] || "").trim().replace(/\//g, '\\').replace(/[\\]+$/, ''); for (const i of sa) { const f = state.files[p][i]; if (f.isUp) continue; let lp = (state.paths[p] + '/' + f.name).replace(/\//g, '\\'); paths.push(base ? (base + '\\' + lp) : lp); } if (paths.length === 0) return alert("Nessun percorso valido."); const m = document.getElementById('path-modal-input'); m.value = paths.join('\n'); m.select(); document.getElementById('path-modal-overlay').classList.add('active'); m.focus(); }
-    async function copyPathFromModal() { const i = document.getElementById('path-modal-input'); try { await navigator.clipboard.writeText(i.value); document.getElementById('status-bar').innerText = `PATH COPIATO: ${i.value.split('\n')[0]}`; closePathModal(); } catch(e) { i.select(); document.getElementById('status-bar').innerText = "IMPOSSIBILE COPIARE - USA CTRL+C"; } }
+    async function copyPathFromModal() { const i = document.getElementById('path-modal-input'); try { await navigator.clipboard.writeText(i.value); showToast(`Copiato`, "success"); closePathModal(); } catch (e) { i.select(); showToast("USA CTRL+C", "error"); } }
     function closePathModal() { document.getElementById('path-modal-overlay').classList.remove('active'); document.getElementById(`list-${state.active}`).focus(); }
 
-    // --- SEARCH ---
-    function openSearchModal() { if (!state.handles[state.active] && !inMemoryZip) return alert("Nessuna cartella aperta in cui cercare."); document.getElementById('search-input').value = ''; document.getElementById('search-results').innerHTML = ''; document.getElementById('search-modal-overlay').classList.add('active'); document.getElementById('search-input').focus(); }
+    function openSearchModal() { if (!state.handles[state.active] && !inMemoryZip) return showToast("Nessuna cartella aperta", "error"); document.getElementById('search-input').value = ''; document.getElementById('search-results').innerHTML = ''; document.getElementById('search-modal-overlay').classList.add('active'); document.getElementById('search-input').focus(); }
     function closeSearchModal() { document.getElementById('search-modal-overlay').classList.remove('active'); document.getElementById(`list-${state.active}`).focus(); }
-    
     async function executeSearch() {
-        const term = document.getElementById('search-input').value.trim();
-        if (!term) return;
-        const resDiv = document.getElementById('search-results');
-        resDiv.innerHTML = '<div style="padding:10px;color:var(--yellow)">Cercando... attendere</div>';
-        
-        const pane = state.active;
-        const rootHandle = state.handles[pane];
-        const rootPath = state.paths[pane];
-        const results = [];
-
-        async function recursiveSearch(dirHandle, currentPath) {
-            for await (const entry of dirHandle.values()) {
-                if (entry.name.toLowerCase().includes(term.toLowerCase())) {
-                    results.push({ name: entry.name, kind: entry.kind, path: currentPath + '/' + entry.name });
-                }
-                if (entry.kind === 'directory') {
-                    try {
-                        const subDir = await dirHandle.getDirectoryHandle(entry.name);
-                        await recursiveSearch(subDir, currentPath + '/' + entry.name);
-                    } catch(e) { /* Permesso negato, ignora */ }
-                }
-            }
-        }
-
+        const t = document.getElementById('search-input').value.trim(); if (!t) return;
+        const rd = document.getElementById('search-results'); rd.innerHTML = '<div style="padding:10px;color:var(--yellow)">Cercando...</div>';
+        const p = state.active, rh = state.handles[p], rp = state.paths[p], res = [];
+        async function rs(dh, cp) { for await (const e of dh.values()) { if (e.name.toLowerCase().includes(t.toLowerCase())) res.push({ name: e.name, kind: e.kind, path: cp + '/' + e.name }); if (e.kind === 'directory') { try { await rs(await dh.getDirectoryHandle(e.name), cp + '/' + e.name); } catch (e) { } } } }
         try {
-            await recursiveSearch(rootHandle, rootPath);
-            resDiv.innerHTML = '';
-            if (results.length === 0) { resDiv.innerHTML = '<div style="padding:10px;color:var(--text-dim)">Nessun risultato trovato.</div>'; return; }
-            
-            results.forEach(r => {
-                const div = document.createElement('div'); div.className = 'search-item';
-                div.innerHTML = `<div>${r.kind === 'directory' ? '📁' : '📄'} ${r.name}</div><div class="path">${r.path}</div>`;
-                div.onclick = () => {
-                    // Se clicchi un risultato, naviga fin lì (semplificato: porta alla cartella padre e seleziona il file)
-                    closeSearchModal();
-                    alert("Funzionalità di navigazione al risultato:\n" + r.path + "\n(Implementabile riaprendo i percorsi manualmente)");
-                };
-                resDiv.appendChild(div);
-            });
-        } catch(e) { resDiv.innerHTML = `<div style="padding:10px;color:var(--red)">Errore durante la ricerca: ${e.message}</div>`; }
+            await rs(rh, rp); rd.innerHTML = '';
+            if (!res.length) { rd.innerHTML = '<div style="padding:10px;color:var(--text-dim)">Nessun risultato.</div>'; return; }
+            res.forEach(r => { const d = document.createElement('div'); d.className = 'search-item'; d.innerHTML = `<div>${r.kind === 'directory' ? '\uD83D\uDCC1' : '\uD83D\uDCC4'} ${escapeHtml(r.name)}</div><div class="path">${escapeHtml(r.path)}</div>`; d.onclick = () => { closeSearchModal(); showToast("Risultato: " + r.path, "info"); }; rd.appendChild(d); });
+            showToast(`Trovati ${res.length}`, "success");
+        } catch (e) { rd.innerHTML = `<div style="padding:10px;color:var(--red)">Errore: ${e.message}</div>`; }
     }
 
-    // --- F3, F5, F6, F7, F8, ZIP (Invariati e compattati) ---
-    async function handleF3() { if (inMemoryZip) { const f = getSelectedData(state.active); if(f.length===1 && !f[0].isUp) return openFile(state.active, f[0].name); return alert("Seleziona un file."); } const p = state.active; const sa = Array.from(state.selected[p]); if (sa.length !== 1) return alert("Seleziona un solo file."); const fd = state.files[p][sa[0]]; if (!fd || fd.isUp || fd.kind === 'directory') return alert("Seleziona un file."); try { document.getElementById('status-bar').innerText = `CARICAMENTO ${fd.name}...`; const file = await (await state.handles[p].getFileHandle(fd.name)).getFile(); if (file.size > 5 * 1024 * 1024) return alert("File > 5MB."); const t = await file.text(); localStorage.setItem('webEditPlus_transfer', `|||N_START|||${fd.name}|||N_END|||` + `|||P_START|||${state.paths[p]}/${fd.name}|||P_END|||` + `|||C_START|||${t}|||C_END|||` + `|||T_START|||${fd.type}|||T_END|||`); window.open('WebEditPlus.html?load=1', '_blank'); document.getElementById('status-bar').innerText = `EDITOR: ${fd.name}`; } catch (err) { alert("Errore: " + err.message); } }
+    async function handleF3() {
+        if (inMemoryZip) { const f = getSelectedData(state.active); if (f.length === 1 && !f[0].isUp) return openFile(state.active, f[0].name); return showToast("Seleziona un file", "error"); }
+        const p = state.active, sa = Array.from(state.selected[p]); let fn = 'nuovo.txt', fp = '', ft = 'TXT', c = '';
+        if (sa.length === 1) { const fd = state.files[p][sa[0]]; if (fd && !fd.isUp && fd.kind === 'file') { try { document.getElementById('status-bar').innerText = `CARICAMENTO ${fd.name}...`; const f = await (await state.handles[p].getFileHandle(fd.name)).getFile(); if (f.size > 5 * 1024 * 1024) return showToast("File > 5MB", "error"); c = await f.text(); fn = fd.name; fp = state.paths[p] + '/' + fd.name; ft = fd.type; } catch (e) { showToast("Editor aperto vuoto", "info"); } } }
+        if (state.paths[p]) fp = fp || state.paths[p] + '/nuovo.txt';
+        try { localStorage.setItem('webEditPlus_transfer', `|||N_START|||${fn}|||N_END|||` + `|||P_START|||${fp}|||P_END|||` + `|||C_START|||${c}|||C_END|||` + `|||T_START|||${ft}|||T_END|||`); window.open('WebEditPlus.html?load=1', '_blank'); document.getElementById('status-bar').innerText = `EDITOR: ${fn}`; showToast(c ? `Editor: ${fn}` : "Editor vuoto", c ? "success" : "info"); } catch (e) { showToast("Errore editor: " + e.message, "error"); }
+    }
+
     function getSelectedData(p) { return Array.from(state.selected[p]).map(i => state.files[p][i]).filter(f => !f.isUp); }
-    async function getDiskHandles(p) { const dh = state.handles[p]; const f = []; for (const i of state.selected[p]) { const d = state.files[p][i]; if (d.isUp) continue; try { const h = d.kind === 'file' ? await dh.getFileHandle(d.name) : await dh.getDirectoryHandle(d.name); f.push({ handle: h, data: d }); } catch(e) {} } return f; }
-    async function copyDiskDirectory(s, d) { for await (const e of s.values()) { if (e.kind === 'file') { const f = await e.getFile(); const c = await f.arrayBuffer(); const n = await d.getFileHandle(e.name, { create: true }); const w = await n.createWritable(); await w.write(c); await w.close(); } else { const nd = await d.getDirectoryHandle(e.name, { create: true }); await copyDiskDirectory(await s.getDirectoryHandle(e.name), nd); } } }
+    async function getDiskHandles(p) { const dh = state.handles[p], f = []; for (const i of state.selected[p]) { const d = state.files[p][i]; if (d.isUp) continue; try { const h = d.kind === 'file' ? await dh.getFileHandle(d.name) : await dh.getDirectoryHandle(d.name); f.push({ handle: h, data: d }); } catch (e) { } } return f; }
+    async function copyDiskDirectory(s, d) { for await (const e of s.values()) { if (e.kind === 'file') { const f = await e.getFile(), c = await f.arrayBuffer(), n = await d.getFileHandle(e.name, { create: true }), w = await n.createWritable(); await w.write(c); await w.close(); } else { const nd = await d.getDirectoryHandle(e.name, { create: true }); await copyDiskDirectory(await s.getDirectoryHandle(e.name), nd); } } }
 
-    async function handleF5() { const s = state.active, d = s === 'left' ? 'right' : 'left'; if (!state.handles[d]) return alert("Destinazione non reale."); if (inMemoryZip) { const fe = getSelectedData(s); if (fe.length > 0) { if (!confirm(`Estrarre ${fe.length} file?`)) return; for (const f of fe) { if(f.kind==='file') try { let sp = state.paths[s].substring(inMemoryZipPath.length + 1) + f.name; if(sp.startsWith('/'))sp=sp.substring(1); const c = await inMemoryZip.file(sp).async('blob'); const h = await state.handles[d].getFileHandle(f.name, { create: true }); const w = await h.createWritable(); await w.write(c); await w.close(); } catch(e) { alert(e.message); } } await listFiles(d); return; } return alert("Seleziona file."); } if (!state.handles[s]) return alert("Origine non valida."); const files = await getDiskHandles(s); if (!files.length) return; if (files.length === 1 && files[0].data.isZip && files[0].data.kind === 'file') { if (!confirm(`Unzip?`)) return; try { const f = await files[0].handle.getFile(); const z = await JSZip.loadAsync(await f.arrayBuffer()); z.forEach(async (p, e) => { if (!e.dir) { const b = await e.async('blob'); const pts = p.split('/'); const cdc = async (dh, f) => { if(!f.length) return dh; return cdc(await dh.getDirectoryHandle(f[0], {create:true}), f.slice(1)); }; const fd = await cdc(state.handles[d], pts.slice(0,-1)); const fh = await fd.getFileHandle(pts[pts.length-1], {create:true}); const w = await fh.createWritable(); await w.write(b); await w.close(); } }); await listFiles(d); } catch(e) { alert("Err:"+e.message); } return; } if (!confirm(`Copiare ${files.length} elem?`)) return; for (const i of files) { try { if (i.data.kind === 'file') { const f = await i.handle.getFile(); const c = await f.arrayBuffer(); const h = await state.handles[d].getFileHandle(i.data.name, {create:true}); const w = await h.createWritable(); await w.write(c); await w.close(); } else { await copyDiskDirectory(i.handle, await state.handles[d].getDirectoryHandle(i.data.name, {create:true})); } } catch(e) { alert(e.message); } } await listFiles(d); }
-    async function handleZip() { if (inMemoryZip) return alert("Impossibile in ZIP."); const s = state.active, d = s === 'left' ? 'right' : 'left'; if (!state.handles[s] || !state.handles[d]) return alert("Servono cartelle reali."); const files = await getDiskHandles(s); if (!files.length) return; const n = prompt("Nome archivio:", "archivio.zip"); if (!n) return; if (!n.toLowerCase().endsWith('.zip')) n += '.zip'; document.getElementById('status-bar').innerText = "ZIP IN CORSO..."; try { const z = new JSZip(); for (const i of files) { if (i.data.kind === 'file') { const f = await i.handle.getFile(); z.file(i.data.name, await f.arrayBuffer()); } } const b = await z.generateAsync({type:"blob",compression:"DEFLATE",compressionOptions:{level:6}}); const h = await state.handles[d].getFileHandle(n, {create:true}); const w = await h.createWritable(); await w.write(b); await w.close(); await listFiles(d); document.getElementById('status-bar').innerText = `ZIP CREATO: ${n}`; } catch(e) { alert("Err:"+e.message); } }
-    async function handleF6() { if (inMemoryZip) return alert("No in ZIP."); const s = state.active, d = s === 'left' ? 'right' : 'left'; if (!state.handles[s] || !state.handles[d]) return alert("Servono cartelle."); if (!(await getDiskHandles(s)).length) return; if (!confirm("Spostare?")) return; await handleF5(); await handleF8(true); }
-    async function handleF7() { if (inMemoryZip) return alert("No in ZIP."); const p = state.active; if (!state.handles[p]) return alert("Nessuna cartella."); const n = prompt("Nome cartella:"); if (n) { try { await state.handles[p].getDirectoryHandle(n, {create:true}); await listFiles(p); } catch(e) { alert(e.message); } } }
-    async function handleF8(silent = false) { if (inMemoryZip) return alert("No in ZIP."); const p = state.active; if (!state.handles[p]) return; const files = await getDiskHandles(p); if (!files.length) return; if (!silent && !confirm(`Eliminare ${files.length} elem?`)) return; for (const i of files) { try { await state.handles[p].removeEntry(i.data.name, {recursive:true}); } catch(e) { if(!silent) alert(`Err:${i.data.name}`); } } await listFiles(p); }
+    async function handleUnzip() {
+        const s = state.active, d = s === 'left' ? 'right' : 'left';
+        if (inMemoryZip) {
+            const fe = getSelectedData(s); if (!fe.length) return showToast("Seleziona file", "error"); if (!state.handles[d]) return showToast("Destinazione non aperta", "error"); if (!confirm(`Estrarre ${fe.length} file?`)) return;
+            showProgress("ESTRAZIONE ZIP IN MEMORIA"); let c = 0;
+            for (const f of fe) { if (f.kind === 'file') try { updateProgress((c / fe.length) * 100, f.name); let sp = state.paths[s].substring(inMemoryZipPath.length + 1) + f.name; if (sp.startsWith('/')) sp = sp.substring(1); const ct = await inMemoryZip.file(sp).async('blob'), h = await state.handles[d].getFileHandle(f.name, { create: true }), w = await h.createWritable(); await w.write(ct); await w.close(); c++; } catch (e) { showToast(`Err: ${f.name}`, "error"); } }
+            updateProgress(100, 'Completato'); hideProgress(); await refreshRelevantPanes(state.paths[d]); return showToast(`Estratti ${c} file`, "success");
+        }
+        if (!state.handles[s] || !state.handles[d]) return showToast("Servono src e dst", "error");
+        const files = await getDiskHandles(s); if (!files.length) return showToast("Nessun elemento", "error");
+        if (files.length !== 1 || !files[0].data.isZip || files[0].data.kind !== 'file') return showToast("Seleziona un singolo .zip", "error");
+        if (!confirm(`Estrarre ${files[0].data.name}?`)) return;
+        showProgress("LETTURA ARCHIVIO ZIP"); updateProgress(0, 'Apertura file...');
+        try {
+            const f = await files[0].handle.getFile(); updateProgress(10, 'Parsing archivio...');
+            const z = await JSZip.loadAsync(await f.arrayBuffer()); const en = []; z.forEach((p, e) => { if (!e.dir) en.push({ path: p, entry: e }); });
+            const tf = en.length; if (!tf) { hideProgress(); return showToast("ZIP vuoto", "info"); }
+            updateProgress(15, `${tf} file`, 'Dim: ' + formatSize(f.size));
+            const cdc = async (dh, fl) => { if (!fl.length) return dh; return cdc(await dh.getDirectoryHandle(fl[0], { create: true }), fl.slice(1)); };
+            let c = 0;
+            for (const { path, entry } of en) { const b = await entry.async('blob'), pt = path.split('/'), fd = await cdc(state.handles[d], pt.slice(0, -1)), fh = await fd.getFileHandle(pt[pt.length - 1], { create: true }), w = await fh.createWritable(); await w.write(b); await w.close(); c++; updateProgress(15 + ((c / tf) * 85), pt[pt.length - 1], `${c}/${tf} | ${formatSize(b.size)}`); }
+            updateProgress(100, 'Completato', `${tf} file`); await refreshRelevantPanes(state.paths[d]);
+            document.getElementById('status-bar').innerText = `UNZIP OK: ${tf} FILE`; await new Promise(r => setTimeout(r, 400)); hideProgress(); showToast(`Estratti ${tf} file`, "success");
+        } catch (e) { hideProgress(); showToast("Errore unzip: " + e.message, "error"); }
+    }
 
-    // --- TASTIERA ---
+    async function handleF5() {
+        const s = state.active, d = s === 'left' ? 'right' : 'left';
+        if (!state.handles[d]) return showToast("Destinazione non aperta", "error");
+        if (inMemoryZip) return handleUnzip();
+        if (!state.handles[s]) return showToast("Origine non valida", "error");
+        const files = await getDiskHandles(s); if (!files.length) return showToast("Nessun elemento", "error");
+        if (files.length === 1 && files[0].data.isZip && files[0].data.kind === 'file') { if (confirm("File .zip.\n\nOK = Estrai\nAnnulla = Copia con nome")) return handleUnzip(); }
+        if (files.length > 1) {
+            if (!confirm(`Copiare ${files.length} elemento/i?`)) return;
+            for (const i of files) { try { if (i.data.kind === 'file') { const f = await i.handle.getFile(), c = await f.arrayBuffer(), h = await state.handles[d].getFileHandle(i.data.name, { create: true }), w = await h.createWritable(); await w.write(c); await w.close(); } else { await copyDiskDirectory(i.handle, await state.handles[d].getDirectoryHandle(i.data.name, { create: true })); } } catch (e) { showToast(e.message, "error"); } }
+            await refreshRelevantPanes(state.paths[s], state.paths[d]); showToast(`Copiati ${files.length} elemento/i`, "success"); return;
+        }
+        const file = files[0];
+        if (file.data.kind === 'directory') { if (!confirm(`Copiare "${file.data.name}"?`)) return; await copyDiskDirectory(file.handle, await state.handles[d].getDirectoryHandle(file.data.name, { create: true })); await refreshRelevantPanes(state.paths[s], state.paths[d]); showToast(`Copiata: ${file.data.name}`, "success"); return; }
+        copyTargetData = { handle: file.handle, data: file.data, dest: d };
+        document.getElementById('copy-src-name').textContent = file.data.name;
+        document.getElementById('copy-dst-path').textContent = state.paths[d] || '/';
+        document.getElementById('copy-new-name').value = file.data.name;
+        document.getElementById('copy-error').textContent = '';
+        document.getElementById('copy-modal-overlay').classList.add('active');
+        document.getElementById('copy-new-name').focus();
+        document.getElementById('copy-new-name').select();
+    }
+    function closeCopyModal() { document.getElementById('copy-modal-overlay').classList.remove('active'); copyTargetData = null; document.getElementById(`list-${state.active}`).focus(); }
+    async function executeCopy() {
+        if (!copyTargetData) return;
+        const inp = document.getElementById('copy-new-name'), ed = document.getElementById('copy-error');
+        let nn = inp.value.trim();
+        if (nn && /[\/\\:*?"<>|]/.test(nn)) { ed.textContent = "Caratteri non validi."; inp.focus(); return; }
+        if (!nn) nn = copyTargetData.data.name;
+        try {
+            const f = await copyTargetData.handle.getFile(), c = await f.arrayBuffer(), h = await state.handles[copyTargetData.dest].getFileHandle(nn, { create: true }), w = await h.createWritable(); await w.write(c); await w.close();
+            closeCopyModal(); await refreshRelevantPanes(state.paths[copyTargetData.dest]);
+            showToast(nn !== copyTargetData.data.name ? `Copiato come: ${nn}` : `Copiato: ${nn}`, "success");
+        } catch (e) { ed.textContent = "Errore: " + e.message; }
+    }
+
+    async function handleZip() {
+        if (inMemoryZip) return showToast("Impossibile dentro ZIP", "error");
+        const s = state.active, d = s === 'left' ? 'right' : 'left';
+        if (!state.handles[s] || !state.handles[d]) return showToast("Servono src e dst", "error");
+        const files = await getDiskHandles(s); if (!files.length) return showToast("Nessun elemento", "error");
+        const n = prompt("Nome archivio:", "archivio.zip"); if (!n) return;
+        const zn = n.toLowerCase().endsWith('.zip') ? n : n + '.zip';
+        showProgress("CREAZIONE ARCHIVIO ZIP"); updateProgress(0, 'Scansione strutture...');
+        try {
+            async function sar(dh, bp = '') {
+                const it = [];
+                for await (const e of dh.values()) {
+                    if (e.kind === 'file') { const f = await e.getFile(), dt = await f.arrayBuffer(); it.push({ path: bp + e.name, type: 'file', data: dt }); }
+                    else { it.push({ path: bp + e.name, type: 'dir', data: null }); const sd = await dh.getDirectoryHandle(e.name), si = await sar(sd, bp + e.name + '/'); it.push(...si); }
+                } return it;
+            }
+            let ai = [];
+            for (const i of files) {
+                if (i.data.kind === 'file') { const f = await i.handle.getFile(), dt = await f.arrayBuffer(); ai.push({ path: i.data.name, type: 'file', data: dt }); }
+                else if (i.data.kind === 'directory') { ai.push({ path: i.data.name, type: 'dir', data: null }); const si = await sar(i.handle, i.data.name + '/'); ai.push(...si); }
+            }
+            const fz = ai.filter(i => i.type === 'file');
+            if (!fz.length) { hideProgress(); return showToast("Nessun contenuto", "error"); }
+            updateProgress(5, `${fz.length} file`);
+            const z = new JSZip(); ai.forEach(i => { if (i.type === 'dir') z.folder(i.path); else z.file(i.path, i.data); });
+            updateProgress(60, 'Compressione DEFLATE...', 'Letti: ' + formatSize(fz.reduce((a, b) => a + b.data.byteLength, 0)));
+            const b = await z.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } }, function (m) { updateProgress(60 + (m.percent * 0.4), 'Compressione...'); });
+            updateProgress(95, 'Scrittura...', 'Finale: ' + formatSize(b.size));
+            const h = await state.handles[d].getFileHandle(zn, { create: true }), w = await h.createWritable(); await w.write(b); await w.close();
+            updateProgress(100, 'Completato', `${fz.length} file | ${formatSize(b.size)}`);
+            await refreshRelevantPanes(state.paths[d]);
+            document.getElementById('status-bar').innerText = `ZIP CREATO: ${zn} (${fz.length} elem)`;
+            await new Promise(r => setTimeout(r, 500)); hideProgress(); showToast(`ZIP creato: ${zn} (${formatSize(b.size)})`, "success");
+        } catch (e) { hideProgress(); document.getElementById('status-bar').innerText = "ERRORE ZIP"; showToast("Errore ZIP: " + e.message, "error"); }
+    }
+
+    async function handleF6() {
+        if (inMemoryZip) return showToast("Impossibile dentro ZIP", "error");
+        const s = state.active, d = s === 'left' ? 'right' : 'left';
+        if (!state.handles[s] || !state.handles[d]) return showToast("Servono src e dst", "error");
+        const f = await getDiskHandles(s); if (!f.length) return showToast("Nessun elemento", "error");
+        if (!confirm("Spostare gli elementi?")) return;
+        try {
+            for (const i of f) {
+                try {
+                    if (i.data.kind === 'file') { const fl = await i.handle.getFile(), c = await fl.arrayBuffer(), h = await state.handles[d].getFileHandle(i.data.name, { create: true }), w = await h.createWritable(); await w.write(c); await w.close(); }
+                    else { await copyDiskDirectory(i.handle, await state.handles[d].getDirectoryHandle(i.data.name, { create: true })); }
+                } catch (e) { }
+            }
+            for (const i of f) { try { await state.handles[s].removeEntry(i.data.name, { recursive: true }); } catch (e) { } }
+            await refreshRelevantPanes(state.paths[s], state.paths[d]);
+            showToast("Spostati", "success");
+        } catch (e) { showToast("Errore: " + e.message, "error"); }
+    }
+
+    async function handleF7() {
+        if (inMemoryZip) return showToast("Impossibile dentro ZIP", "error");
+        const p = state.active; if (!state.handles[p]) return showToast("Nessuna cartella aperta", "error");
+        const n = prompt("Nome cartella:"); if (!n) return;
+        try { await state.handles[p].getDirectoryHandle(n, { create: true }); await refreshRelevantPanes(state.paths[p]); showToast(`Creata: ${n}`, "success"); } catch (e) { showToast(e.message, "error"); }
+    }
+
+    async function handleF8(silent = false) {
+        if (inMemoryZip) return;
+        const p = state.active; if (!state.handles[p]) return;
+        const files = await getDiskHandles(p); if (!files.length) return;
+        if (!silent && !confirm(`Eliminare ${files.length} elemento/i?`)) return;
+        let count = 0;
+        for (const i of files) { try { await state.handles[p].removeEntry(i.data.name, { recursive: true }); count++; } catch (e) { if (!silent) showToast(`Err: ${i.data.name}`, "error"); } }
+        await refreshRelevantPanes(state.paths[p]);
+        if (!silent) showToast(`Eliminati ${count} elemento/i`, "success");
+    }
+
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { if (document.getElementById('path-modal-overlay').classList.contains('active')) { closePathModal(); e.preventDefault(); return; } if (document.getElementById('search-modal-overlay').classList.contains('active')) { closeSearchModal(); e.preventDefault(); return; } }
+        if (e.key === 'Escape') {
+            if (document.getElementById('copy-modal-overlay').classList.contains('active')) { closeCopyModal(); e.preventDefault(); return; }
+            if (document.getElementById('rename-modal-overlay').classList.contains('active')) { closeRenameModal(); e.preventDefault(); return; }
+            if (document.getElementById('path-modal-overlay').classList.contains('active')) { closePathModal(); e.preventDefault(); return; }
+            if (document.getElementById('search-modal-overlay').classList.contains('active')) { closeSearchModal(); e.preventDefault(); return; }
+        }
+        if (e.key === 'Enter' && document.getElementById('copy-modal-overlay').classList.contains('active')) { e.preventDefault(); executeCopy(); return; }
         if (e.key === 'Enter' && document.getElementById('search-modal-overlay').classList.contains('active')) { e.preventDefault(); executeSearch(); return; }
+        if (e.key === 'Enter' && document.getElementById('rename-modal-overlay').classList.contains('active')) { e.preventDefault(); executeRename(); return; }
         if (e.ctrlKey && e.key === 'f') { e.preventDefault(); openSearchModal(); return; }
-        
-        const list = document.getElementById(`list-${state.active}`); const files = state.files[state.active]; const sa = Array.from(state.selected[state.active]).sort((a,b)=>a-b); const ci = sa.length > 0 ? sa[sa.length - 1] : -1;
+        if (document.querySelector('.modal-overlay.active')) return;
+
+        const list = document.getElementById(`list-${state.active}`), files = state.files[state.active];
+        const sa = Array.from(state.selected[state.active]).sort((a, b) => a - b);
+        const ci = sa.length > 0 ? sa[sa.length - 1] : -1;
+
         if (e.key === 'Tab') { e.preventDefault(); setActive(state.active === 'left' ? 'right' : 'left'); }
         else if (e.key === 'Backspace') { e.preventDefault(); navigateBack(state.active); }
+        else if (e.key === 'Delete') { e.preventDefault(); handleF8(); }
+        else if (e.key === 'F2' && e.shiftKey) { e.preventDefault(); e.stopPropagation(); handleRename(); }
         else if (e.key === 'F2') { e.preventDefault(); refreshPane(state.active); }
         else if (e.key === 'F3') { e.preventDefault(); handleF3(); }
         else if (e.key === 'F4') { e.preventDefault(); handleF4(); }
@@ -471,10 +705,14 @@
         else if (e.key === 'F6') { e.preventDefault(); handleF6(); }
         else if (e.key === 'F7') { e.preventDefault(); handleF7(); }
         else if (e.key === 'F8') { e.preventDefault(); handleF8(); }
-        else if (e.key === 'ArrowDown') { e.preventDefault(); let n = ci + 1; if (n < files.length) { if (!e.shiftKey && !e.ctrlKey) state.selected[state.active].clear(); state.selected[state.active].add(n); updateSelectionUI(state.active); list.children[n]?.scrollIntoView({block:'nearest'}); } }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); let p = ci - 1; if (p >= 0) { if (!e.shiftKey && !e.ctrlKey) state.selected[state.active].clear(); state.selected[state.active].add(p); updateSelectionUI(state.active); list.children[p]?.scrollIntoView({block:'nearest'}); } }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); let n = ci + 1; if (n < files.length) { if (!e.shiftKey && !e.ctrlKey) state.selected[state.active].clear(); state.selected[state.active].add(n); updateSelectionUI(state.active); list.children[n]?.scrollIntoView({ block: 'nearest' }); } }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); let p = ci - 1; if (p >= 0) { if (!e.shiftKey && !e.ctrlKey) state.selected[state.active].clear(); state.selected[state.active].add(p); updateSelectionUI(state.active); list.children[p]?.scrollIntoView({ block: 'nearest' }); } }
         else if (e.key === 'Enter') { e.preventDefault(); if (ci >= 0) { const f = files[ci]; if (f.isUp) navigateBack(state.active); else if (f.kind === 'directory') navigateInto(state.active, f.name); else openFile(state.active, f.name); } }
     });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'F2' && e.shiftKey) { e.preventDefault(); e.stopPropagation(); if (!document.querySelector('.modal-overlay.active')) handleRename(); }
+    }, true);
 
     document.getElementById('list-left').focus();
 </script>
