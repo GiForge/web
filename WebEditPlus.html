@@ -146,7 +146,7 @@ button.toggle-on{
 
 .menu-lang select{width:100%;border-radius:4px}
 
-/* ===== MOBILE CONTEXT MENU (da pulsante ⋮) ===== */
+/* ===== MOBILE CONTEXT MENU ===== */
 .mobile-ctx-menu{
     display:none;
     position:fixed;
@@ -183,7 +183,7 @@ button.toggle-on{
 
 .mobile-ctx-menu button:active i{color:white}
 
-/* ===== SELECTION ACTION BAR (smartphone) ===== */
+/* ===== SELECTION ACTION BAR ===== */
 .selection-bar{
     display:none;
     position:fixed;
@@ -217,7 +217,6 @@ button.toggle-on{
 
 .selection-bar button:active{background:var(--accent)}
 
-/* Freccina sotto la bar */
 .selection-bar::after{
     content:'';
     position:absolute;
@@ -292,7 +291,37 @@ button.toggle-on{
     touch-action:manipulation;
 }
 
-/* ===== SEPARATORE ===== */
+/* ===== TOAST NOTIFICA SALVATAGGIO ===== */
+.save-toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:#2ea043;
+    color:#fff;
+    padding:10px 22px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:600;
+    box-shadow:0 4px 20px rgba(0,0,0,.5);
+    z-index:9999;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s, transform .25s;
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.save-toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+}
+
+.save-toast.warn{
+    background:#d29922;
+}
+
 .toolbar-sep{
     width:1px;
     height:24px;
@@ -313,7 +342,6 @@ button.toggle-on{
 <div id="toolbar">
     <div class="actions">
 
-        <!-- MENU PRINCIPALE -->
         <div class="menu-wrapper">
             <button class="menu-btn" onclick="toggleMenu()">
                 <i class="fas fa-bars"></i><span>Menu</span>
@@ -356,7 +384,6 @@ button.toggle-on{
 
         <div class="toolbar-sep"></div>
 
-        <!-- FONT E WRAP -->
         <button onclick="decreaseFont()" title="Riduci font">A−</button>
         <button onclick="increaseFont()" title="Aumenta font">A+</button>
 
@@ -368,7 +395,6 @@ button.toggle-on{
 
         <div class="toolbar-sep"></div>
 
-        <!-- MENU CONTESTUALE (手机用) -->
         <button id="ctxMenuBtn" onclick="openEditorContextMenu()" title="Menu contestuale">
             <i class="fas fa-ellipsis-vertical"></i>
         </button>
@@ -389,7 +415,7 @@ button.toggle-on{
 
 <div id="editor-container"></div>
 
-<!-- Barra azioni selezione (smartphone, appare automaticamente) -->
+<!-- Barra azioni selezione -->
 <div id="selectionBar" class="selection-bar">
     <button onclick="mobileAction('selectAll')" title="Seleziona tutto"><i class="fas fa-object-group"></i></button>
     <button onclick="mobileAction('copy')" title="Copia"><i class="fas fa-copy"></i></button>
@@ -397,12 +423,18 @@ button.toggle-on{
     <button onclick="mobileAction('paste')" title="Incolla"><i class="fas fa-paste"></i></button>
 </div>
 
-<!-- Menu contestuale mobile (da pulsante ⋮) -->
+<!-- Menu contestuale mobile -->
 <div id="mobileCtxMenu" class="mobile-ctx-menu">
     <button onclick="mobileAction('selectAll')"><i class="fas fa-object-group"></i> Seleziona tutto</button>
     <button onclick="mobileAction('copy')"><i class="fas fa-copy"></i> Copia</button>
     <button onclick="mobileAction('cut')"><i class="fas fa-cut"></i> Taglia</button>
     <button onclick="mobileAction('paste')"><i class="fas fa-paste"></i> Incolla</button>
+</div>
+
+<!-- Toast di conferma salvataggio -->
+<div id="saveToast" class="save-toast">
+    <i class="fas fa-check-circle"></i>
+    <span id="saveToastMsg">File salvato</span>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs/loader.min.js"></script>
@@ -420,9 +452,24 @@ let menuOpen = false;
 let mobileCtxOpen = false;
 let selBarTimer = null;
 
+/* ===== TOAST SALVATAGGIO ===== */
+let toastTimer = null;
+function showSaveToast(message, isWarn) {
+    var toast = document.getElementById('saveToast');
+    var msg = document.getElementById('saveToastMsg');
+    msg.textContent = message || 'File salvato';
+    toast.classList.toggle('warn', !!isWarn);
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() {
+        toast.classList.remove('show');
+    }, 2200);
+}
+
 /* ===== MONACO INIT ===== */
 require.config({paths:{vs:'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.36.1/min/vs'}});
-require(['vs/editor/editor.main'],()=>{
+require(['vs/editor/editor.main'],function(){
+
     editor = monaco.editor.create(document.getElementById('editor-container'),{
         theme:'vs-dark',
         language:'plaintext',
@@ -432,7 +479,27 @@ require(['vs/editor/editor.main'],()=>{
         contextmenu: !isTouchDevice
     });
 
-    /* Select All (funziona nel menu contestuale desktop e nelle nostre UI mobile) */
+    /* === CTRL+S → Salva === */
+    editor.addAction({
+        id:'cloudedit-save',
+        label:'Salva',
+        keybindings:[monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+        run:function(ed){
+            saveFile();
+        }
+    });
+
+    /* === CTRL+SHIFT+S → Salva con nome === */
+    editor.addAction({
+        id:'cloudedit-save-as',
+        label:'Salva con nome',
+        keybindings:[monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS],
+        run:function(ed){
+            saveFileAs();
+        }
+    });
+
+    /* Select All */
     editor.addAction({
         id:'context-select-all',
         label:'Select All',
@@ -445,40 +512,32 @@ require(['vs/editor/editor.main'],()=>{
     });
 
     // === GESTIONE AVVIO DA FILE MANAGER ===
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasLoadParam = urlParams.get('load');
+    var urlParams = new URLSearchParams(window.location.search);
+    var hasLoadParam = urlParams.get('load');
 
     if (hasLoadParam) {
         try {
-            // 1. Legge la stringa grezza (non usa più JSON)
-            const rawTransfer = localStorage.getItem('webEditPlus_transfer');
+            var rawTransfer = localStorage.getItem('webEditPlus_transfer');
             
             if (rawTransfer && rawTransfer.length > 10) {
-                // 2. Cancella immediatamente la memoria
                 localStorage.removeItem('webEditPlus_transfer');
                 
-                // 3.estrae i dati usando gli indicatori di inizio/fine (ignora eventuali errori di codifica)
-                const fileNameStart = rawTransfer.indexOf('|||N_START|||') + 14;
-                const fileNameEnd = rawTransfer.indexOf('|||N_END|||');
-                const filePathStart = rawTransfer.indexOf('|||P_START|||') + 14;
-                const filePathEnd = rawTransfer.indexOf('|||P_END|||');
-                const contentStart = rawTransfer.indexOf('|||C_START|||') + 14;
-                const contentEnd = rawTransfer.indexOf('|||C_END|||');
+                var fileNameStart = rawTransfer.indexOf('|||N_START|||') + 14;
+                var fileNameEnd = rawTransfer.indexOf('|||N_END|||');
+                var filePathStart = rawTransfer.indexOf('|||P_START|||') + 14;
+                var filePathEnd = rawTransfer.indexOf('|||P_END|||');
+                var contentStart = rawTransfer.indexOf('|||C_START|||') + 14;
+                var contentEnd = rawTransfer.indexOf('|||C_END|||');
 
-                const fileName = rawTransfer.substring(fileNameStart, fileNameEnd);
-                const filePath = rawTransfer.substring(filePathStart, filePathEnd);
-                const content = rawTransfer.substring(contentStart, contentEnd);
+                var fileName = rawTransfer.substring(fileNameStart, fileNameEnd);
+                var filePath = rawTransfer.substring(filePathStart, filePathEnd);
+                var content = rawTransfer.substring(contentStart, contentEnd);
 
                 if (fileName && content) {
-                    // 4. Indovina il linguaggio dall'estensione del file
-                    const lang = getLang(fileName);
-                    
-                    // 5. Crea la scheda con il contenuto reale
+                    var lang = getLang(fileName);
                     createTab(fileName, content, lang, null);
-                    
-                    // 6. Aggiorna il titolo della pagina
                     if (filePath) {
-                        document.title = `Modifica: ${filePath}`;
+                        document.title = 'Modifica: ' + filePath;
                     }
                 } else {
                     console.error("Formato dati non valido.");
@@ -491,10 +550,9 @@ require(['vs/editor/editor.main'],()=>{
         } catch (e) {
             console.error("Errore lettura dati da localStorage:", e);
             alert("Impossibile caricare il file dal File Manager.\nDettagli: " + e.message);
-            newFile(); // Fallback: apre un file vuoto
+            newFile();
         }
     } else {
-        // Se aperto normalmente (senza parametri), crea un file "Senza nome"
         newFile();
     }
 
@@ -505,13 +563,11 @@ require(['vs/editor/editor.main'],()=>{
         }
     });
 
-    /* === Selezione su smartphone: barra azioni automatica === */
+    /* === Selezione su smartphone === */
     if(isTouchDevice){
         editor.onDidChangeCursorSelection(function(e){
             clearTimeout(selBarTimer);
-
             if(!e.selection.isEmpty()){
-                /* Aspetta che l'utente finisca di trascinare la selezione */
                 selBarTimer = setTimeout(function(){
                     positionSelectionBar(e.selection);
                 }, 350);
@@ -529,14 +585,28 @@ require(['vs/editor/editor.main'],()=>{
         if(mobileCtxOpen && !e.target.closest('.mobile-ctx-menu') && !e.target.closest('#ctxMenuBtn')){
             closeMobileCtxMenu();
         }
-        /* Chiudi barra selezione toccando fuori dall'editor */
         if(isTouchDevice && !e.target.closest('.selection-bar') && !e.target.closest('#editor-container')){
             hideSelectionBar();
         }
     });
-}); // <--- CHIUSURA CORRETTA DEL BLOCCO REQUIRE DI MONACO
 
-/* ===== SELECTION BAR (smartphone) ===== */
+}); // fine require
+
+/* ===== INTERCETTA CTRL+S A LIVELLO GLOBALE (fallback) ===== */
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.shiftKey) {
+            saveFileAs();
+        } else {
+            saveFile();
+        }
+    }
+}, true); // capture phase per avere la precedenza sul browser
+
+
+/* ===== SELECTION BAR ===== */
 function positionSelectionBar(selection){
     var bar = document.getElementById('selectionBar');
     var startPos = selection.getStartPosition();
@@ -564,7 +634,7 @@ function hideSelectionBar(){
     document.getElementById('selectionBar').classList.remove('visible');
 }
 
-/* ===== MOBILE CONTEXT MENU (da ⋮) ===== */
+/* ===== MOBILE CONTEXT MENU ===== */
 function openEditorContextMenu(){
     if(!editor) return;
     closeMenu();
@@ -665,7 +735,7 @@ function createTab(name,content,lang,handle){
                 tab.name=inp.value;
                 title.textContent=tab.name;
                 el.replaceChild(title,inp);
-                fileNameDisplay.textContent=tab.name;
+                document.getElementById('fileNameDisplay').textContent=tab.name;
             }
         };
     };
@@ -686,8 +756,8 @@ function switchTab(id){
     activeTab=tabs.find(function(t){return t.id===id;});
     editor.setModel(activeTab.model);
     document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.id===id);});
-    fileNameDisplay.textContent=activeTab.name;
-    languageSelector.value=activeTab.model.getLanguageId();
+    document.getElementById('fileNameDisplay').textContent=activeTab.name;
+    document.getElementById('languageSelector').value=activeTab.model.getLanguageId();
 }
 
 function closeTab(id){
@@ -716,7 +786,10 @@ async function saveFile(){
         var w=await activeTab.handle.createWritable();
         await w.write(editor.getValue());
         await w.close();
-    }catch(e){}
+        showSaveToast('File salvato: ' + activeTab.name);
+    }catch(e){
+        showSaveToast('Errore durante il salvataggio', true);
+    }
 }
 
 async function saveFileAs(){
@@ -730,13 +803,19 @@ async function saveFileAs(){
         activeTab.name=newName;
         var tabEl=document.querySelector('.tab[data-id="'+activeTab.id+'"] span');
         if(tabEl) tabEl.textContent=newName;
-        fileNameDisplay.textContent=newName;
+        document.getElementById('fileNameDisplay').textContent=newName;
         var newLang=getLang(newName);
         if(newLang!==activeTab.model.getLanguageId()){
             monaco.editor.setModelLanguage(activeTab.model,newLang);
-            languageSelector.value=newLang;
+            document.getElementById('languageSelector').value=newLang;
         }
-    }catch(e){}
+        showSaveToast('File salvato: ' + newName);
+    }catch(e){
+        /* L'utente ha annullato il dialogo, nessun messaggio */
+        if(e.name !== 'AbortError'){
+            showSaveToast('Errore durante il salvataggio', true);
+        }
+    }
 }
 
 /* ===== SEARCH ===== */
@@ -781,7 +860,7 @@ function getLang(name){
 }
 
 function changeLanguage(){
-    monaco.editor.setModelLanguage(activeTab.model,languageSelector.value);
+    monaco.editor.setModelLanguage(activeTab.model,document.getElementById('languageSelector').value);
 }
 </script>
 </body>
