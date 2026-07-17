@@ -88,7 +88,7 @@ button.toggle-on{
     display:none;
     position:absolute;
     top:calc(100% + 4px);
-    left:0;
+    left:0; /* Forza l'allineamento a sinistra rispetto al pulsante Menu */
     min-width:240px;
     background:var(--menu-bg);
     border:1px solid var(--border);
@@ -115,6 +115,7 @@ button.toggle-on{
     justify-content:flex-start;
     font-size:13px;
     gap:10px;
+    text-align:left; /* Assicura che il testo sia allineato a sinistra */
 }
 
 .menu-panel button:hover{background:var(--accent)}
@@ -194,6 +195,7 @@ button.toggle-on{
     justify-content:flex-start;
     font-size:14px;
     gap:10px;
+    text-align:left; /* Assicura che il testo sia allineato a sinistra */
 }
 
 .mobile-ctx-menu button:active{background:var(--accent)}
@@ -726,8 +728,9 @@ function openEditorContextMenu(){
         var rect = btn.getBoundingClientRect();
         var menu = document.getElementById('mobileCtxMenu');
         menu.style.top = (rect.bottom + 4) + 'px';
-        menu.style.right = (window.innerWidth - rect.right) + 'px';
-        menu.style.left = 'auto';
+        /* Allinea il menu a sinistra dello schermo */
+        menu.style.left = '8px'; 
+        menu.style.right = 'auto';
         menu.classList.add('open');
         mobileCtxOpen = true;
     } else {
