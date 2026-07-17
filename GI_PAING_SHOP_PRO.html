@@ -1718,77 +1718,26 @@ class PaintShopApp {
     document.getElementById('fileInputSingle').value = '';
   }
   
- // ===== Salvataggio con scelta cartella (File System Access API) =====
-  async saveImage(saveAs = false) {
+  saveImage(saveAs = false) {
     if (!this.activeImage) return;
     const img = this.activeImage;
-
-    // 1. Prepara il canvas per il salvataggio (unione di tutti i livelli)
+    // Export as PNG by default
     const flat = document.createElement('canvas');
-    flat.width = img.width; 
-    flat.height = img.height;
+    flat.width = img.width; flat.height = img.height;
     img.renderTo(flat.getContext('2d'), true);
-
-    // 2. Determina estensione e mime type in base al nome corrente o default PNG
     const ext = img.name.split('.').pop().toLowerCase();
     let mime = 'image/png';
-    let fileExt = '.png';
-    
-    if (ext === 'jpg' || ext === 'jpeg') {
-      mime = 'image/jpeg';
-      fileExt = '.jpg';
-    } else if (ext === 'webp') {
-      mime = 'image/webp';
-      fileExt = '.webp';
-    } else if (ext === 'bmp') {
-      mime = 'image/bmp';
-      fileExt = '.bmp';
-    }
-
-    // 3. Crea il Blob dall'immagine
-    const blob = await new Promise(resolve => flat.toBlob(resolve, mime, 0.95));
-
-    // 4. Controlla se il browser supporta la scelta della cartella
-    if (window.showSaveFilePicker) {
-      try {
-        // Apre la finestra di dialogo nativa "Salva con nome"
-        const handle = await window.showSaveFilePicker({
-          suggestedName: img.name.replace(/\.[^.]+$/, '') + fileExt,
-          types: [{
-            description: 'File Immagine',
-            accept: { [mime]: [fileExt] }
-          }]
-        });
-
-        // Scrive il file direttamente sul disco nella cartella scelta
-        const writable = await handle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-
-        // Aggiorna il nome dell'immagine nella tab in base a ciò che l'utente ha digitato
-        img.name = handle.name;
-        this.renderTabs();
-        
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('Errore durante il salvataggio:', err);
-          alert('Si è verificato un errore durante il salvataggio del file.');
-        }
-        // Se l'utente annulla (AbortError), non fare nulla
-      }
-    } else {
-      // 5. FALLBACK per browser non compatibili (Firefox, Safari)
-      // Usa il metodo standard di download forzato
-      console.warn("Il browser non supporta la scelta della cartella. Esecuzione download standard.");
+    if (ext === 'jpg' || ext === 'jpeg') mime = 'image/jpeg';
+    else if (ext === 'webp') mime = 'image/webp';
+    else if (ext === 'bmp') mime = 'image/bmp';
+    flat.toBlob((blob) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = img.name.replace(/\.[^.]+$/, '') + fileExt;
-      document.body.appendChild(a);
+      a.download = img.name.replace(/\.[^.]+$/, '') + (mime === 'image/png' ? '.png' : mime === 'image/jpeg' ? '.jpg' : mime === 'image/webp' ? '.webp' : '.png');
       a.click();
-      document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
+    }, mime, 0.95);
   }
   
   exportImage() {
