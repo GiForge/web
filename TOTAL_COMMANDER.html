@@ -56,19 +56,9 @@
         .btn-sync { padding: 6px 8px; cursor: pointer; background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: bold; font-family: inherit; border-radius: 3px; box-shadow: 0 0 5px var(--accent-glow); transition: all 0.2s; }
         .btn-sync:hover { background: var(--accent); color: var(--bg-main); }
 
-        panels-container { display: flex; flex: 1; overflow: hidden; padding: 6px; gap: 0; position: relative; }
+        #panels-container { display: flex; flex: 1; overflow: hidden; padding: 6px; gap: 0; position: relative; }
         .panel { display: flex; flex-direction: column; border: 1px solid var(--border); background-color: var(--bg-panel); overflow: hidden; border-radius: 4px; transition: border-color 0.2s, box-shadow 0.2s; min-width: 150px; }
-##############
         .panel.active { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow), inset 0 0 15px rgba(0, 243, 255, 0.03); }
-        
-        /* Colori bordo diversi per i due pannelli */
-        #panel-left { border-color: var(--green); }
-        #panel-left.active { border-color: var(--green); box-shadow: 0 0 12px rgba(126, 231, 135, 0.15), inset 0 0 15px rgba(0, 243, 255, 0.03); }
-        
-        #panel-right { border-color: var(--yellow); }
-        #panel-right.active { border-color: var(--yellow); box-shadow: 0 0 12px rgba(255, 166, 87, 0.15), inset 0 0 15px rgba(255, 166, 87, 0.03); }
-##############
-        
         .file-header { display: flex; padding: 5px 8px; background-color: var(--bg-header); border-bottom: 1px solid var(--border); font-weight: bold; font-size: 12px; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; align-items: stretch; }
         .file-header > div.col-cell { padding: 2px; overflow: hidden; }
         .file-header > div.sortable { cursor: pointer; border-radius: 2px; }
