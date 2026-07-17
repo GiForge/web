@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertitore Universale Docx / Markdown</title>
+    
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --secondary: #8b5cf6;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-main);
+            background-color: var(--bg);
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05);
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 8px;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            color: var(--text-main);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            font-size: 0.95rem;
+        }
+
+        .tabs-container {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 14px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 0;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover { color: var(--primary); background-color: #f1f5f9; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .upload-section, .textarea-section {
+            margin-bottom: 32px;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            background-color: #fcfcfd;
+        }
+        
+        .upload-section { align-items: center; padding: 40px; }
+
+        .upload-section.dragover {
+            border-color: var(--primary);
+            background-color: #eeebff;
+            transform: scale(1.01);
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 14px 28px;
+            background-color: var(--primary);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(79,70,229,0.2);
+            text-align: center;
+        }
+
+        .file-label:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        .file-label input { display: none; }
+
+        .file-name {
+            margin-top: 16px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .drag-text { margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); }
+
+        .md-textarea {
+            width: 100%;
+            height: 180px;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            color: #334155;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .md-textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
+        button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        .convert-btn { background-color: var(--success); color: white; }
+        .download-btn { background-color: var(--secondary); color: white; }
+        .copy-btn { background-color: var(--warning); color: white; }
+
+        .result-container {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .result-header {
+            background-color: #f8fafc;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-header h2 { font-size: 1rem; font-weight: 700; color: var(--text-main); }
+
+        .result-content {
+            padding: 20px;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #334155;
+            background: transparent;
+        }
+
+        /* Stili Anteprima Microsoft Word Leggibile */
+        .word-preview {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #1e293b;
+            background: #ffffff;
+        }
+        .word-preview h1 { text-align: left; font-size: 20pt; font-weight: bold; margin-bottom: 10pt; color: #1e293b; letter-spacing: normal; }
+        .word-preview h2 { font-size: 15pt; font-weight: bold; margin-top: 16pt; margin-bottom: 6pt; color: #1e293b; }
+        .word-preview h3 { font-size: 13pt; font-weight: bold; margin-top: 12pt; margin-bottom: 4pt; color: #1e293b; }
+        .word-preview p { margin-bottom: 8pt; }
+        .word-preview ul, .word-preview ol { margin-bottom: 8pt; padding-left: 18pt; }
+        .word-preview li { margin-bottom: 3pt; }
+        .word-preview strong { font-weight: bold; }
+        .word-preview em { font-style: italic; }
+        .word-preview code { font-family: Consolas, monospace; font-size: 10pt; background: #f1f5f9; padding: 2px 4px; border-radius: 4px; }
+        .word-preview pre { font-family: Consolas, monospace; font-size: 10pt; background: #f8fafc; padding: 8pt; margin-bottom: 10pt; border: 1px solid #e2e8f0; border-radius: 6px; }
+        .word-preview blockquote { border-left: 4px solid #cbd5e1; padding-left: 12pt; color: #64748b; margin: 10pt 0; }
+        .word-preview table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
+        .word-preview th, .word-preview td { border: 1px solid #cbd5e1; padding: 5pt 8pt; font-size: 10pt; text-align: left; }
+        .word-preview th { background: #f1f5f9; font-weight: bold; }
+        .word-preview a { color: #4f46e5; }
+        .word-preview hr { border: none; border-top: 1px solid #e2e8f0; margin: 14pt 0; }
+
+        .status-ok { color: var(--success); font-weight: 600; }
+        .status-err { color: #ef4444; font-weight: 600; }
+
+        .result-content::-webkit-scrollbar { width: 8px; }
+        .result-content::-webkit-scrollbar-track { background: #f1f5f9; }
+        .result-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Convertitore di Documenti</h1>
+    <p class="subtitle">Trasforma i tuoi file in formato Word o Markdown in un click.</p>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('docx-to-md', this)">Word ➔ Markdown</button>
+        <button class="tab-btn" onclick="switchTab('md-to-docx', this)">File MD ➔ Word</button>
+        <button class="tab-btn" onclick="switchTab('paste-md', this)">Incolla Markdown ➔ Word</button>
+    </div>
+
+    <div id="docx-to-md" class="tab-content active">
+        <div class="upload-section" id="docx-drop-zone">
+            <label for="docx-file" class="file-label">
+                <span>Seleziona Documento Word (.docx)</span>
+                <input type="file" id="docx-file" accept=".docx" />
+            </label>
+            <div class="drag-text">oppure trascina il file qui</div>
+            <div class="file-name" id="docx-file-name">Nessun file selezionato</div>
+        </div>
+
+        <div class="button-container">
+            <button id="docx-convert-btn" class="convert-btn" disabled>⚡ Converti ora</button>
+            <button id="docx-download-btn" class="download-btn" disabled>⬇ Scarica .md</button>
+            <button id="docx-copy-btn" class="copy-btn" disabled>📋 Copia testo</button>
+        </div>
+
+        <div class="result-container">
+            <div class="result-header"><h2>Anteprima Markdown</h2></div>
+            <div class="result-content">
+                <pre id="markdown-result">Il risultato della conversione apparirà qui...</pre>
+            </div>
+        </div>
+    </div>
+
+    <div id="md-to-docx" class="tab-content">
+        <div class="upload-section" id="md-drop-zone">
+            <label for="md-file" class="file-label">
+                <span>Seleziona File Markdown (.md)</span>
+                <input type="file" id="md-file" accept=".md,.txt" />
+            </label>
+            <div class="drag-text">oppure trascina il file qui</div>
+            <div class="file-name" id="md-file-name">Nessun file selezionato</div>
+        </div>
+
+        <div class="button-container">
+            <button id="md-convert-btn" class="convert-btn" disabled>⚡ Converti ora</button>
+            <button id="md-download-btn" class="download-btn" disabled>⬇ Scarica .docx</button>
+        </div>
+
+        <div class="result-container">
+            <div class="result-header"><h2>Stato Conversione</h2></div>
+            <div class="result-content">
+                <pre id="docx-result">L'anteprima dello stato di conversione apparirà qui...</pre>
+            </div>
+        </div>
+    </div>
+
+    <div id="paste-md" class="tab-content">
+        <div class="textarea-section">
+            <p style="font-weight: 600; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-main);">Incolla qui il tuo testo Markdown (.md):</p>
+            <textarea id="paste-md-textarea" class="md-textarea" placeholder="# Titolo principale&#10;&#10;Questo è un testo di esempio in **grassetto** e *corsivo*.&#10;&#10;- Elemento lista 1&#10;- Elemento lista 2"></textarea>
+        </div>
+
+        <div class="button-container">
+            <button id="paste-convert-btn" class="convert-btn">👁 Visualizza Anteprima Word</button>
+            <button id="paste-download-btn" class="download-btn" disabled>⬇ Scarica .docx</button>
+        </div>
+
+        <div class="result-container">
+            <div class="result-header"><h2>Anteprima in Modalità Word (Leggibile)</h2></div>
+            <div class="result-content">
+                <div id="word-preview-area" class="word-preview">
+                    <p style="color: var(--text-muted); font-style: italic;">Incolla del testo e clicca su "Visualizza Anteprima Word" per generare la pagina...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://unpkg.com/turndown/dist/turndown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.js"></script>
+
+<script>
+    // --- TAB SWITCHING (Globale) ---
+    function switchTab(tabId, btnEl) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btnEl.classList.add('active');
+    }
+
+    // --- TEMPLATE STRUTTURA WORD ---
+    const getWordHtmlContainer = (htmlBody) => `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body        { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1e293b; }
+  h1          { font-size: 20pt; font-weight: bold; margin-bottom: 10pt; color: #1e293b; }
+  h2          { font-size: 15pt; font-weight: bold; margin-top: 16pt; margin-bottom: 6pt; color: #1e293b; }
+  h3          { font-size: 13pt; font-weight: bold; margin-top: 12pt; margin-bottom: 4pt; color: #1e293b; }
+  p           { margin-bottom: 8pt; }
+  ul, ol      { margin-bottom: 8pt; padding-left: 18pt; }
+  li          { margin-bottom: 3pt; }
+  strong      { font-weight: bold; }
+  em          { font-style: italic; }
+  code        { font-family: Consolas, monospace; font-size: 10pt; background: #f1f5f9; }
+  pre         { font-family: Consolas, monospace; font-size: 10pt; background: #f8fafc; padding: 8pt; margin-bottom: 10pt; border: 1px solid #e2e8f0; }
+  blockquote  { border-left: 4px solid #cbd5e1; padding-left: 12pt; color: #64748b; margin: 10pt 0; }
+  table       { border-collapse: collapse; width: 100%; margin: 10pt 0; }
+  th, td      { border: 1px solid #cbd5e1; padding: 5pt 8pt; font-size: 10pt; text-align: left; }
+  th          { background: #f1f5f9; font-weight: bold; }
+  a           { color: #4f46e5; }
+</style>
+</head>
+<body>${htmlBody}</body>
+</html>`;
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // Helper Drag and Drop
+        function setupDragAndDrop(dropZoneId, fileInputId) {
+            const dropZone = document.getElementById(dropZoneId);
+            const fileInput = document.getElementById(fileInputId);
+
+            if(!dropZone || !fileInput) return;
+
+            ['dragenter', 'dragover'].forEach(ev => {
+                dropZone.addEventListener(ev, e => {
+                    e.preventDefault(); e.stopPropagation();
+                    dropZone.classList.add('dragover');
+                });
+            });
+            ['dragleave', 'drop'].forEach(ev => {
+                dropZone.addEventListener(ev, e => {
+                    e.preventDefault(); e.stopPropagation();
+                    dropZone.classList.remove('dragover');
+                });
+            });
+            dropZone.addEventListener('drop', e => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    fileInput.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+
+        setupDragAndDrop('docx-drop-zone', 'docx-file');
+        setupDragAndDrop('md-drop-zone', 'md-file');
+
+        // TAB 1: DOCX → MD
+        const docxInput      = document.getElementById('docx-file');
+        const docxFileName   = document.getElementById('docx-file-name');
+        const docxConvertBtn = document.getElementById('docx-convert-btn');
+        const docxDownloadBtn= document.getElementById('docx-download-btn');
+        const docxCopyBtn    = document.getElementById('docx-copy-btn');
+        const markdownResult = document.getElementById('markdown-result');
+
+        let docxSelectedFile  = null;
+        let convertedMarkdown = '';
+
+        docxInput.addEventListener('change', function (e) {
+            docxSelectedFile = e.target.files[0];
+            if (docxSelectedFile) {
+                docxFileName.textContent = '📄 ' + docxSelectedFile.name;
+                docxConvertBtn.disabled = false;
+                markdownResult.textContent = 'Pronto per la conversione...';
+            }
+        });
+
+        docxConvertBtn.addEventListener('click', function () {
+            if (!docxSelectedFile) return;
+            docxConvertBtn.disabled = true;
+            markdownResult.textContent = 'Conversione in corso...';
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                mammoth.convertToHtml({ arrayBuffer: e.target.result })
+                    .then(function (result) {
+                        const td = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
+                        convertedMarkdown = td.turndown(result.value);
+                        markdownResult.textContent = convertedMarkdown;
+                        docxDownloadBtn.disabled = false;
+                        docxCopyBtn.disabled = false;
+                        docxConvertBtn.disabled = false;
+                    })
+                    .catch(err => {
+                        markdownResult.textContent = 'Errore: ' + err.message;
+                        docxConvertBtn.disabled = false;
+                    });
+            };
+            reader.readAsArrayBuffer(docxSelectedFile);
+        });
+
+        docxDownloadBtn.addEventListener('click', () => {
+            const blob = new Blob([convertedMarkdown], { type: 'text/markdown' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = docxSelectedFile.name.replace(/\.docx$/i, '.md');
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        docxCopyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(convertedMarkdown).then(() => {
+                const old = docxCopyBtn.textContent;
+                docxCopyBtn.textContent = '✓ Copiato!';
+                setTimeout(() => docxCopyBtn.textContent = old, 2000);
+            });
+        });
+
+        // TAB 2: MD FILE → DOCX
+        const mdInput      = document.getElementById('md-file');
+        const mdFileName   = document.getElementById('md-file-name');
+        const mdConvertBtn = document.getElementById('md-convert-btn');
+        const mdDownloadBtn= document.getElementById('md-download-btn');
+        const docxResult   = document.getElementById('docx-result');
+
+        let mdSelectedFile  = null;
+        let finalDocxBlob   = null;
+
+        mdInput.addEventListener('change', function (e) {
+            mdSelectedFile = e.target.files[0];
+            if (mdSelectedFile) {
+                mdFileName.textContent = '📄 ' + mdSelectedFile.name;
+                mdConvertBtn.disabled = false;
+                docxResult.textContent = 'Pronto per la generazione del file Word...';
+            }
+        });
+
+        mdConvertBtn.addEventListener('click', function () {
+            if (!mdSelectedFile) return;
+            mdConvertBtn.disabled = true;
+            docxResult.textContent = 'Generazione documento Word in corso...';
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const htmlBody   = marked.parse(e.target.result);
+                    const fullHtml   = getWordHtmlContainer(htmlBody);
+
+                    finalDocxBlob = htmlDocx.asBlob(fullHtml, {
+                        orientation: 'portrait',
+                        margins: { top: 720, right: 720, bottom: 720, left: 720 }
+                    });
+
+                    docxResult.className = 'status-ok';
+                    docxResult.textContent = '✓ Documento Word generato correttamente.\nClicca "Scarica .docx" per salvarlo.';
+                    mdDownloadBtn.disabled = false;
+                    mdConvertBtn.disabled = false;
+                } catch (err) {
+                    docxResult.className = 'status-err';
+                    docxResult.textContent = '✗ Errore: ' + err.message;
+                    mdConvertBtn.disabled = false;
+                }
+            };
+            reader.readAsText(mdSelectedFile);
+        });
+
+        mdDownloadBtn.addEventListener('click', () => {
+            if (!finalDocxBlob) return;
+            const url = URL.createObjectURL(finalDocxBlob);
+            const a   = document.createElement('a');
+            a.href    = url;
+            a.download = mdSelectedFile.name.replace(/\.(md|txt)$/i, '.docx');
+            if (!a.download.endsWith('.docx')) a.download += '.docx';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // TAB 3: INCOLLA MD
+        const pasteTextArea = document.getElementById('paste-md-textarea');
+        const pasteConvertBtn = document.getElementById('paste-convert-btn');
+        const pasteDownloadBtn = document.getElementById('paste-download-btn');
+        const wordPreviewArea = document.getElementById('word-preview-area');
+        
+        let pastedDocxBlob = null;
+
+        pasteConvertBtn.addEventListener('click', function() {
+            const mdContent = pasteTextArea.value.trim();
+            if(!mdContent) {
+                wordPreviewArea.innerHTML = '<p style="color: #ef4444; font-style: italic;">Inserisci del testo in formato Markdown prima di procedere.</p>';
+                pasteDownloadBtn.disabled = true;
+                return;
+            }
+
+            try {
+                const htmlBody = marked.parse(mdContent);
+                wordPreviewArea.innerHTML = htmlBody;
+                
+                const fullHtml = getWordHtmlContainer(htmlBody);
+                pastedDocxBlob = htmlDocx.asBlob(fullHtml, {
+                    orientation: 'portrait',
+                    margins: { top: 720, right: 720, bottom: 720, left: 720 }
+                });
+
+                pasteDownloadBtn.disabled = false;
+            } catch (err) {
+                wordPreviewArea.innerHTML = '<p class="status-err">Errore nel rendering: ' + err.message + '</p>';
+                pasteDownloadBtn.disabled = true;
+            }
+        });
+
+        pasteDownloadBtn.addEventListener('click', () => {
+            if (!pastedDocxBlob) return;
+            const url = URL.createObjectURL(pastedDocxBlob);
+            const a   = document.createElement('a');
+            a.href    = url;
+            a.download = 'documento_da_markdown.docx';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+    });
+</script>
+</body>
+</html>
