@@ -59,20 +59,39 @@
         #panels-container { display: flex; flex: 1; overflow: hidden; padding: 6px; gap: 0; position: relative; }
         .panel { display: flex; flex-direction: column; border: 1px solid var(--border); background-color: var(--bg-panel); overflow: hidden; border-radius: 4px; transition: border-color 0.2s, box-shadow 0.2s; min-width: 150px; }
         .panel.active { border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow), inset 0 0 15px rgba(0, 243, 255, 0.03); }
+        #panel-right.active { border-color: var(--red); box-shadow: 0 0 12px rgba(255, 123, 114, 0.3), inset 0 0 15px rgba(255, 123, 114, 0.03); }
         .file-header { display: flex; padding: 5px 8px; background-color: var(--bg-header); border-bottom: 1px solid var(--border); font-weight: bold; font-size: 12px; color: var(--text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; align-items: stretch; }
         .file-header > div.col-cell { padding: 2px; overflow: hidden; }
         .file-header > div.sortable { cursor: pointer; border-radius: 2px; }
         .file-header > div.sortable:hover { color: var(--accent); background: var(--bg-hover); }
 
-        .col-resize-handle { width: 7px; flex-shrink: 0; cursor: col-resize; position: relative; margin: 0 -3px; z-index: 5; }
-        .col-resize-handle::before { content: ''; position: absolute; left: 50%; top: 15%; bottom: 15%; width: 1px; background: transparent; transform: translateX(-50%); transition: background 0.15s, box-shadow 0.15s; }
-        .col-resize-handle:hover::before, .col-resize-handle.active::before { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+        .col-resize-handle {
+            width: 7px; flex-shrink: 0; cursor: col-resize; position: relative; margin: 0 -3px; z-index: 5;
+        }
+        .col-resize-handle::before {
+            content: ''; position: absolute; left: 50%; top: 15%; bottom: 15%;
+            width: 1px; background: transparent; transform: translateX(-50%); transition: background 0.15s, box-shadow 0.15s;
+        }
+        .col-resize-handle:hover::before, .col-resize-handle.active::before {
+            background: var(--accent); box-shadow: 0 0 6px var(--accent-glow);
+        }
         .col-resize-handle:hover, .col-resize-handle.active { background: rgba(0, 243, 255, 0.04); }
 
-        .panel-divider { width: 8px; flex-shrink: 0; cursor: col-resize; background: var(--border); border-radius: 4px; transition: background 0.2s, box-shadow 0.2s; position: relative; margin: 0 3px; }
-        .panel-divider::before { content: ''; position: absolute; left: 50%; top: 20%; bottom: 20%; width: 2px; background: transparent; transform: translateX(-50%); border-radius: 1px; transition: background 0.2s, box-shadow 0.2s; }
-        .panel-divider:hover::before, .panel-divider.active::before { background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
-        .panel-divider:hover, .panel-divider.active { background: rgba(0, 243, 255, 0.08); box-shadow: 0 0 12px var(--accent-glow); }
+        .panel-divider {
+            width: 8px; flex-shrink: 0; cursor: col-resize; background: var(--border);
+            border-radius: 4px; transition: background 0.2s, box-shadow 0.2s; position: relative; margin: 0 3px;
+        }
+        .panel-divider::before {
+            content: ''; position: absolute; left: 50%; top: 20%; bottom: 20%;
+            width: 2px; background: transparent; transform: translateX(-50%); border-radius: 1px;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .panel-divider:hover::before, .panel-divider.active::before {
+            background: var(--accent); box-shadow: 0 0 8px var(--accent-glow);
+        }
+        .panel-divider:hover, .panel-divider.active {
+            background: rgba(0, 243, 255, 0.08); box-shadow: 0 0 12px var(--accent-glow);
+        }
 
         .file-list { flex: 1; overflow-y: auto; outline: none; position: relative; }
         .file-list::-webkit-scrollbar { width: 6px; }
@@ -86,17 +105,6 @@
         .col-size { text-align: right; padding-right: 10px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .col-date { text-align: right; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .zip-icon { color: var(--yellow); }
-
-        /* Icone per tipo file */
-        .icon-office { color: #e44d26; }
-        .icon-pdf { color: #ff4444; }
-        .icon-exe { color: var(--purple); }
-        .icon-img { color: #7ee787; }
-        .icon-audio { color: #ffa657; }
-        .icon-video { color: #d2a8ff; }
-        .icon-archive { color: var(--yellow); }
-        .icon-code { color: var(--accent); }
-        .icon-text { color: var(--text-dim); }
 
         #status-bar { padding: 5px 12px; background-color: var(--bg-panel); border-top: 1px solid var(--border); font-size: 12px; color: var(--text-dim); letter-spacing: 0.5px; }
         #function-keys { display: flex; padding: 6px; gap: 6px; background-color: var(--bg-panel); border-top: 1px solid var(--border); flex-wrap: wrap; }
@@ -114,29 +122,15 @@
         .search-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 12px; display: flex; justify-content: space-between; }
         .search-item:hover { background: var(--bg-hover); color: var(--accent); }
         .search-item span.path { color: var(--text-dim); margin-left: 15px; font-size: 11px; }
-        .modal-btns { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+        .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
         .modal-btn { padding: 8px 16px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text-main); font-family: inherit; font-weight: bold; font-size: 12px; border-radius: 4px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; }
         .modal-btn:hover { border-color: var(--accent); color: var(--accent); }
         .modal-btn.primary { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
         .modal-btn.primary:hover { background: var(--accent); color: var(--bg-main); }
         .modal-btn.primary-yellow { background: rgba(255,166,87,0.1); border-color: var(--yellow); color: var(--yellow); }
         .modal-btn.primary-yellow:hover { background: var(--yellow); color: var(--bg-main); }
-        .modal-btn.primary-green { background: rgba(126,231,135,0.1); border-color: var(--green); color: var(--green); }
-        .modal-btn.primary-green:hover { background: var(--green); color: var(--bg-main); }
-        .modal-btn.primary-red { background: rgba(255,123,114,0.1); border-color: var(--red); color: var(--red); }
-        .modal-btn.primary-red:hover { background: var(--red); color: var(--bg-main); }
         .copy-info { margin-bottom: 12px; font-size: 13px; color: var(--text-dim); word-break: break-all; }
         .copy-info span { color: var(--text-main); font-weight: bold; }
-
-        /* Info box nel modal di azione file */
-        .file-action-info { display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: var(--bg-main); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 16px; }
-        .file-action-icon { font-size: 36px; flex-shrink: 0; }
-        .file-action-details { flex: 1; min-width: 0; }
-        .file-action-name { font-size: 15px; font-weight: bold; color: var(--text-main); word-break: break-all; margin-bottom: 4px; }
-        .file-action-meta { font-size: 11px; color: var(--text-dim); display: flex; gap: 14px; flex-wrap: wrap; }
-        .file-action-meta span { white-space: nowrap; }
-        .file-action-warn { font-size: 11px; color: var(--yellow); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
-        .file-action-exe-warn { font-size: 12px; color: var(--red); padding: 10px 14px; background: rgba(255,123,114,0.06); border: 1px solid rgba(255,123,114,0.25); border-radius: 6px; margin-bottom: 16px; line-height: 1.5; }
 
         #progress-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(6px); }
         #progress-overlay.active { display: flex; }
@@ -159,13 +153,30 @@
         @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
 
+        /* ============================================
+           PULSANTE SWITCH MOBILE
+           ============================================ */
         #mobile-switch {
-            display: none; position: absolute; bottom: 16px; right: 16px; z-index: 50;
-            padding: 10px 20px; background: var(--bg-panel); border: 1px solid var(--accent);
-            color: var(--accent); font-family: inherit; font-size: 11px; font-weight: bold;
-            border-radius: 24px; cursor: pointer; box-shadow: 0 0 16px var(--accent-glow), 0 4px 12px rgba(0,0,0,0.6);
-            text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.2s;
-            white-space: nowrap; backdrop-filter: blur(6px);
+            display: none;
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            z-index: 50;
+            padding: 10px 20px;
+            background: var(--bg-panel);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 24px;
+            cursor: pointer;
+            box-shadow: 0 0 16px var(--accent-glow), 0 4px 12px rgba(0,0,0,0.6);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            backdrop-filter: blur(6px);
         }
         #mobile-switch:hover { background: var(--accent); color: var(--bg-main); box-shadow: 0 0 24px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.7); }
         #mobile-switch:active { transform: scale(0.93); }
@@ -174,28 +185,49 @@
         #mobile-switch .sw-arrow { color: var(--border); margin: 0 4px; }
         #mobile-switch:hover .sw-active, #mobile-switch:hover .sw-dim, #mobile-switch:hover .sw-arrow { color: var(--bg-main); }
 
+        /* ============================================
+           MOBILE — una sola view alla volta
+           ============================================ */
         @media (max-width: 768px) {
             #mobile-switch { display: flex; align-items: center; justify-content: center; }
+
+            /* Nascondi divisore pannello */
             .panel-divider { display: none !important; }
+
+            /* Solo il pannello attivo è visibile, occupa tutto lo spazio */
             .panel { display: none !important; flex: 1 1 0% !important; width: 100% !important; min-width: 0 !important; border-radius: 4px; }
             .panel.active { display: flex !important; }
+
+            /* Nascondi handle resize colonne su mobile */
             .col-resize-handle { display: none !important; }
+
+            /* Path bar: mostra solo il path del pannello attivo */
             .path-wrap { display: none !important; }
             .path-wrap.mobile-visible { display: block !important; flex: 1; min-width: 0; }
             .path-sync-wrap { display: none !important; }
             #path-bar { flex-wrap: nowrap; }
-            .col-name, .col-type, .col-size, .col-date { flex: unset !important; width: unset !important; min-width: unset !important; }
+
+            /* Le colonne su mobile tornano flex proporzionale */
+            .col-name, .col-type, .col-size, .col-date {
+                flex: unset !important; width: unset !important; min-width: unset !important;
+            }
             .col-name { flex: 3 !important; }
             .col-type { flex: 1 !important; }
             .col-size { flex: 1 !important; }
             .col-date { flex: 1.5 !important; }
+
+            /* Toolbar più compatto su mobile */
             #toolbar { padding: 3px 4px; gap: 1px; }
             .tb-btn { min-width: 26px; min-height: 26px; padding: 4px 5px; font-size: 14px; }
             .tb-sep { margin: 0 2px; }
+
+            /* Status bar e function keys più compatti */
             #status-bar { padding: 4px 8px; font-size: 11px; }
             #function-keys { padding: 4px; gap: 4px; }
             .fkey { padding: 4px 8px; font-size: 10px; }
         }
+
+        /* Per schermi molto stretti, nascondi i pulsanti app esterne */
         @media (max-width: 480px) {
             .tb-ext { display: none !important; }
         }
@@ -229,10 +261,8 @@
         <button class="tb-btn c-red" onclick="handleF8()" title="Elimina (CANC / F8)">&#128465;</button>
         <div class="tb-sep"></div>
         <button class="tb-btn tb-ext c-purple" onclick="window.open('WebEditPlus.html', '_blank')" title="Editor">&#9997;</button>
-        <button class="tb-btn tb-ext c-purple" onclick="window.open('CALCOLATRICE.html', '_blank')" title="Calcolatrice">🧮</button>
-        <button class="tb-btn tb-ext c-purple" onclick="window.open('WEB_OFFICE_WORD.html', '_blank')" title="WORD">📝</button>
-        <button class="tb-btn tb-ext c-purple" onclick="window.open('GI_PAING_SHOP_PRO.html', '_blank')" title="Paint Shop Pro">🎨</button>
-        <button class="tb-btn tb-ext c-purple" onclick="window.open('GI-DocToMd.html', '_blank')" title="MarkDownToWord">📗</button>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('Calcolatrice.html', '_blank')" title="Calcolatrice">🧮</button>
+        <button class="tb-btn tb-ext c-purple" onclick="window.open('WEB_WORD.html', '_blank')" title="WORD">📝</button>
         <button class="tb-btn tb-ext c-purple" onclick="window.open('IMG_TO_TEXT.html', '_blank')" title="OCR">📄</button>
         <button class="tb-btn tb-ext c-purple" onclick="window.open('CAM_SCANNER.html', '_blank')" title="SCANNER">📸</button>
         <button class="tb-btn tb-ext c-purple" onclick="window.open('PASSWORD_MANAGER.html', '_blank')" title="PASS_KEEPR">🔑</button>
@@ -280,7 +310,9 @@
             </div>
             <div id="list-left" class="file-list" tabindex="0"></div>
         </div>
+
         <div class="panel-divider" id="panel-divider"></div>
+
         <div id="panel-right" class="panel">
             <div class="file-header" onclick="setActive('right')">
                 <div class="col-name col-cell sortable" onclick="event.stopPropagation(); handleSort('right', 'name')">Nome <span id="sort-right-name"></span></div>
@@ -293,6 +325,8 @@
             </div>
             <div id="list-right" class="file-list" tabindex="0"></div>
         </div>
+
+        <!-- Pulsante switch visibile solo su mobile -->
         <button id="mobile-switch" onclick="switchMobilePanel()">
             <span class="sw-active" id="sw-src">SRC</span>
             <span class="sw-arrow">&#10132;</span>
@@ -310,22 +344,6 @@
         <button class="fkey" onclick="handleF7()">F7 Nuova Dir</button>
         <button class="fkey" onclick="handleRename()" style="color:var(--yellow)">Shift+F2 Rinomina</button>
         <button class="fkey" onclick="handleF8()" style="color:var(--red)">CANC / F8 Elimina</button>
-    </div>
-
-    <!-- Modal Azione File (download/apri) -->
-    <div id="fileaction-modal-overlay" class="modal-overlay">
-        <div class="modal-box" style="max-width: 520px;">
-            <h3 id="fileaction-title">AZIONE FILE</h3>
-            <div class="file-action-info">
-                <div class="file-action-icon" id="fileaction-icon"></div>
-                <div class="file-action-details">
-                    <div class="file-action-name" id="fileaction-name"></div>
-                    <div class="file-action-meta" id="fileaction-meta"></div>
-                </div>
-            </div>
-            <div id="fileaction-warn-box"></div>
-            <div class="modal-btns" id="fileaction-btns"></div>
-        </div>
     </div>
 
     <div id="progress-overlay"><div class="progress-box">
@@ -395,79 +413,14 @@
     let inMemoryZip = null, inMemoryZipPath = '', isDragging = false, dragStartIndex = -1, dragPane = '', hasDragged = false;
     let renameTargetIndex = -1, renameTargetPane = '', copyTargetData = null;
 
-    // Dati del file in attesa di azione (per il modal)
-    let pendingFileAction = null;
-
     /* ============================================================
-       CLASSIFICAZIONE FILE PER CATEGORIA
-       ============================================================ */
-    const TEXT_EXTENSIONS = new Set([
-        'txt','md','csv','json','xml','html','htm','css','js','ts','jsx','tsx',
-        'py','rb','php','java','c','cpp','h','hpp','cs','go','rs','swift','kt',
-        'sh','bat','ps1','cmd','log','ini','cfg','conf','yml','yaml','toml',
-        'env','gitignore','dockerfile','makefile','sql','r','lua','pl','pm',
-        'vue','svelte','scss','sass','less','graphql','tf','hcl','proto'
-    ]);
-    const IMAGE_EXTENSIONS = new Set(['png','jpg','jpeg','gif','bmp','svg','webp','ico','tiff','tif','avif']);
-    const AUDIO_EXTENSIONS = new Set(['mp3','wav','ogg','flac','aac','wma','m4a','opus']);
-    const VIDEO_EXTENSIONS = new Set(['mp4','avi','mkv','mov','wmv','flv','webm','m4v','mpg','mpeg']);
-    const OFFICE_EXTENSIONS = new Set([
-        'doc','docx','xls','xlsx','ppt','pptx','odt','ods','odp','rtf',
-        'docm','xlsm','pptm','xlt','xltm','dot','dotx','pot','potx','xlam'
-    ]);
-    const PDF_EXTENSION = 'pdf';
-    const ARCHIVE_EXTENSIONS = new Set(['zip','rar','7z','tar','gz','bz2','xz','iso','dmg']);
-    const EXE_EXTENSIONS = new Set(['exe','msi','bat','cmd','com','scr','wsf','vbs','js','vbe','wsh']);
-
-    function getFileCategory(name) {
-        const ext = name.split('.').pop().toLowerCase();
-        if (TEXT_EXTENSIONS.has(ext)) return 'text';
-        if (IMAGE_EXTENSIONS.has(ext)) return 'image';
-        if (AUDIO_EXTENSIONS.has(ext)) return 'audio';
-        if (VIDEO_EXTENSIONS.has(ext)) return 'video';
-        if (OFFICE_EXTENSIONS.has(ext)) return 'office';
-        if (ext === PDF_EXTENSION) return 'pdf';
-        if (ARCHIVE_EXTENSIONS.has(ext)) return 'archive';
-        if (EXE_EXTENSIONS.has(ext)) return 'executable';
-        return 'binary';
-    }
-
-    function getCategoryIcon(cat) {
-        switch (cat) {
-            case 'text': return '<span class="icon-code">📄</span>';
-            case 'image': return '<span class="icon-img">🖼️</span>';
-            case 'audio': return '<span class="icon-audio">🎵</span>';
-            case 'video': return '<span class="icon-video">🎬</span>';
-            case 'office': return '<span class="icon-office">📊</span>';
-            case 'pdf': return '<span class="icon-pdf">📕</span>';
-            case 'archive': return '<span class="icon-archive">📦</span>';
-            case 'executable': return '<span class="icon-exe">⚡</span>';
-            default: return '📄';
-        }
-    }
-
-    function getCategoryLabel(cat) {
-        switch (cat) {
-            case 'text': return 'File di testo';
-            case 'image': return 'Immagine';
-            case 'audio': return 'Audio';
-            case 'video': return 'Video';
-            case 'office': return 'Documento Office';
-            case 'pdf': return 'Documento PDF';
-            case 'archive': return 'Archivio';
-            case 'executable': return 'Eseguibile';
-            default: return 'File binario';
-        }
-    }
-
-    /* ============================================================
-       RESIZE COLONNE
+       RESIZE COLONNE — stato e proporzioni
        ============================================================ */
     let colResizing = false, colResizeIdx = -1, colResizeStartX = 0;
     let colProportions = [3 / 6.5, 1 / 6.5, 1 / 6.5, 1.5 / 6.5];
 
     /* ============================================================
-       RESIZE PANNELLI
+       RESIZE PANNELLI — stato
        ============================================================ */
     let panelResizing = false, panelResizeStartX = 0, panelLeftStartW = 0;
 
@@ -475,6 +428,7 @@
        UTILITÀ
        ============================================================ */
     function isMobile() { return window.innerWidth <= 768; }
+
     function showProgress(t) {
         document.getElementById('progress-title').textContent = t;
         document.getElementById('progress-fill').style.width = '0%';
@@ -502,49 +456,51 @@
         const i = Math.floor(Math.log(b) / Math.log(k));
         return parseFloat((b / Math.pow(k, i)).toFixed(1)) + ' ' + s[i];
     }
-    function getMimeType(name) {
-        const ext = name.split('.').pop().toLowerCase();
-        const map = {
-            'png':'image/png','jpg':'image/jpeg','jpeg':'image/jpeg','gif':'image/gif','svg':'image/svg+xml','webp':'image/webp','bmp':'image/bmp','ico':'image/x-icon',
-            'mp3':'audio/mpeg','wav':'audio/wav','ogg':'audio/ogg','flac':'audio/flac','aac':'audio/aac','m4a':'audio/mp4',
-            'mp4':'video/mp4','webm':'video/webm','avi':'video/x-msvideo','mkv':'video/x-matroska','mov':'video/quicktime',
-            'pdf':'application/pdf',
-            'doc':'application/msword','docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'xls':'application/vnd.ms-excel','xlsx':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'ppt':'application/vnd.ms-powerpoint','pptx':'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'zip':'application/zip','rar':'application/x-rar-compressed','7z':'application/x-7z-compressed',
-            'txt':'text/plain','html':'text/html','htm':'text/html','css':'text/css','js':'text/javascript','json':'application/json','xml':'text/xml',
-            'exe':'application/x-msdownload','msi':'application/x-msdownload',
-        };
-        return map[ext] || 'application/octet-stream';
-    }
 
     document.getElementById('base-left').addEventListener('input', (e) => { state.basePath.left = e.target.value; });
     document.getElementById('base-right').addEventListener('input', (e) => { state.basePath.right = e.target.value; });
 
     /* ============================================================
-       MOBILE
+       MOBILE — switch pannello e aggiornamento visibilità
        ============================================================ */
-    function switchMobilePanel() { setActive(state.active === 'left' ? 'right' : 'left'); }
+    function switchMobilePanel() {
+        const other = state.active === 'left' ? 'right' : 'left';
+        setActive(other);
+    }
+
     function updateMobileVisibility() {
+        // Aggiorna path bar: mostra solo il wrap del pannello attivo
         const lw = document.getElementById('path-left-wrap');
         const rw = document.getElementById('path-right-wrap');
         if (lw) lw.classList.toggle('mobile-visible', state.active === 'left');
         if (rw) rw.classList.toggle('mobile-visible', state.active === 'right');
+
+        // Aggiorna testo pulsante switch
         const swSrc = document.getElementById('sw-src');
         const swDst = document.getElementById('sw-dst');
         if (swSrc && swDst) {
-            swSrc.className = state.active === 'left' ? 'sw-active' : 'sw-dim';
-            swDst.className = state.active === 'right' ? 'sw-active' : 'sw-dim';
+            if (state.active === 'left') {
+                swSrc.className = 'sw-active';
+                swDst.className = 'sw-dim';
+            } else {
+                swSrc.className = 'sw-dim';
+                swDst.className = 'sw-active';
+            }
         }
-        if (isMobile()) requestAnimationFrame(() => applyColumnWidths());
+
+        // Su mobile, ricalcola le colonne per il pannello pieno
+        if (isMobile()) {
+            requestAnimationFrame(() => applyColumnWidths());
+        }
     }
 
     /* ============================================================
-       RESIZE COLONNE
+       RESIZE COLONNE — applica le larghezze
        ============================================================ */
     function applyColumnWidths() {
+        // Su mobile non forzare larghezze fisse, usa flex naturale
         if (isMobile()) return;
+
         const colClasses = ['col-name', 'col-type', 'col-size', 'col-date'];
         document.querySelectorAll('.file-header').forEach(header => {
             const totalW = header.offsetWidth - 21;
@@ -554,7 +510,11 @@
             pixels[3] = Math.max(30, totalW - used);
             colClasses.forEach((cls, i) => {
                 const el = header.querySelector('.' + cls);
-                if (el) { el.style.flex = '0 0 ' + pixels[i] + 'px'; el.style.minWidth = '30px'; el.style.width = pixels[i] + 'px'; }
+                if (el) {
+                    el.style.flex = '0 0 ' + pixels[i] + 'px';
+                    el.style.minWidth = '30px';
+                    el.style.width = pixels[i] + 'px';
+                }
             });
         });
         ['left', 'right'].forEach(pane => {
@@ -569,11 +529,17 @@
             if (!list) return;
             colClasses.forEach((cls, i) => {
                 list.querySelectorAll('.' + cls).forEach(el => {
-                    el.style.flex = '0 0 ' + pixels[i] + 'px'; el.style.minWidth = '30px'; el.style.width = pixels[i] + 'px';
+                    el.style.flex = '0 0 ' + pixels[i] + 'px';
+                    el.style.minWidth = '30px';
+                    el.style.width = pixels[i] + 'px';
                 });
             });
         });
     }
+
+    /* ============================================================
+       RESIZE PANNELLI — inizializza larghezze
+       ============================================================ */
     function initPanelWidths() {
         if (isMobile()) return;
         const container = document.getElementById('panels-container');
@@ -592,9 +558,12 @@
         handle.addEventListener('mousedown', (e) => {
             if (isMobile()) return;
             e.preventDefault(); e.stopPropagation();
-            colResizing = true; colResizeIdx = parseInt(handle.dataset.colIdx); colResizeStartX = e.clientX;
+            colResizing = true;
+            colResizeIdx = parseInt(handle.dataset.colIdx);
+            colResizeStartX = e.clientX;
             document.querySelectorAll('.col-resize-handle[data-col-idx="' + colResizeIdx + '"]').forEach(h => h.classList.add('active'));
-            document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
         });
     });
 
@@ -604,10 +573,12 @@
     document.getElementById('panel-divider').addEventListener('mousedown', (e) => {
         if (isMobile()) return;
         e.preventDefault(); e.stopPropagation();
-        panelResizing = true; panelResizeStartX = e.clientX;
+        panelResizing = true;
+        panelResizeStartX = e.clientX;
         panelLeftStartW = document.getElementById('panel-left').offsetWidth;
         document.getElementById('panel-divider').classList.add('active');
-        document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
     });
 
     /* ============================================================
@@ -617,21 +588,27 @@
         if (colResizing) {
             const header = document.querySelector('#panel-left .file-header');
             if (!header) return;
-            const totalW = header.offsetWidth - 21; if (totalW <= 0) return;
-            const dx = e.clientX - colResizeStartX, minProp = 30 / totalW;
+            const totalW = header.offsetWidth - 21;
+            if (totalW <= 0) return;
+            const dx = e.clientX - colResizeStartX;
+            const minProp = 30 / totalW;
             const newL = colProportions[colResizeIdx] + dx / totalW;
             const newR = colProportions[colResizeIdx + 1] - dx / totalW;
             if (newL >= minProp && newR >= minProp) {
-                colProportions[colResizeIdx] = newL; colProportions[colResizeIdx + 1] = newR;
-                colResizeStartX = e.clientX; applyColumnWidths();
+                colProportions[colResizeIdx] = newL;
+                colProportions[colResizeIdx + 1] = newR;
+                colResizeStartX = e.clientX;
+                applyColumnWidths();
             }
             return;
         }
         if (panelResizing) {
             const container = document.getElementById('panels-container');
-            const totalW = container.offsetWidth - 8 - 12, minW = 180;
+            const totalW = container.offsetWidth - 8 - 12;
+            const minW = 180;
             const dx = e.clientX - panelResizeStartX;
-            const newL = panelLeftStartW + dx, newR = totalW - newL;
+            const newL = panelLeftStartW + dx;
+            const newR = totalW - newL;
             if (newL >= minW && newR >= minW) {
                 document.getElementById('panel-left').style.flex = '0 0 ' + newL + 'px';
                 document.getElementById('panel-right').style.flex = '0 0 ' + newR + 'px';
@@ -657,12 +634,14 @@
         if (colResizing) {
             colResizing = false;
             document.querySelectorAll('.col-resize-handle').forEach(h => h.classList.remove('active'));
-            document.body.style.cursor = ''; document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
         }
         if (panelResizing) {
             panelResizing = false;
             document.getElementById('panel-divider').classList.remove('active');
-            document.body.style.cursor = ''; document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
         }
     });
     document.addEventListener('contextmenu', (e) => { if (e.target.closest('.file-list')) e.preventDefault(); });
@@ -670,14 +649,27 @@
     /* ============================================================
        INIZIALIZZAZIONE
        ============================================================ */
-    window.addEventListener('load', () => { requestAnimationFrame(() => { requestAnimationFrame(() => { initPanelWidths(); applyColumnWidths(); updateMobileVisibility(); }); }); });
-    window.addEventListener('resize', () => { initPanelWidths(); applyColumnWidths(); updateMobileVisibility(); });
+    window.addEventListener('load', () => {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                initPanelWidths();
+                applyColumnWidths();
+                updateMobileVisibility();
+            });
+        });
+    });
+    window.addEventListener('resize', () => {
+        initPanelWidths();
+        applyColumnWidths();
+        updateMobileVisibility();
+    });
 
     /* ============================================================
        NAVIGAZIONE E VISTE
        ============================================================ */
     async function refreshRelevantPanes(...paths) {
-        const ap = paths.filter(p => p && p.length > 0); if (!ap.length) return;
+        const ap = paths.filter(p => p && p.length > 0);
+        if (!ap.length) return;
         if (state.handles.left && !inMemoryZip && ap.some(p => state.paths.left.startsWith(p))) await listFiles('left');
         if (state.handles.right && !inMemoryZip && ap.some(p => state.paths.right.startsWith(p))) {
             if (state.paths.left !== state.paths.right) await listFiles('right');
@@ -694,7 +686,8 @@
         state.active = p;
         document.getElementById('panel-left').classList.toggle('active', p === 'left');
         document.getElementById('panel-right').classList.toggle('active', p === 'right');
-        document.getElementById(`list-${p}`).focus(); updateMobileVisibility();
+        document.getElementById(`list-${p}`).focus();
+        updateMobileVisibility();
     }
     function updateStatus() {
         const p = state.active, c = state.selected[p].size;
@@ -719,6 +712,7 @@
             state.history[pane] = []; state.forwardHistory[pane] = [];
             inMemoryZip = null; inMemoryZipPath = '';
             document.getElementById(`path-${pane}`).value = d.name;
+            // Su mobile, se apro il pannello non attivo, ci switcho
             if (isMobile() && pane !== state.active) setActive(pane);
             await listFiles(pane);
             const o = pane === 'left' ? 'right' : 'left';
@@ -773,225 +767,18 @@
             const item = document.createElement('div');
             item.className = 'file-item' + (state.selected[pane].has(index) ? ' selected' : '');
             const ss = file.kind === 'directory' ? '<DIR>' : formatSize(file.size);
-            let ic;
-            if (file.isUp) { ic = '\u2B06\uFE0F'; }
-            else if (file.kind === 'directory') {
-                ic = '\uD83D\uDCC1';
-            } else {
-                // Icona basata sulla categoria del file
-                const cat = getFileCategory(file.name);
-                ic = getCategoryIcon(cat);
-            }
+            const ic = file.isUp ? '\u2B06\uFE0F' : (file.isZip ? '<span class="zip-icon">\uD83D\uDCE6</span>' : (file.kind === 'directory' ? '\uD83D\uDCC1' : '\uD83D\uDCC4'));
             item.innerHTML = `<div class="col-name">${ic} ${escapeHtml(file.name)}</div><div class="col-type">${escapeHtml(file.type)}</div><div class="col-size">${ss}</div><div class="col-date">${file.modified}</div>`;
             item.dataset.index = index;
             item.addEventListener('mousedown', (e) => { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); setActive(pane); if (e.ctrlKey) { state.selected[pane].has(index) ? state.selected[pane].delete(index) : state.selected[pane].add(index); } else if (e.shiftKey) { const sa = Array.from(state.selected[pane]).sort((a, b) => a - b); const an = sa.length > 0 ? sa[sa.length - 1] : 0; state.selected[pane].clear(); selectRange(pane, an, index); } else { state.selected[pane].clear(); state.selected[pane].add(index); } updateSelectionUI(pane); });
             item.addEventListener('mousedown', (e) => { if (e.button !== 2) return; e.preventDefault(); e.stopPropagation(); setActive(pane); isDragging = true; hasDragged = false; dragStartIndex = index; dragPane = pane; });
             item.addEventListener('mouseenter', () => { if (!isDragging || dragPane !== pane) return; const ci = parseInt(item.dataset.index); if (ci !== dragStartIndex) { hasDragged = true; state.selected[pane].clear(); selectRange(pane, dragStartIndex, ci); updateSelectionUI(pane); } });
-            item.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); isDragging = false; if (file.isUp) navigateBack(pane); else if (file.kind === 'directory') navigateInto(pane, file.name); else openFileSmart(pane, file.name); });
+            item.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); isDragging = false; if (file.isUp) navigateBack(pane); else if (file.kind === 'directory') navigateInto(pane, file.name); else openFile(pane, file.name); });
             item.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); });
             l.appendChild(item);
         });
-        updateStatus(); applyColumnWidths();
-    }
-
-    /* ============================================================
-       APERTURA FILE INTELLIGENTE — decide come gestire il file
-       ============================================================ */
-    async function openFileSmart(pane, fileName) {
-        const cat = getFileCategory(fileName);
-
-        // File di testo: apri nel browser o nell'editor (come prima)
-        if (cat === 'text') {
-            // Se c'è l'editor configurato, usa F3, altrimenti apri nel browser
-            await openFile(pane, fileName);
-            return;
-        }
-
-        // Immagini: il browser le apre nativamente
-        if (cat === 'image') {
-            await openFile(pane, fileName);
-            return;
-        }
-
-        // Audio/Video: il browser li apre nativamente
-        if (cat === 'audio' || cat === 'video') {
-            await openFile(pane, fileName);
-            return;
-        }
-
-        // Per tutto il resto (Office, PDF, EXE, archivi, binari):
-        // mostra il modal con opzioni
-        showFileActionModal(pane, fileName, cat);
-    }
-
-    /* ============================================================
-       MODAL AZIONE FILE
-       ============================================================ */
-    async function showFileActionModal(pane, fileName, cat) {
-        const fd = state.files[pane].find(f => f.name === fileName);
-        if (!fd) return;
-
-        pendingFileAction = { pane, fileName, cat, fileData: fd };
-
-        const overlay = document.getElementById('fileaction-modal-overlay');
-        const title = document.getElementById('fileaction-title');
-        const icon = document.getElementById('fileaction-icon');
-        const name = document.getElementById('fileaction-name');
-        const meta = document.getElementById('fileaction-meta');
-        const warnBox = document.getElementById('fileaction-warn-box');
-        const btns = document.getElementById('fileaction-btns');
-
-        // Titolo
-        if (cat === 'executable') {
-            title.textContent = '⚠ ESEGUIBILE';
-            title.style.color = 'var(--red)';
-        } else if (cat === 'office') {
-            title.textContent = 'DOCUMENTO OFFICE';
-            title.style.color = 'var(--yellow)';
-        } else if (cat === 'pdf') {
-            title.textContent = 'DOCUMENTO PDF';
-            title.style.color = 'var(--red)';
-        } else if (cat === 'archive') {
-            title.textContent = 'ARCHIVIO';
-            title.style.color = 'var(--yellow)';
-        } else {
-            title.textContent = 'FILE BINARIO';
-            title.style.color = 'var(--accent)';
-        }
-
-        // Icona grande
-        icon.innerHTML = getCategoryIcon(cat);
-
-        // Nome e meta
-        name.textContent = fileName;
-        meta.innerHTML = `<span>Tipo: ${escapeHtml(fd.type)}</span><span>Dim: ${formatSize(fd.size)}</span>${fd.modified ? '<span>Data: ' + fd.modified + '</span>' : ''}`;
-
-        // Warning
-        warnBox.innerHTML = '';
-        if (cat === 'executable') {
-            warnBox.innerHTML = `
-                <div class="file-action-exe-warn">
-                    ⚠ I browser web <strong>non possono eseguire programmi</strong> per motivi di sicurezza.
-                    Il file può essere salvato in una posizione a tua scelta per poi avviarlo manualmente dal file manager.
-                    <br><br>
-                    <strong style="color:var(--text-main)">Per avere l'esecuzione diretta</strong>, l'app deve essere
-                    impacchettata con <strong>Electron</strong> o <strong>Tauri</strong>, che espongono API native come
-                    <code style="color:var(--accent)">shell.openPath()</code> e
-                    <code style="color:var(--accent)">child_process.exec()</code>.
-                </div>`;
-        } else if (cat === 'office') {
-            warnBox.innerHTML = `
-                <div class="file-action-warn">
-                    💡 Il browser non può aprire i file Office nell'app installata. Salva il file e aprilo dal file manager,
-                    oppure aprilo nel browser (anteprima limitata).
-                </div>`;
-        } else if (cat === 'pdf') {
-            warnBox.innerHTML = `
-                <div class="file-action-warn">
-                    💡 Il browser può visualizzare il PDF inline, oppure puoi salvarlo per aprirlo nel tuo lettore PDF preferito.
-                </div>`;
-        }
-
-        // Pulsanti in base alla categoria
-        btns.innerHTML = '';
-
-        if (cat === 'executable') {
-            // Per gli eseguibili: solo salva
-            btns.innerHTML = `
-                <button class="modal-btn" onclick="closeFileActionModal()">Annulla (Esc)</button>
-                <button class="modal-btn primary-red" onclick="executeFileAction('save')">&#128190; Salva in...</button>`;
-        } else if (cat === 'pdf') {
-            // PDF: apri nel browser + salva
-            btns.innerHTML = `
-                <button class="modal-btn" onclick="closeFileActionModal()">Annulla (Esc)</button>
-                <button class="modal-btn primary-green" onclick="executeFileAction('open')">&#128065; Apri nel browser</button>
-                <button class="modal-btn primary" onclick="executeFileAction('save')">&#128190; Salva in...</button>`;
-        } else if (cat === 'office') {
-            // Office: apri nel browser (anteprima) + salva
-            btns.innerHTML = `
-                <button class="modal-btn" onclick="closeFileActionModal()">Annulla (Esc)</button>
-                <button class="modal-btn primary-yellow" onclick="executeFileAction('open')">&#128065; Anteprima browser</button>
-                <button class="modal-btn primary" onclick="executeFileAction('save')">&#128190; Salva in...</button>`;
-        } else if (cat === 'archive') {
-            // Archivio: salva (o estrai se .zip)
-            if (fileName.toLowerCase().endsWith('.zip')) {
-                btns.innerHTML = `
-                    <button class="modal-btn" onclick="closeFileActionModal()">Annulla (Esc)</button>
-                    <button class="modal-btn primary" onclick="closeFileActionModal(); handleUnzip()">&#128194; Estrai ZIP</button>
-                    <button class="modal-btn primary" onclick="executeFileAction('save')">&#128190; Salva in...</button>`;
-            } else {
-                btns.innerHTML = `
-                    <button class="modal-btn" onclick="closeFileActionModal()">Annulla (Esc)</button>
-                    <button class="modal-btn primary" onclick="executeFileAction('save')">&#128190; Salva in...</button>`;
-            }
-        } else {
-            // Binario generico: apri nel browser + salva
-            btns.innerHTML = `
-                <button class="modal-btn" onclick="closeFileActionModal()">Annulla (Esc)</button>
-                <button class="modal-btn primary" onclick="executeFileAction('open')">&#128065; Apri nel browser</button>
-                <button class="modal-btn primary" onclick="executeFileAction('save')">&#128190; Salva in...</button>`;
-        }
-
-        overlay.classList.add('active');
-    }
-
-    function closeFileActionModal() {
-        document.getElementById('fileaction-modal-overlay').classList.remove('active');
-        pendingFileAction = null;
-        document.getElementById(`list-${state.active}`).focus();
-    }
-
-    async function executeFileAction(action) {
-        if (!pendingFileAction) return;
-        const { pane, fileName, cat, fileData } = pendingFileAction;
-
-        closeFileActionModal();
-
-        try {
-            let fileBlob;
-
-            if (inMemoryZip) {
-                let sp = state.paths[pane].substring(inMemoryZipPath.length + 1) + fileName;
-                if (sp.startsWith('/')) sp = sp.substring(1);
-                const content = await inMemoryZip.file(sp).async('blob');
-                fileBlob = content;
-            } else {
-                const fh = await state.handles[pane].getFileHandle(fileName);
-                fileBlob = await fh.getFile();
-            }
-
-            if (action === 'open') {
-                // Apri nel browser tramite blob URL
-                const url = URL.createObjectURL(fileBlob);
-                window.open(url, '_blank');
-                document.getElementById('status-bar').innerText = `APERTO: ${fileName}`;
-                showToast(`Aperto: ${fileName}`, "info");
-            } else if (action === 'save') {
-                // Salva con showSaveFilePicker — l'utente sceglie dove
-                try {
-                    const ext = fileName.split('.').pop();
-                    const mime = getMimeType(fileName);
-                    const handle = await window.showSaveFilePicker({
-                        suggestedName: fileName,
-                        types: [{
-                            description: cat === 'executable' ? 'Eseguibile' : cat === 'pdf' ? 'PDF' : cat === 'office' ? 'Documento' : cat === 'archive' ? 'Archivio' : 'File',
-                            accept: { [mime]: ['.' + ext] }
-                        }]
-                    });
-                    const writable = await handle.createWritable();
-                    await writable.write(fileBlob);
-                    await writable.close();
-                    document.getElementById('status-bar').innerText = `SALVATO: ${handle.name}`;
-                    showToast(`Salvato: ${handle.name}`, "success");
-                } catch (e) {
-                    if (e.name !== 'AbortError') {
-                        showToast("Errore salvataggio: " + e.message, "error");
-                    }
-                }
-            }
-        } catch (e) {
-            showToast("Errore: " + e.message, "error");
-        }
+        updateStatus();
+        applyColumnWidths();
     }
 
     /* ============================================================
@@ -1053,6 +840,7 @@
         state.sort[d] = { ...state.sort[sp] }; state.basePath[d] = state.basePath[sp];
         document.getElementById(`path-${d}`).value = state.paths[sp]; document.getElementById(`base-${d}`).value = state.basePath[sp];
         await listFiles(d);
+        // Su mobile, switcha al pannello sincronizzato
         if (isMobile()) setActive(d);
         showToast("Sincronizzate", "success");
     }
@@ -1281,7 +1069,8 @@
                             else { zip.folder(ep); await addDirToZip(await dh.getDirectoryHandle(e.name), ep); }
                         }
                     }
-                    zip.folder(f.data.name); await addDirToZip(f.handle, f.data.name);
+                    zip.folder(f.data.name);
+                    await addDirToZip(f.handle, f.data.name);
                 }
                 c++;
             }
@@ -1316,14 +1105,19 @@
             updateProgress(10, 'Parsing archivio...');
             const buf = await f.arrayBuffer();
             const zip = await JSZip.loadAsync(buf);
-            const entries = []; zip.forEach((path, entry) => { entries.push({ path, entry }); });
+            const entries = [];
+            zip.forEach((path, entry) => { entries.push({ path, entry }); });
             let c = 0, total = entries.length;
             for (const { path, entry } of entries) {
                 updateProgress(10 + (c / total) * 85, path);
                 const parts = path.split('/'); let current = state.handles[d];
                 for (let i = 0; i < parts.length - 1; i++) { if (parts[i]) current = await current.getDirectoryHandle(parts[i], { create: true }); }
                 const fn = parts[parts.length - 1];
-                if (fn && !entry.dir) { const blob = await entry.async('blob'); const h = await current.getFileHandle(fn, { create: true }); const w = await h.createWritable(); await w.write(blob); await w.close(); }
+                if (fn && !entry.dir) {
+                    const blob = await entry.async('blob');
+                    const h = await current.getFileHandle(fn, { create: true });
+                    const w = await h.createWritable(); await w.write(blob); await w.close();
+                }
                 c++;
             }
             updateProgress(100, 'Completato'); hideProgress();
@@ -1336,12 +1130,18 @@
        SELEZIONE CON TASTIERA
        ============================================================ */
     function moveSelection(p, dir) {
-        const files = state.files[p]; if (!files.length) return;
+        const files = state.files[p];
+        if (!files.length) return;
         const sa = Array.from(state.selected[p]).sort((a, b) => a - b);
         const cur = sa.length > 0 ? sa[sa.length - 1] : 0;
-        let next = cur + dir; if (next < 0) next = 0; if (next >= files.length) next = files.length - 1;
-        state.selected[p].clear(); state.selected[p].add(next); updateSelectionUI(p);
-        const list = document.getElementById(`list-${p}`); const items = list.querySelectorAll('.file-item');
+        let next = cur + dir;
+        if (next < 0) next = 0;
+        if (next >= files.length) next = files.length - 1;
+        state.selected[p].clear();
+        state.selected[p].add(next);
+        updateSelectionUI(p);
+        const list = document.getElementById(`list-${p}`);
+        const items = list.querySelectorAll('.file-item');
         if (items[next]) items[next].scrollIntoView({ block: 'nearest' });
     }
 
@@ -1366,7 +1166,6 @@
         else if (e.key === 'Escape') {
             if (document.querySelector('.modal-overlay.active')) {
                 document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
-                pendingFileAction = null;
                 document.getElementById(`list-${state.active}`).focus();
             }
         }
@@ -1379,7 +1178,7 @@
                 const f = state.files[state.active][sa[0]];
                 if (f.isUp) navigateBack(state.active);
                 else if (f.kind === 'directory') navigateInto(state.active, f.name);
-                else openFileSmart(state.active, f.name);
+                else openFile(state.active, f.name);
             }
         }
         else if (e.key === 'Tab') { e.preventDefault(); setActive(state.active === 'left' ? 'right' : 'left'); }
@@ -1399,9 +1198,6 @@
     document.getElementById('copy-new-name').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); executeCopy(); }
         if (e.key === 'Escape') { e.preventDefault(); closeCopyModal(); }
-    });
-    document.getElementById('fileaction-modal-overlay').addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { e.preventDefault(); closeFileActionModal(); }
     });
 </script>
 </body>
