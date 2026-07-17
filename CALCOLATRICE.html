@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Tactical Register V5 - Fixed Layout</title>
+<title>Calcolatrici - Multi Tab</title>
 <style>
+  /* ===== STILI GLOBALI E TAB ===== */
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@700;800&display=swap');
 
   :root {
@@ -16,122 +17,260 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
 
-  /* Layout bloccato all'altezza dello schermo */
   body { 
     background: var(--bg); color: var(--text); 
-    font-family: 'Share Tech Mono', monospace; 
-    display: flex; flex-direction: column; 
-    height: 100vh; height: 100dvh; /* Supporto per mobile toolbar */
+    font-family: 'Share Tech Mono', monospace;
     overflow: hidden; 
-    padding: 10px;
+    height: 100vh;
   }
 
-  h2 {
+  /* Navigazione Tab */
+  .tab-nav {
+    display: flex;
+    background: #050608;
+    border-bottom: 2px solid var(--border);
+    padding: 0 10px;
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 15px 25px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    letter-spacing: 2px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* FIX RIGOROSO: La classe tab-content gestisce la visualizzazione forzata */
+  .tab-content { display: none !important; height: calc(100vh - 50px); }
+  .tab-content.active { display: flex !important; }
+
+  /* ===== STILI APP 1 (TACTICAL REGISTER) ===== */
+  #app1 { 
+    flex-direction: column; 
+    overflow: hidden; padding: 10px;
+  }
+  #app1 h2 {
     color: var(--accent); margin-bottom: 10px; 
     font-family: 'Syne'; letter-spacing: 2px; 
     font-size: 0.8rem; text-align: center;
-    flex-shrink: 0; /* Non si restringe */
+    flex-shrink: 0;
   }
-
-  /* Area della griglia scrollabile */
   .calc-container {
     background: var(--panel); border: 2px solid var(--border); border-radius: 12px;
-    padding: 10px; overflow: auto; 
-    width: 100%; max-width: 950px;
-    margin: 0 auto 10px auto;
-    flex-grow: 1; /* Prende tutto lo spazio tra titolo e tastiera */
+    padding: 10px; overflow: auto; width: 100%; max-width: 950px;
+    margin: 0 auto 10px auto; flex-grow: 1;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     -webkit-overflow-scrolling: touch;
   }
-
   #grid { 
-    display: grid; gap: 1px; 
-    background: var(--border); 
-    border: 1px solid var(--border); 
-    min-width: fit-content; 
+    display: grid; gap: 1px; background: var(--border); 
+    border: 1px solid var(--border); min-width: fit-content; 
   }
-
   .cell {
     width: var(--cell-w); height: var(--cell-h);
     display: flex; align-items: center; justify-content: center;
     background: var(--panel); font-size: 1.1rem; cursor: pointer;
   }
-
   .cell.index-cell { width: 30px; background: #13151a; color: var(--muted); font-size: 0.6rem; cursor: default; }
   .cell.header { background: #13151a; color: var(--muted); font-size: 0.5rem; height: 20px; position: sticky; top: 0; z-index: 10; }
   .cell.op-cell { width: 45px; color: var(--accent2); font-weight: 800; }
   .cell.point-cell { color: var(--accent); font-weight: bold; background: rgba(232, 240, 39, 0.05); }
-
   .cell.subtotal-cell { 
     width: 120px; background: #13151a; color: var(--accent2); 
     font-size: 0.9rem; justify-content: flex-end; padding-right: 8px;
     border-left: 2px solid var(--border);
   }
-
   .cell.selected { background: #252936; box-shadow: inset 0 0 0 2px var(--accent); color: var(--accent); z-index: 5; }
-
-  /* Riga del totale finale */
   .cell.result-val { color: var(--accent2); background: #0f1115; border-top: 2px solid var(--accent2); font-weight: bold; }
   .cell.result-label { background: #0f1115; border-top: 2px solid var(--accent2); color: var(--accent2); font-size: 0.7rem; }
   .cell.total-final { width: 120px; background: #0f1115; color: var(--accent2); border-top: 2px solid var(--accent2); justify-content: flex-end; padding-right: 8px; font-weight: bold; }
-
-  /* Tastierino fisso in basso */
-  .sidebar { 
-    width: 100%; max-width: 450px; 
-    margin: 0 auto;
-    flex-shrink: 0; /* Non permette al tastierino di rimpicciolirsi */
-  }
+  .sidebar { width: 100%; max-width: 450px; margin: 0 auto; flex-shrink: 0; }
   .numpad-grid { 
     display: grid; grid-template-columns: repeat(4, 1fr); 
-    gap: 6px; background: var(--panel); 
-    padding: 10px; border-radius: 12px; 
-    border: 1px solid var(--border); 
+    gap: 6px; background: var(--panel); padding: 10px; 
+    border-radius: 12px; border: 1px solid var(--border); 
   }
-  
-  button { font-family: 'Syne', sans-serif; background: #232731; border: 1px solid var(--border); color: var(--text); border-radius: 8px; cursor: pointer; height: 50px; font-size: 1.3rem; }
-  button:active { background: var(--accent); color: #000; }
+  #app1 button { font-family: 'Syne', sans-serif; background: #232731; border: 1px solid var(--border); color: var(--text); border-radius: 8px; cursor: pointer; height: 50px; font-size: 1.3rem; }
+  #app1 button:active { background: var(--accent); color: #000; }
   .btn-reset { grid-column: span 4; height: 30px; font-size: 0.65rem; color: var(--danger); background: #1a0a0a; margin-bottom: 2px; }
   .btn-op { color: var(--accent2); background: #1c2029; }
   .btn-tall { grid-row: span 2; height: 106px; }
   .btn-wide { grid-column: span 2; }
 
+  /* ===== STILI APP 2 (SCIENTIFICA) ===== */
+  #app2 {
+    font-family: Arial, sans-serif;
+    background: #1e1e1e;
+    color: #fff;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+    overflow: auto;
+  }
+  .calculator {
+    background: #333;
+    padding: 20px;
+    border-radius: 10px;
+    width: 360px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+  }
+  #display {
+    width: 100%;
+    height: 60px;
+    background: #000;
+    color: #0f0;
+    font-size: 28px;
+    text-align: right;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    border: none;
+    box-sizing: border-box;
+  }
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+  #app2 button {
+    padding: 15px;
+    font-size: 18px;
+    border: none;
+    border-radius: 5px;
+    background: #555;
+    color: #fff;
+    cursor: pointer;
+  }
+  #app2 button:hover { background: #777; }
+  #app2 .orange { background: #d87f00; }
+  #history {
+    width: 260px;
+    height: 400px;
+    background: #222;
+    padding: 10px;
+    border-radius: 10px;
+    overflow-y: auto;
+    box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    font-size: 16px;
+    line-height: 1.4em;
+    flex-shrink: 0;
+  }
+  .hist-item { padding: 6px 0; border-bottom: 1px solid #444; }
+  .expr { color: #aaa; }
+  .res { color: #0f0; font-weight: bold; }
+
+  /* ===== RESPONSIVE ===== */
   @media (max-width: 600px) {
     :root { --cell-w: 24px; --cell-h: 36px; }
     .cell { font-size: 0.85rem; }
     .cell.subtotal-cell, .cell.total-final { width: 80px; font-size: 0.65rem; }
     .cell.op-cell { width: 35px; }
-    button { height: 45px; font-size: 1.1rem; }
+    #app1 button { height: 45px; font-size: 1.1rem; }
     .btn-tall { height: 96px; }
+    
+    #app2 { flex-direction: column; align-items: center; }
+    #history { width: 100%; max-width: 360px; height: 200px; }
   }
 </style>
 </head>
 <body>
 
-<h2>TACTICAL_PRECISION_REGISTER</h2>
-
-<div class="calc-container" id="scroll-area">
-  <div id="grid"></div>
+<!-- NAVIGAZIONE TAB -->
+<div class="tab-nav">
+  <button class="tab-btn" onclick="openTab('app1', this)">Tactical Register</button>
+  <button class="tab-btn active" onclick="openTab('app2', this)">Scientifica</button>
 </div>
 
-<div class="sidebar">
-  <div class="numpad-grid">
-    <button class="btn-reset" onclick="fullReset()">MASTER SYSTEM RESET</button>
-    <button onclick="clearRow()" style="color:var(--danger)">CLR</button>
-    <button class="btn-op" onclick="handleOp('/')">/</button>
-    <button class="btn-op" onclick="handleOp('*')">×</button>
-    <button onclick="deleteAction()" style="color:var(--danger)">⌫</button>
-    
-    <button onclick="inputAction('7')">7</button><button onclick="inputAction('8')">8</button><button onclick="inputAction('9')">9</button>
-    <button class="btn-op" onclick="handleOp('-')">-</button>
-    <button onclick="inputAction('4')">4</button><button onclick="inputAction('5')">5</button><button onclick="inputAction('6')">6</button>
-    <button class="btn-op" onclick="handleOp('+')">+</button>
-    <button onclick="inputAction('1')">1</button><button onclick="inputAction('2')">2</button><button onclick="inputAction('3')">3</button>
-    <button class="btn-op btn-tall" onclick="handleOp('+')">ENT</button>
-    <button class="btn-wide" onclick="inputAction('0')">0</button><button onclick="inputAction('.')">.</button>
+<!-- ================= APP 1 ================= -->
+<div id="app1" class="tab-content">
+  <h2>TACTICAL_PRECISION_REGISTER</h2>
+  <div class="calc-container" id="scroll-area">
+    <div id="grid"></div>
+  </div>
+  <div class="sidebar">
+    <div class="numpad-grid">
+      <button class="btn-reset" onclick="fullReset()">MASTER SYSTEM RESET</button>
+      <button onclick="clearRow()" style="color:var(--danger)">CLR</button>
+      <button class="btn-op" onclick="handleOp('/')">/</button>
+      <button class="btn-op" onclick="handleOp('*')">×</button>
+      <button onclick="deleteAction()" style="color:var(--danger)">⌫</button>
+      <button onclick="inputAction('7')">7</button><button onclick="inputAction('8')">8</button><button onclick="inputAction('9')">9</button>
+      <button class="btn-op" onclick="handleOp('-')">-</button>
+      <button onclick="inputAction('4')">4</button><button onclick="inputAction('5')">5</button><button onclick="inputAction('6')">6</button>
+      <button class="btn-op" onclick="handleOp('+')">+</button>
+      <button onclick="inputAction('1')">1</button><button onclick="inputAction('2')">2</button><button onclick="inputAction('3')">3</button>
+      <button class="btn-op btn-tall" onclick="handleOp('+')">ENT</button>
+      <button class="btn-wide" onclick="inputAction('0')">0</button><button onclick="inputAction('.')">.</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= APP 2 ================= -->
+<div id="app2" class="tab-content active">
+  <div class="calculator">
+    <input type="text" id="display" readonly>
+    <div class="keys">
+      <button onclick="clearDisplay()" class="orange">C</button>
+      <button onclick="backspace()">⌫</button>
+      <button onclick="insert('(')">(</button>
+      <button onclick="insert(')')">)</button>
+      <button onclick="insert('^')">x^y</button>
+      <button onclick="insert('/')">÷</button>
+
+      <button onclick="insert('7')">7</button>
+      <button onclick="insert('8')">8</button>
+      <button onclick="insert('9')">9</button>
+      <button onclick="insert('*')">×</button>
+      <button onclick="insert('sin(')">sin</button>
+      <button onclick="insert('cos(')">cos</button>
+
+      <button onclick="insert('4')">4</button>
+      <button onclick="insert('5')">5</button>
+      <button onclick="insert('6')">6</button>
+      <button onclick="insert('-')">−</button>
+      <button onclick="insert('tan(')">tan</button>
+      <button onclick="insert('sqrt(')">√</button>
+
+      <button onclick="insert('1')">1</button>
+      <button onclick="insert('2')">2</button>
+      <button onclick="insert('3')">3</button>
+      <button onclick="insert('+')">+</button>
+      <button onclick="insert('log(')">log</button>
+      <button onclick="insert('ln(')">ln</button>
+
+      <button onclick="insert('0')">0</button>
+      <button onclick="insert('.')">.</button>
+      <button onclick="insert('pi')">π</button>
+      <button onclick="insert('e')">e</button>
+      <button onclick="calculate()" class="orange">=</button>
+      <button onclick="insert('%')">%</button>
+    </div>
+  </div>
+  <div id="history">
+    <h3>Storico</h3>
   </div>
 </div>
 
 <script>
+// ===== LOGICA TAB =====
+function openTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ===== SCRIPT APP 1 (TACTICAL REGISTER) =====
 const COLS = 13; 
 let rows = [{ val: Array(COLS).fill(""), op: "" }];
 rows[0].val[8] = "0"; 
@@ -139,146 +278,195 @@ let selR = 0;
 let selC = 8; 
 
 function triggerFeedback(type = 'default') {
-    if (navigator.vibrate) navigator.vibrate(15);
-    try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(type === 'op' ? 1000 : 700, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-    } catch(e) {}
+  if (navigator.vibrate) navigator.vibrate(15);
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(type === 'op' ? 1000 : 700, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+  } catch(e) {}
 }
 
 function render() {
-    const grid = document.getElementById('grid');
-    grid.style.gridTemplateColumns = `30px 45px repeat(${COLS}, var(--cell-w)) 120px`;
-    grid.innerHTML = '';
+  const grid = document.getElementById('grid');
+  grid.style.gridTemplateColumns = `30px 45px repeat(${COLS}, var(--cell-w)) 120px`;
+  grid.innerHTML = '';
+  grid.appendChild(createCell('ID', 'header')); grid.appendChild(createCell('OP', 'header'));
+  for(let i=1; i<=COLS; i++) grid.appendChild(createCell(i==10 ? 'PT' : 'W'+i, 'header'));
+  grid.appendChild(createCell('SUBTOTAL', 'header'));
 
-    // Headers
-    grid.appendChild(createCell('ID', 'header')); grid.appendChild(createCell('OP', 'header'));
-    for(let i=1; i<=COLS; i++) grid.appendChild(createCell(i==10 ? 'PT' : 'W'+i, 'header'));
-    grid.appendChild(createCell('SUBTOTAL', 'header'));
+  let total = 0;
+  rows.forEach((row, ri) => {
+    let numStr = row.val.slice(0, 9).join('') + "." + row.val.slice(10).join('');
+    let n = parseFloat(numStr) || 0;
+    if(ri === 0) total = n;
+    else {
+      if(row.op === '+') total += n;
+      if(row.op === '-') total -= n;
+      if(row.op === '*') total *= n;
+      if(row.op === '/' && n !== 0) total /= n;
+    }
+    grid.appendChild(createCell((ri+1).toString().padStart(2,'0'), 'index-cell'));
+    const opCell = createCell(ri === 0 ? "STR" : row.op, 'op-cell');
+    opCell.onclick = () => { triggerFeedback('op'); removeRow(ri); };
+    grid.appendChild(opCell);
+    for(let ci=0; ci<COLS; ci++) {
+      let char = (ci === 9) ? "." : row.val[ci];
+      let cls = (ci === 9) ? "point-cell" : "digit-cell";
+      if(ri === selR && ci === selC) cls += " selected";
+      const cell = createCell(char, cls);
+      cell.onclick = () => { triggerFeedback(); selR = ri; selC = ci; render(); };
+      grid.appendChild(cell);
+    }
+    grid.appendChild(createCell(format(total), 'subtotal-cell'));
+  });
 
-    let total = 0;
+  grid.appendChild(createCell('TOT', 'result-label'));
+  grid.appendChild(createCell('=', 'result-label'));
+  let fStr = total.toFixed(2).split('.');
+  let intP = fStr[0].padStart(9, ' ');
+  let decP = fStr[1].padEnd(3, ' ');
+  for(let i=0; i<9; i++) grid.appendChild(createCell(intP[i].trim(), 'result-val'));
+  grid.appendChild(createCell('.', 'result-val point-cell'));
+  for(let i=0; i<3; i++) grid.appendChild(createCell(decP[i].trim(), 'result-val'));
+  grid.appendChild(createCell(format(total), 'total-final'));
 
-    rows.forEach((row, ri) => {
-        let numStr = row.val.slice(0, 9).join('') + "." + row.val.slice(10).join('');
-        let n = parseFloat(numStr) || 0;
-        
-        if(ri === 0) total = n;
-        else {
-            if(row.op === '+') total += n;
-            if(row.op === '-') total -= n;
-            if(row.op === '*') total *= n;
-            if(row.op === '/' && n !== 0) total /= n;
-        }
-
-        grid.appendChild(createCell((ri+1).toString().padStart(2,'0'), 'index-cell'));
-        const opCell = createCell(ri === 0 ? "STR" : row.op, 'op-cell');
-        opCell.onclick = () => { triggerFeedback('op'); removeRow(ri); };
-        grid.appendChild(opCell);
-
-        for(let ci=0; ci<COLS; ci++) {
-            let char = (ci === 9) ? "." : row.val[ci];
-            let cls = (ci === 9) ? "point-cell" : "digit-cell";
-            if(ri === selR && ci === selC) cls += " selected";
-            const cell = createCell(char, cls);
-            cell.onclick = () => { triggerFeedback(); selR = ri; selC = ci; render(); };
-            grid.appendChild(cell);
-        }
-        grid.appendChild(createCell(format(total), 'subtotal-cell'));
-    });
-
-    // Totale Finale in fondo
-    grid.appendChild(createCell('TOT', 'result-label'));
-    grid.appendChild(createCell('=', 'result-label'));
-    let fStr = total.toFixed(2).split('.');
-    let intP = fStr[0].padStart(9, ' ');
-    let decP = fStr[1].padEnd(3, ' ');
-    for(let i=0; i<9; i++) grid.appendChild(createCell(intP[i].trim(), 'result-val'));
-    grid.appendChild(createCell('.', 'result-val point-cell'));
-    for(let i=0; i<3; i++) grid.appendChild(createCell(decP[i].trim(), 'result-val'));
-    grid.appendChild(createCell(format(total), 'total-final'));
-
-    // Auto-scroll verso il basso quando si aggiungono righe
-    const scrollArea = document.getElementById('scroll-area');
-    scrollArea.scrollTop = scrollArea.scrollHeight;
+  const scrollArea = document.getElementById('scroll-area');
+  scrollArea.scrollTop = scrollArea.scrollHeight;
 }
 
 function format(n) { return n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function createCell(t, c) { const d = document.createElement('div'); d.className = 'cell ' + c; d.textContent = t; return d; }
 
 function inputAction(k) {
-    triggerFeedback();
-    let row = rows[selR];
-    if (k === "." || k === ",") { selC = 10; render(); return; }
-    if (selC === 8 || selC === 12) {
-        if (selC === 8) { 
-            const isInitialZero = row.val[8] === "0" && row.val.slice(0, 8).every(v => v === "");
-            if (isInitialZero) row.val[8] = k;
-            else { for(let i=0; i<8; i++) row.val[i] = row.val[i+1]; row.val[8] = k; }
-        } else { 
-            for(let i=10; i<12; i++) row.val[i] = row.val[i+1]; row.val[12] = k;
-        }
-    } else {
-        if (selC !== 9) {
-            row.val[selC] = k;
-            if (selC < 8) selC++; 
-            else if (selC >= 10 && selC < 12) selC++;
-        }
+  triggerFeedback();
+  let row = rows[selR];
+  if (k === "." || k === ",") { selC = 10; render(); return; }
+  if (selC === 8 || selC === 12) {
+    if (selC === 8) { 
+      const isInitialZero = row.val[8] === "0" && row.val.slice(0, 8).every(v => v === "");
+      if (isInitialZero) row.val[8] = k;
+      else { for(let i=0; i<8; i++) row.val[i] = row.val[i+1]; row.val[8] = k; }
+    } else { 
+      for(let i=10; i<12; i++) row.val[i] = row.val[i+1]; row.val[12] = k;
     }
-    render();
+  } else {
+    if (selC !== 9) {
+      row.val[selC] = k;
+      if (selC < 8) selC++; 
+      else if (selC >= 10 && selC < 12) selC++;
+    }
+  }
+  render();
 }
 
 function deleteAction() {
-    triggerFeedback();
-    let row = rows[selR];
-    if (selC === 8 || selC === 12) {
-        let start = (selC === 8) ? 0 : 10;
-        let end = (selC === 8) ? 8 : 12;
-        for(let i=end; i>start; i--) row.val[i] = row.val[i-1];
-        row.val[start] = "";
-        if (row.val.every(v => v === "")) row.val[8] = "0";
-    } else { row.val[selC] = ""; }
-    render();
+  triggerFeedback();
+  let row = rows[selR];
+  if (selC === 8 || selC === 12) {
+    let start = (selC === 8) ? 0 : 10;
+    let end = (selC === 8) ? 8 : 12;
+    for(let i=end; i>start; i--) row.val[i] = row.val[i-1];
+    row.val[start] = "";
+    if (row.val.every(v => v === "")) row.val[8] = "0";
+  } else { row.val[selC] = ""; }
+  render();
 }
 
 function handleOp(op) {
-    triggerFeedback('op');
-    rows.push({ val: Array(COLS).fill(""), op: op });
-    rows[rows.length-1].val[8] = "0";
-    selR = rows.length - 1; selC = 8; 
-    render();
+  triggerFeedback('op');
+  rows.push({ val: Array(COLS).fill(""), op: op });
+  rows[rows.length-1].val[8] = "0";
+  selR = rows.length - 1; selC = 8; 
+  render();
 }
 
 function clearRow() { 
-    triggerFeedback('op');
-    rows[selR].val = Array(COLS).fill(""); 
-    rows[selR].val[8] = "0"; 
-    selC = 8; render(); 
+  triggerFeedback('op');
+  rows[selR].val = Array(COLS).fill(""); 
+  rows[selR].val[8] = "0"; 
+  selC = 8; render(); 
 }
 
 function removeRow(i) { 
-    if(rows.length > 1) { 
-        rows.splice(i, 1); 
-        selR = rows.length - 1; 
-        render(); 
-    } 
+  if(rows.length > 1) { 
+    rows.splice(i, 1); 
+    selR = rows.length - 1; 
+    render(); 
+  } 
 }
 
 function fullReset() { 
-    if(confirm("Reset Totale?")) { 
-        triggerFeedback('op');
-        rows = [{ val: Array(COLS).fill(""), op: "" }]; 
-        rows[0].val[8]="0"; selR=0; selC=8; render(); 
-    } 
+  if(confirm("Reset Totale?")) { 
+    triggerFeedback('op');
+    rows = [{ val: Array(COLS).fill(""), op: "" }]; 
+    rows[0].val[8]="0"; selR=0; selC=8; render(); 
+  } 
 }
 
-document.addEventListener('keydown', (e) => {
+// ===== SCRIPT APP 2 (SCIENTIFICA) =====
+function insert(value) {
+  document.getElementById("display").value += value;
+}
+
+function clearDisplay() {
+  document.getElementById("display").value = "";
+}
+
+function backspace() {
+  let x = document.getElementById("display").value;
+  document.getElementById("display").value = x.substring(0, x.length - 1);
+}
+
+function addToHistory(expr, result) {
+  const history = document.getElementById("history");
+  const item = document.createElement("div");
+  item.className = "hist-item";
+  item.innerHTML = `<div class="expr">${expr}</div><div class="res">${result}</div>`;
+  history.appendChild(item);
+  history.scrollTop = history.scrollHeight;
+}
+
+function calculate() {
+  let expr = document.getElementById("display").value;
+  let originalExpr = expr;
+  expr = expr.replace(/(\d+|\))\^(\d+|\()/g, "Math.pow($1,$2)");
+  expr = expr.replace(/sin\(/g, "Math.sin(");
+  expr = expr.replace(/cos\(/g, "Math.cos(");
+  expr = expr.replace(/tan\(/g, "Math.tan(");
+  expr = expr.replace(/sqrt\(/g, "Math.sqrt(");
+  expr = expr.replace(/log\(/g, "Math.log10(");
+  expr = expr.replace(/ln\(/g, "Math.log(");
+  expr = expr.replace(/pi/g, "Math.PI");
+  expr = expr.replace(/e/g, "Math.E");
+  try {
+    let result = eval(expr);
+    document.getElementById("display").value = result;
+    addToHistory(originalExpr, result);
+  } catch {
+    document.getElementById("display").value = "Errore";
+  }
+}
+
+document.getElementById("display").addEventListener("paste", function(e) {
+  let pastedData = (e.clipboardData || window.clipboardData).getData('text');
+  insert(pastedData);
+  e.preventDefault(); 
+});
+
+// ===== GESTIONE TASTIERA GLOBALE =====
+document.addEventListener('keydown', function(e) {
+  const isApp1Active = document.getElementById('app1').classList.contains('active');
+  const isApp2Active = document.getElementById('app2').classList.contains('active');
+
+  if (isApp2Active && (e.ctrlKey || e.metaKey)) return; 
+
+  if (isApp1Active) {
     if(e.key >= '0' && e.key <= '9' || e.key === '.' || e.key === ',') inputAction(e.key);
     else if(e.key === 'Backspace') { e.preventDefault(); deleteAction(); }
     else if(['+','-','*','/'].includes(e.key)) { e.preventDefault(); handleOp(e.key); }
@@ -287,9 +475,36 @@ document.addEventListener('keydown', (e) => {
     else if(e.key === 'ArrowDown') { e.preventDefault(); selR = Math.min(rows.length-1, selR+1); render(); }
     else if(e.key === 'ArrowLeft') { e.preventDefault(); selC = Math.max(0, selC-1); render(); }
     else if(e.key === 'ArrowRight') { e.preventDefault(); selC = Math.min(COLS-1, selC+1); render(); }
+  }
+  
+  if (isApp2Active) {
+    const key = e.key;
+    if (!isNaN(key)) insert(key);
+    if ("+-*/().%^".includes(key)) insert(key);
+    if (key === "Enter") calculate();
+    if (key === "Backspace") backspace();
+    if (key === "Escape") clearDisplay();
+    if (key === "s") insert("sin(");
+    if (key === "c") insert("cos(");
+    if (key === "t") insert("tan(");
+    if (key === "l") insert("log(");
+    if (key === "n") insert("ln(");
+    if (key === "p") insert("pi");
+    if (key === "e") insert("e");
+  }
 });
 
+// ===== INIZIALIZZAZIONE FORZATA =====
+// Inizializza la griglia della prima calcolatrice in background
 render();
+
+// Forza il focus sul tab "Scientifica" all'avvio per sicurezza
+window.onload = function() {
+  const btns = document.querySelectorAll('.tab-btn');
+  if(btns.length > 1) {
+    openTab('app2', btns[1]);
+  }
+};
 </script>
 </body>
 </html>
