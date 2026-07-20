@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cyber Commander</title>
     <style>
+        #function-keys {
+            display: flex;
+            justify-content: center; /* Centra i bottoni orizzontalmente */
+            align-items: center;     /* Li allinea verticalmente se hanno altezze diverse */
+            flex-wrap: wrap;         /* Permette ai bottoni di andare a capo su schermi piccoli */
+            gap: 8px;                /* Spazio uniforme tra i bottoni (opzionale) */
+        }        
         :root {
             --bg-main: #0d1117; --bg-panel: #161b22; --bg-header: #1c2128;
             --bg-hover: #262c36; --bg-active: #0d1f2d;
