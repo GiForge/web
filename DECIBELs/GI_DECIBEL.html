@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fonometro Web & Grafico Storico</title>
+    <!-- Chart.js da CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #38bdf8;
+            --accent: #f43f5e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Displays */
+        .db-display-container {
+            text-align: center;
+        }
+
+        .db-value {
+            font-size: 4rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+            margin: 15px 0;
+        }
+
+        .db-unit {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .stat-item .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .stat-item .val {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* Controls */
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #0f172a;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background-color: #334155;
+            color: var(--text-main);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--accent);
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .slider-group label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary);
+        }
+
+        /* Chart */
+        .chart-card {
+            min-height: 350px;
+            position: relative;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Fonometro & Tracciamento Ambientale</h1>
+        <p>Rilevamento in tempo reale dei decibel tramite Web Audio API</p>
+    </header>
+
+    <div class="dashboard">
+        <!-- Pannello di Controllo & Lettura -->
+        <div class="card">
+            <div class="db-display-container">
+                <div class="stat-item">
+                    <span class="label">Livello Attuale</span>
+                </div>
+                <div class="db-value" id="dbValue">--</div>
+                <span class="db-unit">dB (SPL Stimati)</span>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="label">Min</div>
+                        <div class="val" id="minDb">--</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Med</div>
+                        <div class="val" id="avgDb">--</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Max</div>
+                        <div class="val" id="maxDb">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="toggleBtn" class="btn-primary">Avvia Misurazione</button>
+                <button id="clearBtn" class="btn-danger">Azzera Storico</button>
+
+                <div class="slider-group">
+                    <label for="calibration">
+                        <span>Calibrazione (Offset)</span>
+                        <span id="calibVal">+100 dB</span>
+                    </label>
+                    <input type="range" id="calibration" min="50" max="130" value="100" step="1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Grafico Storico -->
+        <div class="card chart-card">
+            <canvas id="noiseChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    let audioCtx = null;
+    let analyser = null;
+    let micStream = null;
+    let isRunning = false;
+    let animationId = null;
+
+    // Elementi DOM
+    const dbValueEl = document.getElementById('dbValue');
+    const minDbEl = document.getElementById('minDb');
+    const maxDbEl = document.getElementById('maxDb');
+    const avgDbEl = document.getElementById('avgDb');
+    const toggleBtn = document.getElementById('toggleBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const calibInput = document.getElementById('calibration');
+    const calibValEl = document.getElementById('calibVal');
+
+    // Statistiche
+    let historyData = [];
+    let historyLabels = [];
+    let minDb = Infinity;
+    let maxDb = -Infinity;
+    let sumDb = 0;
+    let countDb = 0;
+
+    // Configurazione Chart.js
+    const ctx = document.getElementById('noiseChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: historyLabels,
+            datasets: [{
+                label: 'Rumore (dB)',
+                data: historyData,
+                borderColor: '#38bdf8',
+                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8', maxTicksLimit: 8 }
+                },
+                y: {
+                    min: 20,
+                    max: 120,
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8' }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+
+    // Gestione Calibrazione
+    calibInput.addEventListener('input', (e) => {
+        calibValEl.textContent = `+${e.target.value} dB`;
+    });
+
+    // Toggle Avvio / Arresto
+    toggleBtn.addEventListener('click', async () => {
+        if (!isRunning) {
+            await startAudio();
+        } else {
+            stopAudio();
+        }
+    });
+
+    // Reset dati
+    clearBtn.addEventListener('click', resetStats);
+
+    async function startAudio() {
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            micStream = await navigator.mediaDevices.getUserMedia({ 
+                audio: { 
+                    echoCancellation: false, 
+                    noiseSuppression: false, 
+                    autoGainControl: false 
+                } 
+            });
+
+            const source = audioCtx.createMediaStreamSource(micStream);
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            source.connect(analyser);
+
+            isRunning = true;
+            toggleBtn.textContent = 'Interrompi';
+            toggleBtn.style.backgroundColor = '#f43f5e';
+
+            processAudio();
+        } catch (err) {
+            alert('Impossibile accedere al microfono: ' + err.message);
+        }
+    }
+
+    function stopAudio() {
+        if (animationId) cancelAnimationFrame(animationId);
+        if (micStream) micStream.getTracks().forEach(track => track.stop());
+        if (audioCtx) audioCtx.close();
+
+        isRunning = false;
+        toggleBtn.textContent = 'Avvia Misurazione';
+        toggleBtn.style.backgroundColor = '#38bdf8';
+    }
+
+    function processAudio() {
+        if (!isRunning) return;
+
+        const bufferLength = analyser.fftSize;
+        const dataArray = new Float32Array(bufferLength);
+        analyser.getFloatTimeDomainData(dataArray);
+
+        // Calcolo Valore RMS (Root Mean Square)
+        let sumSquares = 0;
+        for (let i = 0; i < bufferLength; i++) {
+            sumSquares += dataArray[i] * dataArray[i];
+        }
+        const rms = Math.sqrt(sumSquares / bufferLength);
+
+        // Converti RMS in dB con offset di calibrazione
+        const offset = parseFloat(calibInput.value);
+        let db = 20 * Math.log10(rms) + offset;
+
+        // Limita a valori fisicamente sensati (rumore di fondo minimo 20 dB)
+        if (!isFinite(db) || db < 20) db = 20;
+        db = Math.round(db * 10) / 10; // arrotonda a 1 decimale
+
+        updateUI(db);
+
+        // Frequenza aggiornamento grafico (~10 volte al secondo)
+        setTimeout(() => {
+            animationId = requestAnimationFrame(processAudio);
+        }, 100);
+    }
+
+    function updateUI(db) {
+        dbValueEl.textContent = db.toFixed(1);
+
+        // Aggiorna Min/Max/Avg
+        if (db < minDb) minDb = db;
+        if (db > maxDb) maxDb = db;
+        sumDb += db;
+        countDb++;
+
+        minDbEl.textContent = minDb.toFixed(1);
+        maxDbEl.textContent = maxDb.toFixed(1);
+        avgDbEl.textContent = (sumDb / countDb).toFixed(1);
+
+        // Aggiorna Grafico
+        const timeLabel = new Date().toLocaleTimeString();
+        historyLabels.push(timeLabel);
+        historyData.push(db);
+
+        // Mantiieni al massimo 100 punti visibili sul grafico
+        if (historyLabels.length > 100) {
+            historyLabels.shift();
+            historyData.shift();
+        }
+
+        chart.update('none'); // Update senza ri-animazione per massimizzare le prestazioni
+    }
+
+    function resetStats() {
+        historyLabels.length = 0;
+        historyData.length = 0;
+        minDb = Infinity;
+        maxDb = -Infinity;
+        sumDb = 0;
+        countDb = 0;
+
+        dbValueEl.textContent = '--';
+        minDbEl.textContent = '--';
+        maxDbEl.textContent = '--';
+        avgDbEl.textContent = '--';
+
+        chart.update();
+    }
+</script>
+</body>
+</html>

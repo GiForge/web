@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sonograph — Analizzatore di Rumore Ambientale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #08080d;
+  --bg-elevated: #0f0f18;
+  --bg-card: rgba(20, 20, 31, 0.5);
+  --fg: #f0f0f5;
+  --fg-muted: #8a8aa0;
+  --fg-dim: #4a4a5e;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --safe: #00ff9d;
+  --moderate: #ffd60a;
+  --loud: #ff8c1a;
+  --danger: #ff2e63;
+  --accent: #ff6b1a;
+  --accent-2: #00d9ff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Space Grotesk', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body {
+  background-image: 
+    radial-gradient(circle at 15% 10%, rgba(255, 107, 26, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(0, 217, 255, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(255, 46, 99, 0.03) 0%, transparent 60%);
+  transition: box-shadow 0.3s;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.app {
+  position: relative;
+  z-index: 2;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 28px 64px;
+}
+
+/* HEADER */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 36px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ff6b1a 0%, #ff2e63 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(255, 107, 26, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-mark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4), transparent 60%);
+}
+
+.brand-mark svg {
+  width: 26px;
+  height: 26px;
+  position: relative;
+  z-index: 1;
+}
+
+.brand-text h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.brand-text p {
+  font-size: 10px;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mic-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fg-dim);
+  transition: all 0.3s;
+}
+
+.mic-status.active .status-dot {
+  background: var(--safe);
+  box-shadow: 0 0 12px var(--safe);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.mic-status.error .status-dot {
+  background: var(--danger);
+  box-shadow: 0 0 12px var(--danger);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #ff4a1a);
+  color: white;
+  box-shadow: 0 8px 24px rgba(255, 107, 26, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(255, 107, 26, 0.4);
+}
+
+.btn-primary.recording {
+  background: linear-gradient(135deg, var(--danger), #c41e3a);
+  box-shadow: 0 8px 24px rgba(255, 46, 99, 0.4);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* MAIN GRID */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 968px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.card-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+
+.card-badge {
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255, 107, 26, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(255, 107, 26, 0.3);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.3s;
+}
+
+/* GAUGE */
+.gauge-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.gauge-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px auto;
+  aspect-ratio: 1;
+  max-width: 380px;
+  width: 100%;
+}
+
+.gauge-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 30px rgba(255, 107, 26, 0.15));
+}
+
+.gauge-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  width: 70%;
+}
+
+.gauge-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -2px;
+  color: var(--fg);
+  transition: color 0.3s;
+}
+
+.gauge-unit {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--fg-muted);
+  margin-top: 8px;
+  letter-spacing: 2px;
+  font-weight: 500;
+}
+
+.gauge-level {
+  margin-top: 12px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-weight: 700;
+  color: var(--safe);
+  transition: color 0.3s;
+}
+
+.gauge-meta {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.meta-item {
+  text-align: center;
+}
+
+.meta-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--fg-muted);
+  margin-bottom: 4px;
+}
+
+.meta-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+/* SPECTRUM */
+.spectrum-wrap {
+  margin-top: 20px;
+  height: 100px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+#spectrum {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.spectrum-label {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--fg-dim);
+  font-family: 'JetBrains Mono', monospace;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* STATS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.stat-tile {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.stat-tile:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.stat-tile::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  opacity: 0.7;
+}
+
+.stat-tile.peak::before { background: var(--danger); }
+.stat-tile.min::before { background: var(--safe); }
+.stat-tile.avg::before { background: var(--accent-2); }
+.stat-tile.duration::before { background: var(--moderate); }
+.stat-tile.samples::before { background: var(--loud); }
+.stat-tile.now::before { background: var(--accent); }
+
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: var(--fg-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.stat-unit {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin-left: 4px;
+  font-weight: 500;
+}
+
+/* CONTROLS */
+.controls-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.control-row {
+  margin-bottom: 18px;
+}
+
+.control-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.control-label span:first-child {
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  font-size: 10px;
+}
+
+.control-label span:last-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 13px;
+}
+
+input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 18px;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: linear-gradient(to right, var(--safe), var(--moderate), var(--loud), var(--danger));
+  border-radius: 2px;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: linear-gradient(to right, var(--safe), var(--moderate), var(--loud), var(--danger));
+  border-radius: 2px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--fg);
+  margin-top: -7px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 4px rgba(255,255,255,0.05);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--fg);
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 4px rgba(255,255,255,0.05);
+  cursor: pointer;
+}
+
+/* CHART */
+.chart-card {
+  margin-bottom: 24px;
+}
+
+.chart-wrap {
+  height: 320px;
+  position: relative;
+}
+
+.chart-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--fg-dim);
+  font-size: 13px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.chart-empty.hidden { display: none; }
+
+.chart-empty svg {
+  width: 48px;
+  height: 48px;
+  opacity: 0.4;
+}
+
+/* THRESHOLDS */
+.threshold-bar {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.threshold-chip {
+  flex: 1;
+  min-width: 110px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.threshold-chip .label {
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  font-size: 9px;
+}
+
+.threshold-chip .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.threshold-chip.safe .value { color: var(--safe); }
+.threshold-chip.moderate .value { color: var(--moderate); }
+.threshold-chip.loud .value { color: var(--loud); }
+.threshold-chip.danger .value { color: var(--danger); }
+
+/* TOAST */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 240px;
+  animation: slideIn 0.3s ease;
+}
+
+.toast.success { border-left: 3px solid var(--safe); }
+.toast.error { border-left: 3px solid var(--danger); }
+.toast.info { border-left: 3px solid var(--accent-2); }
+
+@keyframes slideIn {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* DISCLAIMER */
+.disclaimer {
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: rgba(255, 214, 10, 0.05);
+  border: 1px solid rgba(255, 214, 10, 0.15);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  line-height: 1.6;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.disclaimer svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--moderate);
+}
+
+.action-bar {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .app { padding: 20px 16px 40px; }
+  .gauge-value { font-size: 56px; }
+  .stat-value { font-size: 22px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  header { flex-direction: column; align-items: stretch; }
+  .header-controls { justify-content: stretch; }
+  .mic-status { flex: 1; justify-content: center; }
+  .btn { flex: 1; justify-content: center; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12h2l2-7 4 14 3-10 2 5h5"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>Sonograph</h1>
+        <p>Environmental Noise Analyzer</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="mic-status" id="micStatus">
+        <span class="status-dot"></span>
+        <span id="micStatusText">Microfono inattivo</span>
+      </div>
+      <button class="btn btn-primary" id="startBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+        Avvia misurazione
+      </button>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <div class="card gauge-card">
+      <div class="card-header">
+        <span class="card-title">Livello Sonoro Attuale</span>
+        <span class="card-badge" id="liveBadge">STANDBY</span>
+      </div>
+      
+      <div class="gauge-wrap">
+        <svg class="gauge-svg" viewBox="0 0 220 220">
+          <g id="ticks"></g>
+          <circle cx="110" cy="110" r="90" 
+                  fill="none" 
+                  stroke="rgba(255,255,255,0.04)" 
+                  stroke-width="16"
+                  stroke-linecap="round"
+                  stroke-dasharray="424 565"
+                  transform="rotate(135 110 110)"/>
+          <circle id="gaugeArc" cx="110" cy="110" r="90"
+                  fill="none"
+                  stroke="#00ff9d"
+                  stroke-width="16"
+                  stroke-linecap="round"
+                  stroke-dasharray="0 565"
+                  transform="rotate(135 110 110)"
+                  style="transition: stroke-dasharray 0.15s linear, stroke 0.3s;"/>
+          <circle cx="110" cy="110" r="76" fill="rgba(0,0,0,0.4)" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        </svg>
+        <div class="gauge-center">
+          <div class="gauge-value" id="gaugeValue">--</div>
+          <div class="gauge-unit">dB SPL</div>
+          <div class="gauge-level" id="gaugeLevel">In attesa</div>
+        </div>
+      </div>
+
+      <div class="gauge-meta">
+        <div class="meta-item">
+          <div class="meta-label">Picco Istantaneo</div>
+          <div class="meta-value" id="instantPeak">-- dB</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Min Istantaneo</div>
+          <div class="meta-value" id="instantMin">-- dB</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">RMS</div>
+          <div class="meta-value" id="rmsValue">--</div>
+        </div>
+      </div>
+
+      <div class="spectrum-wrap">
+        <span class="spectrum-label">SPETTRO FREQUENZE</span>
+        <canvas id="spectrum"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Statistiche Sessione</span>
+        <span class="card-badge" id="sessionTime">00:00:00</span>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-tile now">
+          <div class="stat-label">Attuale</div>
+          <div class="stat-value"><span id="statCurrent">--</span><span class="stat-unit">dB</span></div>
+        </div>
+        <div class="stat-tile avg">
+          <div class="stat-label">Media</div>
+          <div class="stat-value"><span id="statAvg">--</span><span class="stat-unit">dB</span></div>
+        </div>
+        <div class="stat-tile min">
+          <div class="stat-label">Minimo</div>
+          <div class="stat-value"><span id="statMin">--</span><span class="stat-unit">dB</span></div>
+        </div>
+        <div class="stat-tile peak">
+          <div class="stat-label">Picco Massimo</div>
+          <div class="stat-value"><span id="statMax">--</span><span class="stat-unit">dB</span></div>
+        </div>
+        <div class="stat-tile duration">
+          <div class="stat-label">Campioni</div>
+          <div class="stat-value" id="statSamples">0</div>
+        </div>
+        <div class="stat-tile samples">
+          <div class="stat-label">Sopra Soglia</div>
+          <div class="stat-value" id="statOver85">0<span class="stat-unit">%</span></div>
+        </div>
+      </div>
+
+      <div class="controls-section">
+        <div class="control-row">
+          <div class="control-label">
+            <span>Calibrazione Microfono</span>
+            <span id="calibValue">+0 dB</span>
+          </div>
+          <input type="range" id="calibSlider" min="-20" max="20" value="0" step="1">
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Soglia Allarme</span>
+            <span id="thresholdValue">85 dB</span>
+          </div>
+          <input type="range" id="thresholdSlider" min="50" max="120" value="85" step="1">
+        </div>
+
+        <div class="threshold-bar">
+          <div class="threshold-chip safe">
+            <span class="label">Silenzio</span>
+            <span class="value">&lt; 40 dB</span>
+          </div>
+          <div class="threshold-chip moderate">
+            <span class="label">Normale</span>
+            <span class="value">40-70</span>
+          </div>
+          <div class="threshold-chip loud">
+            <span class="label">Forte</span>
+            <span class="value">70-90</span>
+          </div>
+          <div class="threshold-chip danger">
+            <span class="label">Pericolo</span>
+            <span class="value">&gt; 90 dB</span>
+          </div>
+        </div>
+
+        <div class="action-bar">
+          <button class="btn btn-secondary" id="resetBtn" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Reset Sessione
+          </button>
+          <button class="btn btn-secondary" id="exportBtn" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Esporta CSV
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <div class="card-header">
+      <span class="card-title">Storico Livelli Sonori nel Tempo</span>
+      <span class="card-badge" id="chartBadge">Nessun dato</span>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="historyChart"></canvas>
+      <div class="chart-empty" id="chartEmpty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        <div>Avvia la misurazione per visualizzare il grafico storico</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div>
+      <strong>Nota sulla precisione:</strong> I valori sono stimati dal segnale del microfono del dispositivo e calibrati approssimativamente alla scala dB SPL. Per misurazioni certificate (conformità normativa) utilizzare un fonometro professionale calibrato. La calibrazione manuale permette di compensare le differenze tra microfoni. Riferimenti: 30 dB = sussurro, 60 dB = conversazione, 85 dB = traffico intenso, 100 dB = concerti, 120 dB = soglia del dolore.
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ============ STATO APPLICAZIONE ============
+const state = {
+  audioContext: null,
+  analyser: null,
+  microphone: null,
+  stream: null,
+  isRecording: false,
+  calibrationOffset: 100, // offset predefinito per conversione dBFS -> dB SPL
+  calibrationAdjust: 0,
+  threshold: 85,
+  smoothedDb: 0,
+  instantPeak: 0,
+  instantMin: 200,
+  sessionStats: {
+    min: 200,
+    max: 0,
+    sum: 0,
+    count: 0,
+    overThreshold: 0,
+    startTime: null
+  },
+  history: [],
+  maxHistoryPoints: 120,
+  rafId: null,
+  samplingInterval: null,
+  statsInterval: null,
+  sessionTimerInterval: null
+};
+
+// ============ RIFERIMENTI DOM ============
+const els = {
+  startBtn: document.getElementById('startBtn'),
+  resetBtn: document.getElementById('resetBtn'),
+  exportBtn: document.getElementById('exportBtn'),
+  micStatus: document.getElementById('micStatus'),
+  micStatusText: document.getElementById('micStatusText'),
+  liveBadge: document.getElementById('liveBadge'),
+  gaugeValue: document.getElementById('gaugeValue'),
+  gaugeLevel: document.getElementById('gaugeLevel'),
+  gaugeArc: document.getElementById('gaugeArc'),
+  instantPeak: document.getElementById('instantPeak'),
+  instantMin: document.getElementById('instantMin'),
+  rmsValue: document.getElementById('rmsValue'),
+  statCurrent: document.getElementById('statCurrent'),
+  statAvg: document.getElementById('statAvg'),
+  statMin: document.getElementById('statMin'),
+  statMax: document.getElementById('statMax'),
+  statSamples: document.getElementById('statSamples'),
+  statOver85: document.getElementById('statOver85'),
+  sessionTime: document.getElementById('sessionTime'),
+  calibSlider: document.getElementById('calibSlider'),
+  calibValue: document.getElementById('calibValue'),
+  thresholdSlider: document.getElementById('thresholdSlider'),
+  thresholdValue: document.getElementById('thresholdValue'),
+  spectrum: document.getElementById('spectrum'),
+  historyChart: document.getElementById('historyChart'),
+  chartEmpty: document.getElementById('chartEmpty'),
+  chartBadge: document.getElementById('chartBadge'),
+  ticks: document.getElementById('ticks'),
+  toastContainer: document.getElementById('toastContainer')
+};
+
+// ============ UTILITY ============
+function showToast(message, type = 'info', duration = 3500) {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  const iconPaths = {
+    success: '<polyline points="20 6 9 17 4 12"/>',
+    error: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'
+  };
+  toast.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      ${iconPaths[type] || iconPaths.info}
+    </svg>
+    <span>${message}</span>
+  `;
+  els.toastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(120%)';
+    toast.style.transition = 'all 0.3s';
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+function getColorForDb(db) {
+  if (db < 40) return '#00ff9d';
+  if (db < 70) return '#ffd60a';
+  if (db < 90) return '#ff8c1a';
+  return '#ff2e63';
+}
+
+function getLevelLabel(db) {
+  if (db < 30) return 'Molto silenzioso';
+  if (db < 40) return 'Silenzioso';
+  if (db < 60) return 'Normale';
+  if (db < 70) return 'Moderato';
+  if (db < 85) return 'Forte';
+  if (db < 100) return 'Molto forte';
+  if (db < 120) return 'Pericoloso';
+  return 'Soglia del dolore';
+}
+
+function formatTime(seconds) {
+  const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+  const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+// ============ TICK MARKS GAUGE ============
+function generateTicks() {
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const tickCount = 10;
+  for (let i = 0; i <= tickCount; i++) {
+    const ratio = i / tickCount;
+    const tickAngleDeg = 135 + ratio * 270;
+    const tickAngleRad = tickAngleDeg * Math.PI / 180;
+    const innerR = 80;
+    const outerR = 70;
+    const cx = 110, cy = 110;
+    
+    const x1 = cx + innerR * Math.cos(tickAngleRad);
+    const y1 = cy + innerR * Math.sin(tickAngleRad);
+    const x2 = cx + outerR * Math.cos(tickAngleRad);
+    const y2 = cy + outerR * Math.sin(tickAngleRad);
+    
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2);
+    line.setAttribute('y2', y2);
+    line.setAttribute('stroke', 'rgba(255,255,255,0.15)');
+    line.setAttribute('stroke-width', '1.5');
+    els.ticks.appendChild(line);
+  }
+}
+
+// ============ AGGIORNAMENTO GAUGE ============
+function updateGauge(db) {
+  const minDb = 30, maxDb = 120;
+  const clamped = Math.max(minDb, Math.min(maxDb, db));
+  const ratio = (clamped - minDb) / (maxDb - minDb);
+  const arcLength = 424 * ratio;
+  
+  els.gaugeArc.setAttribute('stroke-dasharray', `${arcLength} 565`);
+  els.gaugeArc.setAttribute('stroke', getColorForDb(db));
+  
+  els.gaugeValue.textContent = Math.round(db);
+  els.gaugeValue.style.color = getColorForDb(db);
+  els.gaugeLevel.textContent = getLevelLabel(db);
+  els.gaugeLevel.style.color = getColorForDb(db);
+}
+
+// ============ INIZIALIZZAZIONE AUDIO ============
+async function initAudio() {
+  try {
+    state.stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        autoGainControl: false,
+        noiseSuppression: false,
+        latency: 0
+      }
+    });
+    
+    state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    state.analyser = state.audioContext.createAnalyser();
+    state.analyser.fftSize = 2048;
+    state.analyser.smoothingTimeConstant = 0.3;
+    
+    state.microphone = state.audioContext.createMediaStreamSource(state.stream);
+    state.microphone.connect(state.analyser);
+    
+    // Setup canvas spettro con DPR
+    const spectrumCtx = els.spectrum.getContext('2d');
+    const resizeSpectrum = () => {
+      const rect = els.spectrum.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      els.spectrum.width = rect.width * window.devicePixelRatio;
+      els.spectrum.height = rect.height * window.devicePixelRatio;
+      spectrumCtx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+    };
+    resizeSpectrum();
+    window.addEventListener('resize', resizeSpectrum);
+    
+    return true;
+  } catch (err) {
+    console.error('Errore inizializzazione audio:', err);
+    let msg = 'Impossibile accedere al microfono';
+    if (err.name === 'NotAllowedError') {
+      msg = 'Permesso microfono negato. Abilita l\'accesso nelle impostazioni del browser.';
+    } else if (err.name === 'NotFoundError') {
+      msg = 'Nessun microfono trovato sul dispositivo.';
+    }
+    showToast(msg, 'error', 5000);
+    els.micStatus.classList.add('error');
+    els.micStatusText.textContent = 'Errore';
+    return false;
+  }
+}
+
+// ============ MISURAZIONE DECIBEL ============
+function measureDb() {
+  if (!state.analyser) return { db: 0, peakDb: 0, rms: 0 };
+  
+  const bufferLength = state.analyser.fftSize;
+  const timeData = new Float32Array(bufferLength);
+  state.analyser.getFloatTimeDomainData(timeData);
+  
+  // Calcolo RMS e picco
+  let sumSquares = 0;
+  let peak = 0;
+  for (let i = 0; i < bufferLength; i++) {
+    const sample = timeData[i];
+    sumSquares += sample * sample;
+    const absSample = Math.abs(sample);
+    if (absSample > peak) peak = absSample;
+  }
+  
+  const rms = Math.sqrt(sumSquares / bufferLength);
+  // Conversione in dBFS (decibel relative to Full Scale)
+  const dbfs = 20 * Math.log10(rms + 1e-10);
+  // Approssimazione a dB SPL con offset di calibrazione
+  const db = dbfs + state.calibrationOffset + state.calibrationAdjust;
+  
+  const peakDbfs = 20 * Math.log10(peak + 1e-10);
+  const peakDb = peakDbfs + state.calibrationOffset + state.calibrationAdjust;
+  
+  return { db, peakDb, rms, peak };
+}
+
+// ============ DISEGNO SPETTRO ============
+function drawSpectrum() {
+  if (!state.analyser) return;
+  
+  const ctx = els.spectrum.getContext('2d');
+  const rect = els.spectrum.getBoundingClientRect();
+  const w = rect.width;
+  const h = rect.height;
+  
+  if (w === 0 || h === 0) return;
+  
+  const freqData = new Uint8Array(state.analyser.frequencyBinCount);
+  state.analyser.getByteFrequencyData(freqData);
+  
+  ctx.clearRect(0, 0, w, h);
+  
+  const barCount = 48;
+  const barWidth = w / barCount;
+  const gap = 2;
+  
+  // Scala logaritmica per le frequenze
+  const nyquist = state.audioContext.sampleRate / 2;
+  const minFreq = 20;
+  const maxFreq = Math.min(20000, nyquist);
+  
+  for (let i = 0; i < barCount; i++) {
+    const freq = minFreq * Math.pow(maxFreq / minFreq, i / barCount);
+    const nextFreq = minFreq * Math.pow(maxFreq / minFreq, (i + 1) / barCount);
+    
+    const binStart = Math.floor(freq / nyquist * freqData.length);
+    const binEnd = Math.floor(nextFreq / nyquist * freqData.length);
+    
+    let sum = 0;
+    let count = 0;
+    for (let j = binStart; j <= binEnd && j < freqData.length; j++) {
+      sum += freqData[j];
+      count++;
+    }
+    const avgValue = count > 0 ? sum / count : 0;
+    
+    const barHeight = Math.max(2, (avgValue / 255) * h);
+    const x = i * barWidth + gap / 2;
+    const y = h - barHeight;
+    const bw = Math.max(1, barWidth - gap);
+    
+    const gradient = ctx.createLinearGradient(0, h, 0, 0);
+    gradient.addColorStop(0, '#00ff9d');
+    gradient.addColorStop(0.5, '#ffd60a');
+    gradient.addColorStop(0.8, '#ff8c1a');
+    gradient.addColorStop(1, '#ff2e63');
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y, bw, barHeight);
+    
+    // highlight in cima alla barra
+    if (barHeight > 5) {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.fillRect(x, y, bw, 2);
+    }
+  }
+}
+
+// ============ STATISTICHE ============
+function updateInstantStats(db, peakDb, rms) {
+  state.instantPeak = Math.max(state.instantPeak, peakDb);
+  state.instantMin = Math.min(state.instantMin, db);
+  
+  // Decay del picco istantaneo
+  state.instantPeak = Math.max(peakDb, state.instantPeak - 0.5);
+  
+  els.instantPeak.textContent = Math.round(state.instantPeak) + ' dB';
+  els.instantMin.textContent = Math.round(state.instantMin) + ' dB';
+  els.rmsValue.textContent = rms.toFixed(3);
+}
+
+function updateSessionStats(db) {
+  state.sessionStats.min = Math.min(state.sessionStats.min, db);
+  state.sessionStats.max = Math.max(state.sessionStats.max, db);
+  state.sessionStats.sum += db;
+  state.sessionStats.count++;
+  if (db > state.threshold) {
+    state.sessionStats.overThreshold++;
+  }
+  
+  const avg = state.sessionStats.sum / state.sessionStats.count;
+  const overPct = state.sessionStats.count > 0 ? 
+    (state.sessionStats.overThreshold / state.sessionStats.count * 100) : 0;
+  
+  els.statCurrent.textContent = Math.round(db);
+  els.statAvg.textContent = Math.round(avg);
+  els.statMin.textContent = Math.round(state.sessionStats.min);
+  els.statMax.textContent = Math.round(state.sessionStats.max);
+  els.statSamples.textContent = state.sessionStats.count;
+  els.statOver85.innerHTML = Math.round(overPct) + '<span class="stat-unit">%</span>';
+  
+  // Allerta visiva se sopra soglia
+  if (db > state.threshold) {
+    document.body.style.boxShadow = 'inset 0 0 100px rgba(255, 46, 99, 0.15)';
+  } else {
+    document.body.style.boxShadow = '';
+  }
+}
+
+// ============ GRAFICO STORICO ============
+let historyChart = null;
+
+function initChart() {
+  const ctx = els.historyChart.getContext('2d');
+  
+  const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+  gradient.addColorStop(0, 'rgba(255, 107, 26, 0.4)');
+  gradient.addColorStop(0.5, 'rgba(255, 107, 26, 0.1)');
+  gradient.addColorStop(1, 'rgba(255, 107, 26, 0)');
+  
+  historyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'dB SPL',
+        data: [],
+        borderColor: '#ff6b1a',
+        backgroundColor: gradient,
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#ff6b1a',
+        pointHoverBorderWidth: 2,
+        tension: 0.35,
+        fill: true,
+        segment: {
+          borderColor: (ctx) => getColorForDb(ctx.p1.parsed.y)
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      },
+      scales: {
+        y: {
+          min: 30,
+          max: 120,
+          grid: { 
+            color: 'rgba(255,255,255,0.04)'
+          },
+          ticks: {
+            color: '#8a8aa0',
+            font: { family: 'JetBrains Mono', size: 10, weight: 500 },
+            stepSize: 20,
+            callback: (v) => v + ' dB'
+          }
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: '#8a8aa0',
+            font: { family: 'JetBrains Mono', size: 10 },
+            maxTicksLimit: 10,
+            maxRotation: 0
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15, 15, 24, 0.95)',
+          titleColor: '#f0f0f5',
+          bodyColor: '#ff6b1a',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          padding: 12,
+          cornerRadius: 8,
+          titleFont: { family: 'JetBrains Mono', size: 11, weight: 600 },
+          bodyFont: { family: 'JetBrains Mono', size: 13, weight: 700 },
+          callbacks: {
+            label: (ctx) => `${Math.round(ctx.parsed.y)} dB SPL — ${getLevelLabel(ctx.parsed.y)}`
+          }
+        }
+      }
+    }
+  });
+}
+
+function addHistoryPoint(db) {
+  const now = new Date();
+  const timeLabel = now.toLocaleTimeString('it-IT', { 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit' 
+  });
+  
+  state.history.push({ time: timeLabel, db: db, timestamp: now.getTime() });
+  
+  if (state.history.length > state.maxHistoryPoints) {
+    state.history.shift();
+  }
+  
+  historyChart.data.labels = state.history.map(h => h.time);
+  historyChart.data.datasets[0].data = state.history.map(h => h.db);
+  historyChart.update('none');
+  
+  els.chartEmpty.classList.add('hidden');
+  els.chartBadge.textContent = `${state.history.length} punti`;
+}
+
+// ============ TIMER SESSIONE ============
+function updateSessionTimer() {
+  if (!state.sessionStats.startTime) return;
+  const elapsed = (Date.now() - state.sessionStats.startTime) / 1000;
+  els.sessionTime.textContent = formatTime(elapsed);
+}
+
+// ============ CICLI PRINCIPALI ============
+function renderLoop() {
+  if (!state.isRecording) return;
+  drawSpectrum();
+  state.rafId = requestAnimationFrame(renderLoop);
+}
+
+function samplingLoop() {
+  if (!state.isRecording) return;
+  
+  const measurement = measureDb();
+  const { db, peakDb, rms } = measurement;
+  
+  // Smoothing con media mobile esponenziale
+  const smoothing = 0.4;
+  state.smoothedDb = state.smoothedDb * (1 - smoothing) + db * smoothing;
+  
+  updateGauge(state.smoothedDb);
+  updateInstantStats(state.smoothedDb, peakDb, rms);
+  updateSessionStats(state.smoothedDb);
+}
+
+function historyLoop() {
+  if (!state.isRecording) return;
+  addHistoryPoint(state.smoothedDb);
+  els.exportBtn.disabled = false;
+}
+
+// ============ AVVIO / STOP ============
+async function toggleRecording() {
+  if (state.isRecording) {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  els.startBtn.disabled = true;
+  
+  if (!state.audioContext) {
+    const ok = await initAudio();
+    if (!ok) {
+      els.startBtn.disabled = false;
+      return;
+    }
+  }
+  
+  // Riprendi il context sospeso (policy browser)
+  if (state.audioContext.state === 'suspended') {
+    await state.audioContext.resume();
+  }
+  
+  // Reset picchi istantanei
+  state.instantPeak = 0;
+  state.instantMin = 200;
+  state.smoothedDb = 0;
+  
+  if (state.sessionStats.startTime === null) {
+    state.sessionStats.startTime = Date.now();
+  }
+  
+  state.isRecording = true;
+  
+  els.startBtn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+    Ferma
+  `;
+  els.startBtn.classList.add('recording');
+  els.startBtn.disabled = false;
+  els.resetBtn.disabled = false;
+  
+  els.micStatus.classList.add('active');
+  els.micStatus.classList.remove('error');
+  els.micStatusText.textContent = 'In registrazione';
+  els.liveBadge.textContent = 'LIVE';
+  els.liveBadge.style.background = 'rgba(255, 46, 99, 0.15)';
+  els.liveBadge.style.color = '#ff2e63';
+  els.liveBadge.style.borderColor = 'rgba(255, 46, 99, 0.3)';
+  
+  // Avvia i cicli
+  renderLoop();
+  state.samplingInterval = setInterval(samplingLoop, 100);
+  state.statsInterval = setInterval(historyLoop, 1000);
+  state.sessionTimerInterval = setInterval(updateSessionTimer, 1000);
+  
+  showToast('Misurazione avviata', 'success');
+}
+
+function stopRecording() {
+  state.isRecording = false;
+  
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  if (state.samplingInterval) clearInterval(state.samplingInterval);
+  if (state.statsInterval) clearInterval(state.statsInterval);
+  if (state.sessionTimerInterval) clearInterval(state.sessionTimerInterval);
+  
+  if (state.audioContext && state.audioContext.state === 'running') {
+    state.audioContext.suspend();
+  }
+  
+  els.startBtn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+    Riprendi
+  `;
+  els.startBtn.classList.remove('recording');
+  
+  els.micStatus.classList.remove('active');
+  els.micStatusText.textContent = 'In pausa';
+  els.liveBadge.textContent = 'PAUSA';
+  els.liveBadge.style.background = 'rgba(255, 214, 10, 0.15)';
+  els.liveBadge.style.color = '#ffd60a';
+  els.liveBadge.style.borderColor = 'rgba(255, 214, 10, 0.3)';
+  
+  document.body.style.boxShadow = '';
+  
+  showToast('Misurazione fermata', 'info');
+}
+
+function resetSession() {
+  if (state.isRecording) {
+    stopRecording();
+  }
+  
+  state.history = [];
+  state.sessionStats = {
+    min: 200,
+    max: 0,
+    sum: 0,
+    count: 0,
+    overThreshold: 0,
+    startTime: null
+  };
+  state.instantPeak = 0;
+  state.instantMin = 200;
+  state.smoothedDb = 0;
+  
+  historyChart.data.labels = [];
+  historyChart.data.datasets[0].data = [];
+  historyChart.update();
+  
+  els.gaugeValue.textContent = '--';
+  els.gaugeValue.style.color = '';
+  els.gaugeLevel.textContent = 'In attesa';
+  els.gaugeLevel.style.color = '';
+  els.gaugeArc.setAttribute('stroke-dasharray', '0 565');
+  els.gaugeArc.setAttribute('stroke', '#00ff9d');
+  
+  els.instantPeak.textContent = '-- dB';
+  els.instantMin.textContent = '-- dB';
+  els.rmsValue.textContent = '--';
+  els.statCurrent.textContent = '--';
+  els.statAvg.textContent = '--';
+  els.statMin.textContent = '--';
+  els.statMax.textContent = '--';
+  els.statSamples.textContent = '0';
+  els.statOver85.innerHTML = '0<span class="stat-unit">%</span>';
+  els.sessionTime.textContent = '00:00:00';
+  
+  els.chartEmpty.classList.remove('hidden');
+  els.chartBadge.textContent = 'Nessun dato';
+  
+  els.startBtn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+    Avvia misurazione
+  `;
+  els.resetBtn.disabled = true;
+  els.exportBtn.disabled = true;
+  
+  showToast('Sessione resettata', 'info');
+}
+
+// ============ ESPORTAZIONE CSV ============
+function exportCSV() {
+  if (state.history.length === 0) {
+    showToast('Nessun dato da esportare', 'error');
+    return;
+  }
+  
+  // BOM per compatibilità Excel
+  let csv = '\ufeffTimestamp,Ora,Livello (dB SPL),Classificazione\n';
+  state.history.forEach(h => {
+    csv += `${h.timestamp},${h.time},${h.db.toFixed(2)},"${getLevelLabel(h.db)}"\n`;
+  });
+  
+  // Riepilogo
+  csv += '\n\n--- RIEPILOGO SESSIONE ---\n';
+  csv += `Campioni totali,${state.sessionStats.count}\n`;
+  csv += `Livello minimo,${state.sessionStats.min.toFixed(2)} dB\n`;
+  csv += `Livello massimo,${state.sessionStats.max.toFixed(2)} dB\n`;
+  csv += `Livello medio,${(state.sessionStats.sum / state.sessionStats.count).toFixed(2)} dB\n`;
+  csv += `Soglia allarme,${state.threshold} dB\n`;
+  csv += `Campioni sopra soglia,${state.sessionStats.overThreshold}\n`;
+  csv += `Percentuale sopra soglia,${((state.sessionStats.overThreshold / state.sessionStats.count) * 100).toFixed(1)}%\n`;
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+  a.href = url;
+  a.download = `misurazione-rumore-${now}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  showToast('CSV esportato con successo', 'success');
+}
+
+// ============ EVENT LISTENERS ============
+els.startBtn.addEventListener('click', toggleRecording);
+els.resetBtn.addEventListener('click', resetSession);
+els.exportBtn.addEventListener('click', exportCSV);
+
+els.calibSlider.addEventListener('input', (e) => {
+  state.calibrationAdjust = parseInt(e.target.value);
+  const sign = state.calibrationAdjust >= 0 ? '+' : '';
+  els.calibValue.textContent = `${sign}${state.calibrationAdjust} dB`;
+});
+
+els.thresholdSlider.addEventListener('input', (e) => {
+  state.threshold = parseInt(e.target.value);
+  els.thresholdValue.textContent = `${state.threshold} dB`;
+});
+
+// Pausa rendering quando il tab non è visibile
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state.isRecording) {
+    if (state.rafId) cancelAnimationFrame(state.rafId);
+  } else if (!document.hidden && state.isRecording) {
+    renderLoop();
+  }
+});
+
+// ============ INIZIALIZZAZIONE ============
+generateTicks();
+initChart();
+
+// Stato iniziale gauge
+els.gaugeValue.textContent = '--';
+els.gaugeLevel.textContent = 'In attesa';
+
+console.log('Sonograph inizializzato. Clicca "Avvia misurazione" per iniziare.');
+</script>
+</body>
+</html>

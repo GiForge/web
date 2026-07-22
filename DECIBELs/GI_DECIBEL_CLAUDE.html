@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misuratore di Rumore - Decibel Meter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        .meter-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .decibel-display {
+            font-size: 72px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .decibel-display.high {
+            color: #ff6b6b;
+        }
+
+        .decibel-display.medium {
+            color: #ffa502;
+        }
+
+        .meter-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .info-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 30px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .scale-reference {
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .scale-reference h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .scale-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .scale-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            border-left: 4px solid #667eea;
+        }
+
+        .scale-item.dangerous {
+            border-left-color: #ff6b6b;
+        }
+
+        .scale-item.loud {
+            border-left-color: #ffa502;
+        }
+
+        .scale-item.moderate {
+            border-left-color: #48bb78;
+        }
+
+        .scale-item.quiet {
+            border-left-color: #a0aec0;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .history-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .history-info {
+            color: #666;
+            font-size: 14px;
+            padding: 12px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .decibel-display {
+                font-size: 48px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Misuratore di Rumore</h1>
+            <p>Misurazione precisa dei decibel ambientali con tracciamento storico</p>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div class="controls">
+            <button class="btn-primary" id="startBtn" onclick="startMeasurement()">🎙️ Avvia Misurazione</button>
+            <button class="btn-primary" id="stopBtn" onclick="stopMeasurement()" disabled>⏹️ Ferma</button>
+            <button class="btn-secondary" id="pauseBtn" onclick="togglePause()" disabled>⏸️ Pausa</button>
+            <button class="btn-danger" onclick="clearHistory()">🗑️ Cancella Dati</button>
+            <button class="btn-secondary" onclick="exportData()">💾 Esporta</button>
+        </div>
+
+        <div class="meter-section">
+            <h2>Livello Rumore Attuale</h2>
+            <div class="decibel-display" id="dbDisplay">-- dB</div>
+            
+            <div class="meter-info">
+                <div class="info-box">
+                    <div class="info-label">Media</div>
+                    <div class="info-value" id="avgValue">-- dB</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Massimo</div>
+                    <div class="info-value" id="maxValue">-- dB</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Minimo</div>
+                    <div class="info-value" id="minValue">-- dB</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Misurazioni</div>
+                    <div class="info-value" id="countValue">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="scale-reference">
+            <h3>📏 Scala di Riferimento (dB SPL)</h3>
+            <div class="scale-items">
+                <div class="scale-item quiet">🤫 0-40 dB: Silenzio, sussurri</div>
+                <div class="scale-item moderate">🔊 40-60 dB: Conversazione normale</div>
+                <div class="scale-item loud">📢 60-80 dB: Ufficio rumoroso, traffico</div>
+                <div class="scale-item dangerous">⚠️ 80+ dB: Pericoloso per l'udito</div>
+            </div>
+        </div>
+
+        <div class="history-info" id="historyInfo" style="display: none;">
+            Registrazioni negli ultimi <span id="timeDuration">5</span> minuti
+        </div>
+
+        <div class="chart-container">
+            <canvas id="noiseChart"></canvas>
+        </div>
+
+        <div class="history-controls">
+            <button class="btn-secondary" onclick="setChartDuration(5)">Ultimi 5 min</button>
+            <button class="btn-secondary" onclick="setChartDuration(15)">Ultimi 15 min</button>
+            <button class="btn-secondary" onclick="setChartDuration(60)">Ultima ora</button>
+        </div>
+    </div>
+
+    <script>
+        let audioContext = null;
+        let analyser = null;
+        let microphone = null;
+        let animationId = null;
+        let isRecording = false;
+        let isPaused = false;
+
+        const measurements = [];
+        const maxDataPoints = 3600; // 60 minuti a 1 misurazione al secondo
+        let chartDuration = 5; // minuti
+        let chart = null;
+
+        const DB_REF = 20e-6; // Riferimento di pressione acustica: 20 microPascal
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status show ${type}`;
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 3000);
+        }
+
+        async function startMeasurement() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    showStatus('❌ Accesso al microfono non supportato nel tuo browser', 'error');
+                    return;
+                }
+
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+
+                microphone = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+
+                microphone.connect(analyser);
+
+                isRecording = true;
+                isPaused = false;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('pauseBtn').disabled = false;
+                document.getElementById('pauseBtn').textContent = '⏸️ Pausa';
+
+                showStatus('✅ Misurazione avviata', 'success');
+                measureNoise();
+            } catch (error) {
+                showStatus(`❌ Errore: ${error.message}`, 'error');
+                console.error('Errore accesso microfono:', error);
+            }
+        }
+
+        function stopMeasurement() {
+            isRecording = false;
+            
+            if (microphone) {
+                microphone.disconnect();
+                microphone.mediaStream.getTracks().forEach(track => track.stop());
+                microphone = null;
+            }
+
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = true;
+
+            showStatus('⏹️ Misurazione fermata', 'info');
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const btn = document.getElementById('pauseBtn');
+            if (isPaused) {
+                btn.textContent = '▶️ Riprendi';
+                showStatus('⏸️ In pausa', 'info');
+            } else {
+                btn.textContent = '⏸️ Pausa';
+                showStatus('▶️ Ripresa', 'success');
+            }
+        }
+
+        function measureNoise() {
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(dataArray);
+
+            if (!isPaused) {
+                // Calcola RMS (Root Mean Square) dall'FFT
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    const normalized = dataArray[i] / 255;
+                    sum += normalized * normalized;
+                }
+
+                const rms = Math.sqrt(sum / dataArray.length);
+                
+                // Converti RMS in decibel SPL
+                // 20 * log10(rms / DB_REF) dove DB_REF = 20 microPascal
+                const db = rms > 0 ? 20 * Math.log10(rms / DB_REF) : -Infinity;
+                const dbClamped = Math.max(-10, Math.min(db, 130)); // Limita tra -10 e 130 dB
+
+                measurements.push({
+                    db: dbClamped,
+                    timestamp: Date.now()
+                });
+
+                // Mantieni solo gli ultimi punti
+                if (measurements.length > maxDataPoints) {
+                    measurements.shift();
+                }
+
+                updateDisplay(dbClamped);
+                updateChart();
+            }
+
+            animationId = requestAnimationFrame(measureNoise);
+        }
+
+        function updateDisplay(currentDb) {
+            document.getElementById('dbDisplay').textContent = currentDb.toFixed(1) + ' dB';
+            
+            const display = document.getElementById('dbDisplay');
+            if (currentDb >= 80) {
+                display.className = 'decibel-display high';
+            } else if (currentDb >= 60) {
+                display.className = 'decibel-display medium';
+            } else {
+                display.className = 'decibel-display';
+            }
+
+            // Aggiorna statistiche
+            if (measurements.length > 0) {
+                const values = measurements.map(m => m.db);
+                const avg = values.reduce((a, b) => a + b) / values.length;
+                const max = Math.max(...values);
+                const min = Math.min(...values);
+
+                document.getElementById('avgValue').textContent = avg.toFixed(1) + ' dB';
+                document.getElementById('maxValue').textContent = max.toFixed(1) + ' dB';
+                document.getElementById('minValue').textContent = min.toFixed(1) + ' dB';
+                document.getElementById('countValue').textContent = measurements.length;
+            }
+        }
+
+        function updateChart() {
+            if (!chart) {
+                const ctx = document.getElementById('noiseChart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Livello Rumore (dB)',
+                            data: [],
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#667eea'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                labels: {
+                                    usePointStyle: true,
+                                    font: { size: 12 }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                min: 0,
+                                max: 130,
+                                title: {
+                                    display: true,
+                                    text: 'Decibel (dB SPL)'
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const now = Date.now();
+            const cutoff = now - (chartDuration * 60 * 1000);
+            const filtered = measurements.filter(m => m.timestamp >= cutoff);
+
+            chart.data.labels = filtered.map((m, idx) => {
+                const date = new Date(m.timestamp);
+                return idx % 10 === 0 ? date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+            });
+            chart.data.datasets[0].data = filtered.map(m => m.db);
+            chart.update('none');
+
+            document.getElementById('historyInfo').style.display = filtered.length > 0 ? 'block' : 'none';
+        }
+
+        function setChartDuration(minutes) {
+            chartDuration = minutes;
+            document.getElementById('timeDuration').textContent = minutes;
+            if (chart) {
+                updateChart();
+            }
+        }
+
+        function clearHistory() {
+            if (confirm('Sei sicuro di voler cancellare tutti i dati registrati?')) {
+                measurements.length = 0;
+                document.getElementById('avgValue').textContent = '-- dB';
+                document.getElementById('maxValue').textContent = '-- dB';
+                document.getElementById('minValue').textContent = '-- dB';
+                document.getElementById('countValue').textContent = '0';
+                if (chart) {
+                    updateChart();
+                }
+                showStatus('🗑️ Dati cancellati', 'success');
+            }
+        }
+
+        function exportData() {
+            if (measurements.length === 0) {
+                showStatus('❌ Nessun dato da esportare', 'error');
+                return;
+            }
+
+            const csv = 'Timestamp,Ora,Decibel (dB)\n' + 
+                measurements.map(m => {
+                    const date = new Date(m.timestamp);
+                    return `${m.timestamp},${date.toLocaleString('it-IT')},${m.db.toFixed(2)}`;
+                }).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rumore_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showStatus('💾 Dati esportati in CSV', 'success');
+        }
+
+        // Inizializza il grafico vuoto
+        window.addEventListener('load', () => {
+            const ctx = document.getElementById('noiseChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Livello Rumore (dB)',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                usePointStyle: true,
+                                font: { size: 12 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 130,
+                            title: {
+                                display: true,
+                                text: 'Decibel (dB SPL)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
