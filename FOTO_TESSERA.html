@@ -561,7 +561,6 @@
                 <button class="btn btn-tool" id="btn-reset">↻ Reset Posizione</button>
             </div>
             <div class="hint">
-                Edge Refinement attivo • Anti-Jagged • Alpha sub-pixel<br>
                 Touch: Drag (1 dito) • Pinch (2 dita) | Mouse: Drag • Scroll
             </div>
         </div>
@@ -622,7 +621,7 @@
         <div class="status-dot"></div>
         <span id="status-text">System Ready</span>
     </div>
-    <span>v3.1 Professional • Edge Refined</span>
+    <span>v3.0 Professional</span>
 </div>
 
 <!-- 3. MODALE A4 -->
@@ -652,74 +651,12 @@
     // === STATE ===
     let rawImg = new Image();
     let aiMask = null;
+    let refinedMaskCanvas = null;
+    let refinedMaskW = 0;
+    let refinedMaskH = 0;
     let px = 0, py = 0, sc = 1.0;
     let isDrag = false, lastX, lastY, lastDist = 0;
     let beauty = false, aiOn = false, side = "user";
-
-// === EDGE REFINEMENT ===
-// Cache della maschera raffinata per evitare di ricalcolarla ad ogni frame.
-// I parametri sono volutamente conservativi: l'obiettivo è eliminare
-// scalettature e piccoli artefatti senza mangiare capelli/orecchie/spalle.
-let refinedMaskCanvas = null;
-let refinedMaskW = 0;
-let refinedMaskH = 0;
-
-function buildRefinedMask(mask) {
-    const w = rawImg.naturalWidth || rawImg.width;
-    const h = rawImg.naturalHeight || rawImg.height;
-
-    if (!w || !h) return null;
-
-    const work = document.createElement('canvas');
-    work.width = w;
-    work.height = h;
-    const mctx = work.getContext('2d', { willReadFrequently: true });
-
-    // Interpolazione di alta qualità: la maschera MediaPipe può essere
-    // significativamente più piccola della fotografia originale.
-    mctx.imageSmoothingEnabled = true;
-    mctx.imageSmoothingQuality = 'high';
-    mctx.clearRect(0, 0, w, h);
-
-    // Prima passata: upsampling + leggero Gaussian-like blur.
-    // Il blur viene applicato SOLO alla maschera, non alla fotografia.
-    mctx.filter = 'blur(0.75px)';
-    mctx.drawImage(mask, 0, 0, w, h);
-    mctx.filter = 'none';
-
-    // Seconda passata pixel-level:
-    // - mantiene l'alpha pieno all'interno
-    // - crea una transizione morbida sul bordo
-    // - elimina il "gradino" tipico della soglia binaria
-    const img = mctx.getImageData(0, 0, w, h);
-    const d = img.data;
-
-    for (let i = 0; i < d.length; i += 4) {
-        const a = d[i + 3] / 255;
-
-        // Zona di transizione ampia abbastanza da anti-aliasare il bordo,
-        // ma non tanto da rendere il soggetto sfocato.
-        const t = Math.max(0, Math.min(1, (a - 0.16) / 0.68));
-
-        // Smoothstep cubico: contorno più uniforme e naturale.
-        const smooth = t * t * (3 - 2 * t);
-
-        d[i + 3] = Math.round(smooth * 255);
-    }
-
-    mctx.putImageData(img, 0, 0);
-
-    refinedMaskCanvas = work;
-    refinedMaskW = w;
-    refinedMaskH = h;
-    return work;
-}
-
-function invalidateRefinedMask() {
-    refinedMaskCanvas = null;
-    refinedMaskW = 0;
-    refinedMaskH = 0;
-}
 
     // === AI SEGMENTATION ===
     const selfie = new SelfieSegmentation({
@@ -728,16 +665,157 @@ function invalidateRefinedMask() {
     selfie.setOptions({ modelSelection: 1 });
     selfie.onResults(res => {
         aiMask = res.segmentationMask;
-        aiOn = true;
-
-        // Raffinamento del contorno ad alta risoluzione.
         buildRefinedMask(aiMask);
-
+        aiOn = true;
         document.getElementById('ai-loading').style.display = 'none';
         document.getElementById('btn-ai').classList.add('active');
         draw();
-        updateStatus('AI Background rimosso • bordo raffinato');
+        updateStatus('AI Background rimosso • bordo ultra-rifinito');
     });
+
+    // === ADVANCED AI MASK REFINEMENT ===
+    // Pipeline:
+    // 1) upscale/interpolazione della maschera alla risoluzione nativa
+    // 2) blur gaussiano multi-pass più forte
+    // 3) apertura morfologica (erosione -> dilatazione) per eliminare piccoli artefatti
+    // 4) chiusura morfologica (dilatazione -> erosione) per richiudere micro-vuoti
+    // 5) alpha ramp ampia + smoothstep per un bordo progressivo e anti-jagged
+    function buildRefinedMask(mask) {
+        if (!mask || !rawImg.width || !rawImg.height) return;
+
+        const w = rawImg.width;
+        const h = rawImg.height;
+
+        const base = document.createElement('canvas');
+        base.width = w;
+        base.height = h;
+        const bctx = base.getContext('2d', { willReadFrequently: true });
+        bctx.imageSmoothingEnabled = true;
+        bctx.imageSmoothingQuality = 'high';
+        bctx.filter = 'blur(1.35px)';
+        bctx.drawImage(mask, 0, 0, w, h);
+
+        // Work at a reduced resolution for stable, fast morphology.
+        // The final mask is then reconstructed at full native resolution.
+        const factor = Math.min(1, 900 / Math.max(w, h));
+        const mw = Math.max(1, Math.round(w * factor));
+        const mh = Math.max(1, Math.round(h * factor));
+
+        const work = document.createElement('canvas');
+        work.width = mw;
+        work.height = mh;
+        const wctx = work.getContext('2d', { willReadFrequently: true });
+        wctx.imageSmoothingEnabled = true;
+        wctx.imageSmoothingQuality = 'high';
+        wctx.drawImage(base, 0, 0, mw, mh);
+
+        let src = wctx.getImageData(0, 0, mw, mh).data;
+        let alpha = new Float32Array(mw * mh);
+
+        for (let i = 0, p = 0; i < alpha.length; i++, p += 4) {
+            alpha[i] = src[p + 3] / 255;
+        }
+
+        // Small-radius morphology. Values are intentionally stronger than v3.1,
+        // but remain conservative enough not to shave off hair/ears.
+        const erodeRadius = 2;
+        const dilateRadius = 3;
+
+        function morph(input, radius, mode) {
+            const output = new Float32Array(input.length);
+            const r = radius;
+
+            for (let y = 0; y < mh; y++) {
+                for (let x = 0; x < mw; x++) {
+                    let value = mode === 'erode' ? 1 : 0;
+
+                    for (let dy = -r; dy <= r; dy++) {
+                        const yy = y + dy;
+                        if (yy < 0 || yy >= mh) continue;
+
+                        for (let dx = -r; dx <= r; dx++) {
+                            if (dx * dx + dy * dy > r * r) continue;
+                            const xx = x + dx;
+                            if (xx < 0 || xx >= mw) continue;
+
+                            const v = input[yy * mw + xx];
+                            if (mode === 'erode') {
+                                if (v < value) value = v;
+                                if (value === 0) break;
+                            } else {
+                                if (v > value) value = v;
+                                if (value === 1) break;
+                            }
+                        }
+                        if ((mode === 'erode' && value === 0) ||
+                            (mode === 'dilate' && value === 1)) break;
+                    }
+
+                    output[y * mw + x] = value;
+                }
+            }
+            return output;
+        }
+
+        // Opening removes isolated mask noise.
+        alpha = morph(alpha, erodeRadius, 'erode');
+        alpha = morph(alpha, erodeRadius, 'dilate');
+
+        // Closing fills tiny holes and breaks in the subject silhouette.
+        alpha = morph(alpha, dilateRadius, 'dilate');
+        alpha = morph(alpha, dilateRadius, 'erode');
+
+        // Rebuild alpha at full resolution with high-quality interpolation.
+        const refinedSmall = document.createElement('canvas');
+        refinedSmall.width = mw;
+        refinedSmall.height = mh;
+        const rctx = refinedSmall.getContext('2d', { willReadFrequently: true });
+        const img = rctx.createImageData(mw, mh);
+
+        // Wider transition zone:
+        // - hard reject below 0.08
+        // - full opacity above 0.92
+        // - smooth transition in between
+        const low = 0.08;
+        const high = 0.92;
+
+        for (let i = 0, p = 0; i < alpha.length; i++, p += 4) {
+            const a = alpha[i];
+            let t = (a - low) / (high - low);
+            t = Math.max(0, Math.min(1, t));
+
+            // Smoothstep twice: gentler shoulder and fewer visible stair-steps.
+            t = t * t * (3 - 2 * t);
+            t = t * t * (3 - 2 * t);
+
+            const v = Math.round(t * 255);
+            img.data[p] = 255;
+            img.data[p + 1] = 255;
+            img.data[p + 2] = 255;
+            img.data[p + 3] = v;
+        }
+        rctx.putImageData(img, 0, 0);
+
+        refinedMaskCanvas = document.createElement('canvas');
+        refinedMaskCanvas.width = w;
+        refinedMaskCanvas.height = h;
+        const fctx = refinedMaskCanvas.getContext('2d');
+        fctx.imageSmoothingEnabled = true;
+        fctx.imageSmoothingQuality = 'high';
+
+        // Final feather at native resolution, deliberately stronger than v3.1.
+        fctx.filter = 'blur(1.10px)';
+        fctx.drawImage(refinedSmall, 0, 0, w, h);
+
+        refinedMaskW = w;
+        refinedMaskH = h;
+    }
+
+    function invalidateRefinedMask() {
+        refinedMaskCanvas = null;
+        refinedMaskW = 0;
+        refinedMaskH = 0;
+    }
 
     // === CAMERA ===
     async function init() {
@@ -779,8 +857,6 @@ function invalidateRefinedMask() {
         invalidateRefinedMask();
         aiMask = null;
         aiOn = false;
-        document.getElementById('btn-ai').classList.remove('active');
-
         rawImg.onload = () => {
             // Risoluzione alta per qualità
             cvs.width = 800;
@@ -848,20 +924,19 @@ function invalidateRefinedMask() {
             tempCtx.filter = filterString;
             tempCtx.drawImage(rawImg, 0, 0);
             
-            // 4. Applica la maschera raffinata.
-//    La maschera viene portata alla risoluzione originale prima del
-//    compositing, con interpolazione high-quality e alpha continuo.
-            const finalMask =
-                (refinedMaskCanvas &&
-                 refinedMaskW === rawImg.width &&
-                 refinedMaskH === rawImg.height)
-                    ? refinedMaskCanvas
-                    : buildRefinedMask(aiMask);
-
+            // 4. Applica la maschera AI raffinata:
+            // blur + apertura/chiusura morfologica + alpha ramp ampia.
             tempCtx.globalCompositeOperation = "destination-in";
-            tempCtx.imageSmoothingEnabled = true;
-            tempCtx.imageSmoothingQuality = "high";
-            tempCtx.drawImage(finalMask || aiMask, 0, 0, rawImg.width, rawImg.height);
+            if (refinedMaskCanvas &&
+                refinedMaskW === rawImg.width &&
+                refinedMaskH === rawImg.height) {
+                tempCtx.imageSmoothingEnabled = true;
+                tempCtx.imageSmoothingQuality = 'high';
+                tempCtx.drawImage(refinedMaskCanvas, 0, 0);
+            } else {
+                // Fallback sicuro se la maschera raffinata non è ancora disponibile.
+                tempCtx.drawImage(aiMask, 0, 0);
+            }
             
             // 5. Disegna il risultato finale con zoom e posizione
             ctx.drawImage(tempCanvas, px, py, rawImg.width * sc, rawImg.height * sc);
