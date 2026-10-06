@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>MultiTrack Sequencer — Registratore &amp; Editor</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -11,7 +11,30 @@
   --line:#1f2d3a;--line2:#2b3d4e;--txt:#c3d1de;--dim:#75879a;
   --acc:#ff2e5b;--ok:#22d37a;--warn:#ffc531;--vio:#9d6bff;--cyan:#31c9e0;
 }
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);font-size:13px;min-height:100vh}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);font-size:13px;min-height:100dvh;touch-action:pan-y pinch-zoom}
+
+@media (max-width: 920px){
+  #ctrls{gap:8px;padding:6px;flex-wrap:wrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #app{overflow-x:auto}
+  #master{flex:none}
+  .hd{padding:4px 6px;height:auto;min-height:56px;grid-template-columns:1fr 1fr;grid-template-rows:auto auto}
+  .hd .nm{grid-column:1/2;grid-row:1}
+  .hd .ch{grid-column:2/3;grid-row:1}
+  .hd .btns{grid-column:1/3;grid-row:2;justify-content:flex-start}
+  .hd .fx{grid-column:1/3;grid-row:3}
+  .stripwrap,.lanewrap{height:auto;min-height:70px}
+  .strip,.lane{height:auto;min-height:56px}
+  .fx{flex-wrap:wrap;gap:4px}
+  #footer{padding:6px;flex-wrap:wrap;gap:6px}
+}
+@media (max-width: 560px){
+  .hd{grid-template-columns:1fr;grid-template-rows:auto auto auto auto}
+  .hd .nm{grid-column:1;grid-row:1}
+  .hd .ch{grid-column:1;grid-row:2}
+  .hd .btns{grid-column:1;grid-row:3;justify-content:flex-start}
+  .hd .fx{grid-column:1;grid-row:4}
+}
+
 .mono{font-family:'Cascadia Mono',Consolas,'Courier New',monospace}
 button{font-family:inherit}
 header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -1279,6 +1302,27 @@ window.addEventListener('mouseup', () => {
 window.addEventListener('blur', () => { drag = null; });
 document.addEventListener('mouseleave', () => { drag = null; });
 window.addEventListener('resize', () => { drawRuler(); tracks.forEach(drawLane); });
+
+  function pos(e){
+    if (e.touches && e.touches[0]) return e.touches[0];
+    if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0];
+    return e;
+  }
+  lane.addEventListener('touchstart', e => {
+    const p = pos(e);
+    const me = new MouseEvent('mousedown', {bubbles:true, clientX:p.clientX, clientY:p.clientY, cancelable:true});
+    e.target.dispatchEvent(me); e.preventDefault();
+  }, {passive:false});
+  lane.addEventListener('touchmove', e => {
+    const p = pos(e);
+    const me = new MouseEvent('mousemove', {bubbles:true, clientX:p.clientX, clientY:p.clientY, cancelable:true});
+    document.dispatchEvent(me); e.preventDefault();
+  }, {passive:false});
+  lane.addEventListener('touchend', e => {
+    const p = pos(e.changedTouches[0] || e.touches[0] || {clientX:0,clientY:0});
+    const me = new MouseEvent('mouseup', {bubbles:true, clientX:p.clientX, clientY:p.clientY, cancelable:true});
+    document.dispatchEvent(me); e.preventDefault();
+  }, {passive:false});
 document.addEventListener('keydown', e => {
   if (/input|select|textarea/i.test(e.target.tagName)) return;
   if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
