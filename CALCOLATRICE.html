@@ -86,16 +86,6 @@
   }
   .fullscreen-btn:active { background: var(--accent); color: #000; }
 
-  /* Modalità Pseudo-Fullscreen per ambienti sandboxed / iframe */
-  body.pseudo-fullscreen {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100dvh !important;
-    z-index: 999999 !important;
-  }
-
   /* Gestione flessibile del contenuto dei Tab */
   .tab-content { 
     display: none !important; 
@@ -373,44 +363,22 @@
 </div>
 
 <script>
-// ===== GESTIONE SCHERMO INTERO (FULLSCREEN CON FALLBACK SAFE) =====
+// ===== GESTIONE SCHERMO INTERO (FULLSCREEN) =====
 function toggleFullscreen() {
-  const isDocFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
-  const isPseudoFs = document.body.classList.contains('pseudo-fullscreen');
-
-  if (!isDocFullscreen && !isPseudoFs) {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
     const docEl = document.documentElement;
-    const requestFS = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
-
-    if (requestFS) {
-      try {
-        const promise = requestFS.call(docEl);
-        if (promise && promise.catch) {
-          promise.catch(() => {
-            // Se bloccato da Permissions Policy (es. Iframe), attiva Pseudo-Fullscreen
-            enablePseudoFullscreen();
-          });
-        }
-      } catch (e) {
-        enablePseudoFullscreen();
-      }
-    } else {
-      enablePseudoFullscreen();
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen();
+    } else if (docEl.webkitRequestFullscreen) {
+      docEl.webkitRequestFullscreen();
     }
   } else {
-    if (isPseudoFs) {
-      document.body.classList.remove('pseudo-fullscreen');
-    }
     if (document.exitFullscreen) {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen();
     } else if (document.webkitExitFullscreen) {
       document.webkitExitFullscreen();
     }
   }
-}
-
-function enablePseudoFullscreen() {
-  document.body.classList.toggle('pseudo-fullscreen');
 }
 
 // ===== LOGICA TAB =====
