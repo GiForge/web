@@ -3,81 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generatore API Key Cifrata</title>
+    <title>Cifratore e Decifratore Gemini</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- CryptoJS CDN per algoritmi di cifratura AES -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        body { background: #f4f7f6; font-family: 'Inter', sans-serif; }
+        body { 
+            background: #f4f7f6; 
+            font-family: 'Inter', sans-serif; 
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
+    <!-- Card Principale -->
     <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
-        <div class="text-center mb-8">
-            <h1 class="text-2xl font-bold text-gray-800">Cifratore Gemini</h1>
-            <p class="text-sm text-gray-500 mt-2">Proteggi la tua chiave prima di inserirla nel codice</p>
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Cifratore / Decifratore</h1>
+            <p class="text-sm text-gray-500 mt-1">Proteggi o recupera la tua API Key in locale</p>
         </div>
 
-        <div class="space-y-6">
+        <!-- Selettore TAB -->
+        <div class="flex bg-gray-100 p-1 rounded-2xl mb-6">
+            <button id="tab-encrypt-btn" onclick="switchTab('encrypt')" 
+                class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-200 bg-white text-gray-800 shadow-sm">
+                Cifra / Codifica
+            </button>
+            <button id="tab-decrypt-btn" onclick="switchTab('decrypt')" 
+                class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-200 text-gray-500 hover:text-gray-800">
+                Decifra / Decodifica
+            </button>
+        </div>
+
+        <!-- TAB 1: CIFRATURA -->
+        <div id="tab-encrypt" class="space-y-5">
             <div>
-                <label class="block text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">Tua API Key</label>
-                <input type="password" id="apiKey" placeholder="Incolla qui la chiave AIza..." 
-                    class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all">
+                <label class="block text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">Tua API Key / Testo</label>
+                <input type="password" id="encryptKey" placeholder="Incolla qui la chiave o il testo..." 
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm">
             </div>
 
             <div>
                 <label class="block text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">Password di sblocco</label>
-                <input type="text" id="password" placeholder="Scegli una password sicura" 
-                    class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all">
-                <p class="text-[10px] text-orange-600 mt-1 font-bold italic">! Ricorda questa password: servir� per usare l'app.</p>
+                <input type="password" id="encryptPassword" placeholder="Scegli una password sicura" 
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm">
+                <p class="text-[10px] text-orange-600 mt-1 font-bold italic">! Ricorda questa password: servirà per decifrare il testo.</p>
             </div>
 
             <button onclick="cifra()" 
-                class="w-full bg-black text-white py-4 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg shadow-black/20">
-                GENERA STRINGA CIFRATA
+                class="w-full bg-black text-white py-3.5 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg shadow-black/20 text-xs tracking-wider uppercase">
+                Genera Stringa Cifrata
             </button>
 
-            <div id="result-container" class="hidden animate-in fade-in slide-in-from-bottom-4">
-                <label class="block text-xs font-black uppercase text-green-600 mb-2 tracking-widest">Copia questo valore:</label>
-                <textarea id="result" readonly 
-                    class="w-full p-4 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-xs font-mono break-all h-24 focus:outline-none"></textarea>
-                <button onclick="copyToClipboard()" class="mt-2 text-[10px] font-bold text-blue-600 uppercase underline">Copia negli appunti</button>
+            <!-- Output Cifratura -->
+            <div id="encrypt-result-container" class="hidden space-y-2">
+                <label class="block text-xs font-black uppercase text-green-600 tracking-widest">Stringa Cifrata (AES):</label>
+                <textarea id="encryptResult" readonly 
+                    class="w-full p-3 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-xs font-mono break-all h-20 focus:outline-none text-gray-700"></textarea>
+                <div class="flex items-center justify-between">
+                    <button onclick="copyToClipboard('encryptResult', 'feedback-encrypt')" class="text-[11px] font-bold text-blue-600 uppercase underline hover:text-blue-800">Copia negli appunti</button>
+                    <span id="feedback-encrypt" class="text-[11px] font-bold text-green-600 hidden">Copiato!</span>
+                </div>
             </div>
         </div>
 
-        <div class="mt-8 pt-6 border-t border-gray-50 text-[10px] text-gray-400 leading-relaxed italic">
-            <strong>Come funziona:</strong> Questa pagina usa l'algoritmo AES. La tua chiave non viene mai inviata a nessun server; la cifratura avviene localmente nel tuo browser. Una volta generata, incolla la stringa nel codice dell'app alla voce <code>ENCRYPTED_KEY</code>.
+        <!-- TAB 2: DECIFRATURA -->
+        <div id="tab-decrypt" class="space-y-5 hidden">
+            <div>
+                <label class="block text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">Stringa Cifrata (AES)</label>
+                <textarea id="decryptEncryptedText" placeholder="Incolla qui la stringa cifrata U2FsdGVk..." 
+                    class="w-full p-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-xs font-mono h-20 text-gray-700"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-black uppercase text-gray-400 mb-2 tracking-widest">Password di sblocco</label>
+                <input type="password" id="decryptPassword" placeholder="Inserisci la password creata in precedenza" 
+                    class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm">
+            </div>
+
+            <button onclick="decifra()" 
+                class="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 text-xs tracking-wider uppercase">
+                Decifra Stringa
+            </button>
+
+            <!-- Error Message Container -->
+            <div id="decrypt-error" class="hidden p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-medium">
+                Password errata o formato della stringa cifrata non valido!
+            </div>
+
+            <!-- Output Decifratura -->
+            <div id="decrypt-result-container" class="hidden space-y-2">
+                <label class="block text-xs font-black uppercase text-green-600 tracking-widest">Testo Decifrato in Chiaro:</label>
+                <textarea id="decryptResult" readonly 
+                    class="w-full p-3 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-xs font-mono break-all h-20 focus:outline-none text-gray-800 font-bold"></textarea>
+                <div class="flex items-center justify-between">
+                    <button onclick="copyToClipboard('decryptResult', 'feedback-decrypt')" class="text-[11px] font-bold text-blue-600 uppercase underline hover:text-blue-800">Copia negli appunti</button>
+                    <span id="feedback-decrypt" class="text-[11px] font-bold text-green-600 hidden">Copiato!</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Toast (Sostituto di alert) -->
+        <div id="toast" class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs py-2 px-4 rounded-xl shadow-lg transition-all duration-300">
+            <span id="toast-message"></span>
+        </div>
+
+        <!-- Footer Informativo -->
+        <div class="mt-8 pt-6 border-t border-gray-100 text-[10px] text-gray-400 leading-relaxed italic">
+            <strong>Sicurezza & Privacy:</strong> Questa applicazione utilizza l'algoritmo di cifratura AES a 256 bit tramite CryptoJS. Tutte le operazioni avvengono interamente nel tuo browser e nessun dato viene mai inviato a server esterni.
         </div>
     </div>
 
+    <!-- Script della Logica della WebApp -->
     <script>
+        // Gestione cambio TAB
+        function switchTab(tab) {
+            const encryptTab = document.getElementById('tab-encrypt');
+            const decryptTab = document.getElementById('tab-decrypt');
+            const encryptBtn = document.getElementById('tab-encrypt-btn');
+            const decryptBtn = document.getElementById('tab-decrypt-btn');
+
+            if (tab === 'encrypt') {
+                encryptTab.classList.remove('hidden');
+                decryptTab.classList.add('hidden');
+                
+                encryptBtn.classList.add('bg-white', 'text-gray-800', 'shadow-sm');
+                encryptBtn.classList.remove('text-gray-500');
+
+                decryptBtn.classList.remove('bg-white', 'text-gray-800', 'shadow-sm');
+                decryptBtn.classList.add('text-gray-500');
+            } else {
+                decryptTab.classList.remove('hidden');
+                encryptTab.classList.add('hidden');
+
+                decryptBtn.classList.add('bg-white', 'text-gray-800', 'shadow-sm');
+                decryptBtn.classList.remove('text-gray-500');
+
+                encryptBtn.classList.remove('bg-white', 'text-gray-800', 'shadow-sm');
+                encryptBtn.classList.add('text-gray-500');
+            }
+        }
+
+        // Mostra messaggi notifiche
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.innerText = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Funzione per Cifrare
         function cifra() {
-            const key = document.getElementById('apiKey').value.trim();
-            const pass = document.getElementById('password').value.trim();
-            const resultArea = document.getElementById('result');
-            const resultContainer = document.getElementById('result-container');
+            const key = document.getElementById('encryptKey').value.trim();
+            const pass = document.getElementById('encryptPassword').value.trim();
+            const resultArea = document.getElementById('encryptResult');
+            const resultContainer = document.getElementById('encrypt-result-container');
 
             if (!key || !pass) {
-                alert("Inserisci sia la chiave che la password!");
+                showToast("Compila sia il testo/chiave che la password!");
                 return;
             }
 
             try {
+                // Cifratura AES con CryptoJS
                 const encrypted = CryptoJS.AES.encrypt(key, pass).toString();
                 resultArea.value = encrypted;
                 resultContainer.classList.remove('hidden');
             } catch (e) {
-                alert("Errore durante la cifratura.");
+                showToast("Errore durante la cifratura.");
             }
         }
 
-        function copyToClipboard() {
-            const copyText = document.getElementById("result");
+        // Funzione per Decifrare
+        function decifra() {
+            const encryptedText = document.getElementById('decryptEncryptedText').value.trim();
+            const pass = document.getElementById('decryptPassword').value.trim();
+            const resultArea = document.getElementById('decryptResult');
+            const resultContainer = document.getElementById('decrypt-result-container');
+            const errorContainer = document.getElementById('decrypt-error');
+
+            // Reset stato visivo
+            resultContainer.classList.add('hidden');
+            errorContainer.classList.add('hidden');
+
+            if (!encryptedText || !pass) {
+                showToast("Inserisci sia la stringa cifrata che la password!");
+                return;
+            }
+
+            try {
+                // Decifratura AES con CryptoJS
+                const decryptedBytes = CryptoJS.AES.decrypt(encryptedText, pass);
+                const originalText = decryptedBytes.toString(CryptoJS.enc.Utf8);
+
+                // Se la password è sbagliata o i dati corrotti, originalText sarà vuoto
+                if (!originalText || originalText.length === 0) {
+                    errorContainer.classList.remove('hidden');
+                } else {
+                    resultArea.value = originalText;
+                    resultContainer.classList.remove('hidden');
+                }
+            } catch (e) {
+                // Gestione errori di sintassi o parsing AES
+                errorContainer.classList.remove('hidden');
+            }
+        }
+
+        // Funzione per copiare nei dati negli appunti
+        function copyToClipboard(elementId, feedbackId) {
+            const copyText = document.getElementById(elementId);
+            if (!copyText.value) return;
+
             copyText.select();
             document.execCommand("copy");
-            alert("Copiato!");
+
+            const feedback = document.getElementById(feedbackId);
+            feedback.classList.remove('hidden');
+            setTimeout(() => {
+                feedback.classList.add('hidden');
+            }, 2000);
         }
     </script>
-
 </body>
 </html>
